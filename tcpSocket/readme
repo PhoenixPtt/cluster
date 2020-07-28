@@ -1,0 +1,8 @@
+版本 v2.2
+由上层tcpSocket控制底层tcpSocketConnection实现通信
+tcpSocketConnection使用tcpList管理发送的数据
+单链接
+优先级通过优先级队列控制
+发送包时更改包序号没有加互斥
+增加函数，StopListen，将listen函数返回值传入可以关闭监听
+增加头字段，占两个字节
