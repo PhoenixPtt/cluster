@@ -50,10 +50,10 @@ func getImageTagList(c *gin.Context)  {
 		opertype: header.FLAG_IMAG_TGLS,
 		pars: make([]header.OperPar, 1),
 	}
-	req.pars = append(req.pars, header.OperPar{
+	req.pars[0] = header.OperPar{
 		Name: "imagename",
 		Value: name,
-	})
+	}
 	// 获取单次Get信息
 	onceToGet(c, req)
 }

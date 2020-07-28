@@ -111,4 +111,14 @@ func onceToGet(c *gin.Context, reqinfo requestInf) {
 func onceToPost(c *gin.Context, reqinfo requestInf) {
 	// 添加跨域头
 	addAccessControlAllowOrigin(c)
+
+	// 创建通道，等待通道数据返回，将该通道的信息返回给前端
+	bOK, msg := getMessage(reqinfo)
+
+	// 如果获取通道数据成功，则返回实际数据，否则返回错误信息
+	if bOK {
+		c.JSON(200, msg.content)
+	} else {
+		errcode.ServeJSON(c, msg.errorMsg)
+	}
 }
