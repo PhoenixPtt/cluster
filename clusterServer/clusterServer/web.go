@@ -9,8 +9,35 @@ func ResponseURL(flag string, data interface{}, respChan chan interface{}) (err 
 
 	switch flag {
 	case header.FLAG_CLST:   	// 集群相关
-		//_,_ := data.(header.CLST)
-		respChan <- header.CLST{}
+		v := data.(header.CLST)
+		switch v.Oper.Type {
+		case header.FLAG_CLST:
+			v.Oper.Success = true
+			v.Oper.Progress = 100
+			v.Oper.Err = ""
+			v.Cfg = d
+			v.State = *clstStats
+			v.Nodes.Count = uint32(nodes.Count())
+			v.Nodes.Node = make([]header.Node, v.Nodes.Count)
+			for i,h := range nodes.GetNodeIds() {
+				v.Nodes.Node[i] = nodes.GetNode(h).Node
+			}
+			v.WarningInfo = *warings.WarningInfo()
+			respChan <- v
+
+		case header.FLAG_CLST_CFG:
+
+		case header.FLAG_CLST_CTRL:
+
+		case header.FLAG_CLST_NODE:
+
+		case header.FLAG_CLST_SERVE:
+
+		case header.FLAG_CLST_STATS:
+
+		default:
+
+		}
 
 	case header.FLAG_NODE:   	// 节点相关
 		v := data.(header.NODE)

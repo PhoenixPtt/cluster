@@ -46,7 +46,6 @@ func CtnEvents() {
 				tcpSocket.WriteData("", 1, 0, FLAG_EVENT, byteStream)
 			}
 		}
-
 	}
 
 	//发送容器资源状态数据

@@ -39,12 +39,12 @@ func Listen(ip string, port int, funReceiveData tcpSocketConnection.UserReceiveD
 	return tcpSocketConnection.Listen(ip, port, data, receive, change)
 }
 
-//连接到server，参数为IP地址、起始端口号、接收数据的回调函数、状态改变的回调函数
-func ConnectToHost(ip string, port int, funReceiveData tcpSocketConnection.UserReceiveData, funStateChange tcpSocketConnection.UserStateChange) {
+//连接到server，参数为目标IP地址、目标端口号、源IP地址、源端口号、接收数据的回调函数、状态改变的回调函数
+func ConnectToHost(tarIp string, tarPort int, srcIp string, srcPort int, funReceiveData tcpSocketConnection.UserReceiveData, funStateChange tcpSocketConnection.UserStateChange) {
 	data := new(tcpSocketConnection.UserData)
 	data.ReceiveDataFun = funReceiveData
 	data.StateChangeFun = funStateChange
-	tcpSocketConnection.ConnectToHost(ip, port, data, receive, change)
+	tcpSocketConnection.ConnectToHost(tarIp, tarPort, srcIp, srcPort, data, receive, change)
 }
 
 //写数据，参数为IP地址、优先级等级、flag、数据体

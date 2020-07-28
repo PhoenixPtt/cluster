@@ -61,6 +61,9 @@ func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
 			case header.FLAG_NODE_RDAT:
 				nodes.SetNodeState(ip, true)
 				nodes.SetResStates(ip, nd.Res)
+
+
+
 			case header.FLAG_NODE_REMV:
 				// 移除节点，需要先迁移所有节点上的副本
 				// 然后删除副本

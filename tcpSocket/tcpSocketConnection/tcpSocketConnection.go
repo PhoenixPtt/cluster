@@ -8,6 +8,7 @@ import (
 	"math"
 	"net"
 	"strconv"
+	"strings"
 	"time"
 
 	"tcpSocket/tcpSocketConnection/tcpList"
@@ -16,7 +17,7 @@ import (
 //tcp连接信息结构体
 type TcpConnection struct {
 	RemoteIp    string
-	LocalIp     string
+	RemotePort  int
 	TcpType     uint8
 	UserDataFun *UserData
 
@@ -77,26 +78,36 @@ func Listen(IpAddress string, Port int, userData *UserData, funReceiveData recei
 
 }
 
-func ConnectToHost(IpAddress string, Port int, userData *UserData, funReceiveData receiveData, funStateChange stateChange) {
+func ConnectToHost(tarIp string, tarPort int, srcIp string, srcPort int, userData *UserData, funReceiveData receiveData, funStateChange stateChange) {
 
-	ipString := IpAddress + ":" + strconv.Itoa(Port)
+	remoteIp := tarIp + ":" + strconv.Itoa(tarPort)
+	localIp  := srcIp + ":" + strconv.Itoa(srcPort)
 
-	tcpAddr, err := net.ResolveTCPAddr("tcp", ipString)
-	if err != nil {
-		fmt.Println("Resolve TCPAddr error", err)
+	remoteAddr, remoteErr := net.ResolveTCPAddr("tcp", remoteIp)
+	if remoteErr != nil {
+		fmt.Println("Resolve TCPAddrRemote error", remoteErr)
 		return
 	}
-	conn, err := net.DialTCP("tcp4", nil, tcpAddr)
+
+	localAddr, localErr := net.ResolveTCPAddr("tcp", localIp)
+	if localErr != nil {
+		fmt.Println("Resolve TCPAddrRemote error", localErr)
+		return
+	}
+
+	conn, err := net.DialTCP("tcp4", localAddr, remoteAddr)
 
 	if err != nil {
 		fmt.Println("connect server error", err)
 		return
 	}
 
+	remote := strings.Split(conn.RemoteAddr().String(),":")
+
 	tcpConnect := new(TcpConnection)
 	tcpConnect.UserDataFun = userData
-	tcpConnect.RemoteIp = conn.RemoteAddr().String()
-	tcpConnect.LocalIp = conn.LocalAddr().String()
+	tcpConnect.RemoteIp = remote[0]
+	tcpConnect.RemotePort, _ = strconv.Atoi(remote[1])
 	tcpConnect.conn = conn
 	tcpConnect.receiveDataFun = funReceiveData
 	tcpConnect.stateChangeFun = funStateChange
@@ -126,10 +137,12 @@ func (lner *TcpListener) listenConn(userData *UserData, funReceiveData receiveDa
 			continue
 		}
 
+		remote := strings.Split(conn.RemoteAddr().String(),":")
+
 		tcpConnect := new(TcpConnection)
 		tcpConnect.UserDataFun = userData
-		tcpConnect.RemoteIp = conn.RemoteAddr().String()
-		tcpConnect.LocalIp = conn.LocalAddr().String()
+		tcpConnect.RemoteIp = remote[0]
+		tcpConnect.RemotePort, _ = strconv.Atoi(remote[1])
 		tcpConnect.conn = conn
 		tcpConnect.receiveDataFun = funReceiveData
 		tcpConnect.stateChangeFun = funStateChange

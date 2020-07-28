@@ -22,6 +22,7 @@ type Warnings struct {
 
 // 发送给Client的警告信息
 func (w *Warnings) WarningInfo() *header.WarningInfo {
+
 	// 如果告警条目发生变化
 	if w.hasChanged == true {
 
@@ -39,6 +40,7 @@ func (w *Warnings) WarningInfo() *header.WarningInfo {
 		}
 
 		i := w.list.Len()-1
+		w.info.Warning = make([]header.WarningItem, w.list.Len())
 		for e := w.list.Front(); e != nil; e = e.Next() {
 			w.info.Warning[i] = e.Value.(header.WarningItem)
 			i--

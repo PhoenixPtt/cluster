@@ -5,6 +5,7 @@ import (
 	"github.com/shirou/gopsutil/host"
 	"sync"
 	"tcpSocket"
+	"time"
 )
 
 type Node struct {
@@ -87,6 +88,18 @@ func (n *Nodes)GetNode(h string) *Node {
 	defer n.mutex.RUnlock()
 
 	return n.nodes[h]
+}
+
+func (n *Nodes)GetState(h string) bool {
+	node := n.GetNode(h)
+	if node == nil {
+		return false
+	}
+
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
+
+	return node.State
 }
 
 func (n *Nodes)SetResStates(h string, res header.ResourceStatus) {
@@ -232,8 +245,8 @@ func (n *Nodes)IsOnline(h string) bool{
 		return false
 	}
 
-	node.mutex.Lock()
-	defer node.mutex.Unlock()
+	node.mutex.RLock()
+	defer node.mutex.RUnlock()
 
 	return node.State
 }
@@ -243,4 +256,57 @@ func (n *Nodes)Count() int {
 	defer n.mutex.RUnlock()
 
 	return len(n.nodes)
+}
+
+func (n* Nodes)ResCount() *header.ResourceStatus {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
+	res := new(header.ResourceStatus)
+
+	nodeCount := len(n.nodes)
+	if nodeCount == 0 {
+		return res
+	}
+
+	for _,node := range n.nodes {
+		node.mutex.RLock()
+
+		cpu := &node.Res.Cpu
+		res.Cpu.CoreCount += cpu.CoreCount
+		res.Cpu.UsedPercent.Val += cpu.UsedPercent.Val * float64(cpu.CoreCount)
+		res.Cpu.Temperature.Val += cpu.Temperature.Val
+		res.Cpu.Health.Val += cpu.Health.Val
+
+		mem := &node.Res.Mem
+		res.Mem.Used.Val += mem.Used.Val
+		res.Mem.Health.Val += mem.Health.Val
+		res.Mem.Temperature.Val += mem.Temperature.Val
+		res.Mem.Total.Val += mem.Total.Val
+
+		disk := &node.Res.Disk
+		res.Disk.Used.Val += disk.Used.Val
+		res.Disk.Health.Val += disk.Health.Val
+		res.Disk.Temperature.Val += disk.Temperature.Val
+		res.Disk.Total.Val += disk.Total.Val
+
+		node.mutex.RUnlock()
+	}
+
+	ndw := 1.0/float64(nodeCount)
+
+	res.Cpu.SetUsedPercentData(res.Cpu.UsedPercent.Val / float64(res.Cpu.CoreCount))
+	res.Cpu.SetTemperatureData(res.Cpu.Temperature.Val * ndw)
+	res.Cpu.SetHealthData(res.Cpu.Health.Val * ndw)
+
+	res.Mem.SetHealthData(res.Mem.Health.Val * ndw)
+	res.Mem.SetTemperatureData(res.Mem.Temperature.Val * ndw)
+	res.Mem.SetUsedData(uint64(res.Mem.Used.Val), uint64(res.Mem.Total.Val))
+
+	res.Disk.SetHealthData(res.Disk.Health.Val * ndw)
+	res.Disk.SetTemperatureData(res.Disk.Temperature.Val * ndw)
+	res.Disk.SetUsedData(uint64(res.Disk.Used.Val), uint64(res.Disk.Total.Val))
+
+	res.Time = time.Now().Format("yyyy-MM-dd hh:mm:ss.zzzzzzzzz")
+	return res
 }

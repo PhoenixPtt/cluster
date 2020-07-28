@@ -10,11 +10,6 @@ import (
 var netListenHandle_Agent string  // 监听Agent的网络句柄
 //var netListenHandle_Client string // 监听客户端的网络句柄
 
-var nodes Nodes
-
-func init() {
-	nodes.Init()
-}
 
 func Start() {
 	// 加载配置
@@ -31,24 +26,29 @@ func Start() {
 	// 启动网络发现
 	go clusterServerDiscovery()
 
+
 	defer Quit()
 
 	// 不退出 阻塞
 	for {
-		time.Sleep(time.Second)
+		// 睡眠
+		time.Sleep(time.Second* time.Duration(d.ResSampleFeq))
+
+		updateClusterStats()
 	}
 }
 
 // 退出集群
 func Quit() {
 
-	//for ip, index := range NodeIds {
-	//	node := &d.Node[index]
-	//	if node.State == tcpSocket.TCP_CONNECT_SUCCESS {
-	//		tcpSocket.Abort(ip)
-	//	}
-	//}
+	// 关闭所有在线节点的网络连接
+	for _,h := range nodes.GetNodeIds() {
+		if nodes.GetState(h) == true {
+			tcpSocket.Abort(h)
+		}
+	}
 
+	// 停止监听
 	tcpSocket.StopListen(netListenHandle_Agent)
 	//tcpSocket.StopListen(netListenHandle_Client)
 

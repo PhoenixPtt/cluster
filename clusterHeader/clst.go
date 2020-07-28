@@ -28,6 +28,7 @@ type ClstCfg struct {
 	Name      					 string   // 集群名称
 
 	AgentUdpPort                 uint32   // Agent端监听的UDP的端口号
+	AgentTcpPort				 uint32   // Agent端的Tcp端口
 	ServerUdpPort                uint32   // 服务端监听的UDP的端口号
 	ServerTcpPortForListenClient uint32   // 服务端监听Agent的TCP端口号
 	ServerTcpPortForListenAgent  uint32   // 服务端监听Client的TCP端口号

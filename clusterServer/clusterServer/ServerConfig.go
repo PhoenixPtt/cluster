@@ -16,7 +16,10 @@ const (
 var d header.ClstCfg // 集群数据
 
 func init() {
+	d.Name = "CETC15-基于容器的集群管理平台"
+
 	d.AgentUdpPort = 30000
+	d.AgentTcpPort = 40000
 	d.ServerUdpPort = 30001
 	d.ServerTcpPortForListenClient = 30002
 	d.ServerTcpPortForListenAgent = 30003

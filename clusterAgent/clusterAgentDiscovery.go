@@ -32,7 +32,7 @@ func clusterAgentDiscovery() {
 
 		log.Println(time.Now(), "clusterAgentDiscovery ReadFromUDP", read, raddr.IP.String(), raddr.Port, string(data[:read]))
 		if string(data[:read]) == string("ClusterServer is ready, please connect!") {
-			tcpSocket.ConnectToHost(raddr.IP.String(), int(d.ServerTcpPortForListenAgent), onNetReadData, onNetStateChanged)
+			tcpSocket.ConnectToHost(raddr.IP.String(), int(d.ServerTcpPortForListenAgent),"0.0.0.0", int(d.AgentTcpPort), onNetReadData, onNetStateChanged)
 		}
 	}
 }
