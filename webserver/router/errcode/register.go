@@ -26,9 +26,9 @@ var (
 
 	// ErrorCodeNotfound is returned when an request URL is not found.
 	ErrorCodeNotfound = Register("errcode", ErrorDescriptor{
-		Value:   "NOTFOUND",
-		Message: "The request URL is not found.",
-		Description: `The request URL was not found in web server.`,
+		Value:          "NOTFOUND",
+		Message:        "The request URL is not found.",
+		Description:    `The request URL was not found in web server.`,
 		HTTPStatusCode: http.StatusNotFound,
 	})
 

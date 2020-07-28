@@ -4,6 +4,7 @@ package router
 
 import (
 	"log"
+	"strings"
 	"sync"
 	"time"
 )
@@ -20,6 +21,7 @@ type Manager struct {
 
 // 管理者对象列表操作互斥对象
 var listOperaMutex sync.Mutex
+
 // 管理者对象列表，存储管理者对象指针，这里必须使用make进行初始化，否则直接赋值时将出现问题
 var managerList map[string]*Manager = make(map[string]*Manager)
 
@@ -90,7 +92,7 @@ func (m *Manager) start() {
 
 				// 休眠对应的getMessage函数，可以在重新启用之前一直堵塞
 				m.pauseFlag <- true
-				return	// <清零结束使用> 由于此时需要结束，故而跳出循环结束本协程
+				return // <清零结束使用> 由于此时需要结束，故而跳出循环结束本协程
 			}
 		// 获取新消息时，通过遍历，将信息发给所有的客户
 		case message := <-m.messages:
@@ -120,10 +122,30 @@ func (m *Manager) delClient(cli chan Message) {
 	m.delClients <- cli
 }
 
+// 根据msgType生成requestInf对象
+func (m *Manager) getRequestInformation() (req requestInf) {
+	// 解析msgType的内容，正常情况下msgType为/XXXXX/YYYY这种格式
+	data := strings.Split(m.msgType, "/")
+
+	// 解析后的字符串切片小于3个，则直接返回，因为解析错误
+	if len(data) < 3 {
+		return
+	}
+
+	// 根据msgType的内容，填充req对象
+	req.typeFlag = data[1]
+	req.opertype = data[2]
+
+	return req
+}
+
 // 获取待发送给客户的消息
 func (m *Manager) getMessage() {
 	// 调试使用i变量实现计数功能 <正式版本，或需删除>
 	var i int = 0
+
+	// 获取请求结构体对象
+	req := m.getRequestInformation()
 
 	// 循环获取待发送的数据内容
 	for {
@@ -156,18 +178,21 @@ func (m *Manager) getMessage() {
 		}
 
 		// 从集群服务端获取指定类型的信息
-		bOK, msg := getMessage(m.msgType)
+		bOK, msg := getMessage(req)
 
+		// 将msg返回的信息，写入到消息数组中
+		m.messages <- msg
+
+		// 如果正常获取信息，则显示信息内容
 		if bOK {
-			m.messages <- msg
-
-			// Print a nice log message and sleep for 5s.
+			// Print a nice log message
 			log.Printf("%v msgType is %v, getMessage: %v", i, m.msgType, msg.content)
-
-			//  临时使用，等待2s，正式版本由集群服务端控制数据间隔
-			time.Sleep(2e9)
-		} else {	// 如果获取的数据出现错误，是否需要在这里处理？
-
+		} else { // 如果获取的数据出现错误，是否需要在这里处理？
+			// Print a error log message
+			log.Printf("%v msgType is %v, getMessage is error: %v", i, m.msgType, msg.errorMsg.Error())
 		}
+
+		//  临时使用，等待2s，正式版本由集群服务端控制数据间隔
+		time.Sleep(2e9)
 	}
 }
