@@ -2,5 +2,3 @@
 // it used to declare structs for router
 
 package router
-
-

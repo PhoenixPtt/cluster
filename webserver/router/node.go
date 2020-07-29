@@ -4,6 +4,7 @@
 package router
 
 import (
+	header "clusterHeader"
 	"github.com/gin-gonic/gin"
 )
 
@@ -18,8 +19,14 @@ func initNodeRouter(group *gin.RouterGroup) bool {
 		if continueFlag == "true" {
 			// 持续获取集群资源监控数据，并及时返回给前端
 			continueToGet(c, group.BasePath()+"/resource")
-		} else {	// 否则仅进行一次数据获取
-			simpleToGet(c, group.BasePath()+"/resource")
+		} else { // 否则仅进行一次数据获取
+			// 生成请求信息结构体
+			req := requestInf{
+				typeFlag: header.FLAG_NODE,
+				opertype: header.FLAG_NODE,
+			}
+			// 获取单次Get信息
+			onceToGet(c, req)
 		}
 	})
 	return true

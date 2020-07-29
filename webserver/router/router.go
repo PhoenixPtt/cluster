@@ -2,7 +2,6 @@ package router
 
 import (
 	"fmt"
-	_ "fmt"
 	"github.com/gin-gonic/gin"
 	"io"
 	"webserver/router/errcode"
@@ -10,34 +9,22 @@ import (
 
 func Init(rout *gin.Engine) bool {
 	// 采样频率相关功能
-	if !initFreqRouter(rout.Group("/frequency")) {
-		return false
-	}
+	initFreqRouter(rout.Group("/frequency"))
 
 	// 镜像操作的相关功能
-	if !initImageRouter(rout.Group("/image")) {
-		return false
-	}
+	initImageRouter(rout.Group("/image"))
 
 	// 文件操作相关功能
-	if !initFileRouter(rout.Group("/file")) {
-		return false
-	}
+	initFileRouter(rout.Group("/file"))
 
 	// 集群操作相关功能
-	if !initClusterRouter(rout.Group("/cluster")) {
-		return false
-	}
+	initClusterRouter(rout.Group("/cluster"))
 
 	// 节点操作相关功能
-	if !initNodeRouter(rout.Group("/agent")) {
-		return false
-	}
+	initNodeRouter(rout.Group("/agent"))
 
 	// 应用服务操作相关功能
-	if !initApplicationServiceRouter(rout.Group("/deployment")) {
-		return false
-	}
+	initApplicationServiceRouter(rout.Group("/deployment"))
 
 	// 定义无法找到指定路由的情况下，返回的错误信息
 	rout.NoRoute(func(c *gin.Context) {
@@ -51,23 +38,20 @@ func Init(rout *gin.Engine) bool {
 func initFreqRouter(group *gin.RouterGroup) bool {
 	// 获取采集频率的当前值
 	group.GET("/current", func(c *gin.Context) {
-		simpleToGet(c, group.BasePath()+"/current")
+		//// 解析请求主体内容
+		//var data header.CLST
+		//if err := c.ShouldBindJSON(&data); err != nil {
+		//	c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		//	return
+		//}
+
+		//req := requestInf{
+		//	typeFlag: "frequency",
+		//	opertype: "current",
+		//}
+		//
+		//onceToGet(c, req)
 	})
-	return true
-}
-
-// 镜像操作相关内容的具体处理函数 /image
-func initImageRouter(group *gin.RouterGroup) bool {
-	return true
-}
-
-// 文件操作相关内容的具体处理函数 /file
-func initFileRouter(group *gin.RouterGroup) bool {
-	return true
-}
-
-// 应用服务操作相关内容的具体处理函数 /deployment(暂定)
-func initApplicationServiceRouter(group *gin.RouterGroup) bool {
 	return true
 }
 
@@ -78,7 +62,7 @@ func addAccessControlAllowOrigin(c *gin.Context) {
 }
 
 // 处理Get命令中连续获取指定URL的内容
-func continueToGet(c *gin.Context, msgType string){
+func continueToGet(c *gin.Context, msgType string) {
 	// 添加跨域头
 	addAccessControlAllowOrigin(c)
 
@@ -107,14 +91,31 @@ func continueToGet(c *gin.Context, msgType string){
 	})
 }
 
-// 单次Get请求指定URL的内容
-func simpleToGet(c *gin.Context, msgType string) {
+// 单次Get请求指定URL的方法
+func onceToGet(c *gin.Context, reqinfo requestInf) {
 	// 添加跨域头
 	addAccessControlAllowOrigin(c)
 
 	// 创建通道，等待通道数据返回，将该通道的信息返回给前端
-	bOK, msg := getMessage(msgType)
+	bOK, msg := getMessage(reqinfo)
 
+	// 如果获取通道数据成功，则返回实际数据，否则返回错误信息
+	if bOK {
+		c.JSON(200, msg.content)
+	} else {
+		errcode.ServeJSON(c, msg.errorMsg)
+	}
+}
+
+// 单次Post请求指定URL的方法
+func onceToPost(c *gin.Context, reqinfo requestInf) {
+	// 添加跨域头
+	addAccessControlAllowOrigin(c)
+
+	// 创建通道，等待通道数据返回，将该通道的信息返回给前端
+	bOK, msg := getMessage(reqinfo)
+
+	// 如果获取通道数据成功，则返回实际数据，否则返回错误信息
 	if bOK {
 		c.JSON(200, msg.content)
 	} else {

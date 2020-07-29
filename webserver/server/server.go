@@ -15,6 +15,7 @@ import (
 	"webserver/router"
 )
 
+// 供外部调用的初始化web服务端的方法
 func Init() error {
 	// 使用默认中间件创建一个gin路由器
 	// logger and recovery (crash-free) 中间件
@@ -24,7 +25,7 @@ func Init() error {
 	if !router.Init(serEngine) {
 		err := fmt.Errorf("router initial is fail")
 		return err
-	} else {	// 正常初始化，则执行可以实现优雅关闭web服务器的操作
+	} else { // 正常初始化，则执行可以实现优雅关闭web服务器的操作
 		// 初始化一个web server
 		srv := &http.Server{
 			Addr:    ":8000",
