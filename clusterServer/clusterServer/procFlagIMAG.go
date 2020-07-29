@@ -12,7 +12,7 @@ func procFlagIMAG(token interface{}, data interface{}, respChan chan<- interface
 	imageData := data.(header.ImageData)
 
 	// 生成一个请求
-	h := NewRequest()
+	h := NewRequest(respChan)
 
 	// 处理镜像类操作
 	ProcessImageFlagDataFromClient(h, &imageData)
@@ -24,6 +24,10 @@ func procFlagIMAG(token interface{}, data interface{}, respChan chan<- interface
 func AnswerRequestOfImage(pkgId uint16, imageBody string, result string, err error, imageData *header.ImageData) {
 	imageData.ImageBody = imageBody
 	imageData.Result = result
-	imageData.TipError = err.Error()
+	if err == nil {
+		imageData.TipError = ""
+	} else {
+		imageData.TipError = err.Error()
+	}
 	AnswerRequest(pkgId, *imageData)
 }
