@@ -61,7 +61,7 @@ func getMessage(reqinfo requestInf) (bSuccess bool, msg *Message) {
 
 	// 调用集群服务端的指定接口函数
 	//fmt.Println("ResponseURL data is： ", data)
-	cluster.ResponseURL(reqinfo.typeFlag, data, temRespChan)
+	cluster.ResponseURL(reqinfo.typeFlag, "", data, temRespChan)
 	// 等待读取通道对象内的数据
 	temResp := <-temRespChan
 
