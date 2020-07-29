@@ -28,7 +28,8 @@ func Init(rout *gin.Engine) bool {
 
 	// 定义无法找到指定路由的情况下，返回的错误信息
 	rout.NoRoute(func(c *gin.Context) {
-		errcode.ServeJSON(c, errcode.ErrorCodeNotfound.WithDetail(fmt.Sprintf("URL:%v is not found", c.Request.URL.Path)))
+		serveErrorJSON(c,
+			errcode.ErrorCodeNotfound.WithDetail(fmt.Sprintf("URL:%v is not found", c.Request.URL.Path)))
 	})
 
 	return true
@@ -61,6 +62,15 @@ func addAccessControlAllowOrigin(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 }
 
+// 返回错误信息
+func serveErrorJSON(c *gin.Context, err errcode.Error) {
+	// 添加跨域头
+	addAccessControlAllowOrigin(c)
+
+	// 返回客户端错误信息
+	errcode.ServeJSON(c, err)
+}
+
 // 处理Get命令中连续获取指定URL的内容
 func continueToGet(c *gin.Context, msgType string) {
 	// 添加跨域头
@@ -85,7 +95,11 @@ func continueToGet(c *gin.Context, msgType string) {
 		case message := <-msg:
 			//log.Println("send message:", message.content)
 			// 当有消息需要发送的时候，使用SSEvent函数来发送数据实体
-			c.SSEvent("message", message.content)
+			if message.content != "" {
+				c.SSEvent("message", message.content)
+			} else {
+				c.SSEvent("message", message.errorMsg)
+			}
 			return true
 		}
 	})
@@ -109,16 +123,19 @@ func onceToGet(c *gin.Context, reqinfo requestInf) {
 
 // 单次Post请求指定URL的方法
 func onceToPost(c *gin.Context, reqinfo requestInf) {
-	// 添加跨域头
-	addAccessControlAllowOrigin(c)
+	//// 添加跨域头
+	//addAccessControlAllowOrigin(c)
+	//
+	//// 创建通道，等待通道数据返回，将该通道的信息返回给前端
+	//bOK, msg := getMessage(reqinfo)
+	//
+	//// 如果获取通道数据成功，则返回实际数据，否则返回错误信息
+	//if bOK {
+	//	c.JSON(200, msg.content)
+	//} else {
+	//	errcode.ServeJSON(c, msg.errorMsg)
+	//}
 
-	// 创建通道，等待通道数据返回，将该通道的信息返回给前端
-	bOK, msg := getMessage(reqinfo)
-
-	// 如果获取通道数据成功，则返回实际数据，否则返回错误信息
-	if bOK {
-		c.JSON(200, msg.content)
-	} else {
-		errcode.ServeJSON(c, msg.errorMsg)
-	}
+	// 目前同单次Get请求的操作，暂时使用这样的方法进行操作
+	onceToGet(c, reqinfo)
 }
