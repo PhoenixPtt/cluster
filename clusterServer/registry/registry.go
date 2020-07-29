@@ -302,7 +302,7 @@ func DeleteRepsitory(imagename string, tag string) bool {
 	}
 
 	// 后续功能还需要测试，暂时删除功能都是返回false
-	return false
+	//return false
 
 
 
