@@ -98,7 +98,7 @@ func onNetReadData(ip string, pkgId uint16, flag string, data []byte) {
 		}
 	case header.FLAG_IMAG:
 		var imageData header.ImageData
-		header.Decode(data, &imageData)
+		json.Unmarshal(data, &imageData)
 		agentImage.RecieveDataFromServer(ip, pkgId, imageData)
 
 	case header.FLAG_SERV, header.FLAG_CTNS: // 任务相关

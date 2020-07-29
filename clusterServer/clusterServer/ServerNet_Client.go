@@ -1,9 +1,5 @@
 package clusterServer
 
-import (
-	"clusterHeader"
-)
-
 //func writeClientData(ip string, tcpType uint8, flag string, data []byte) {
 //	if len(ip) <= 0 { // 如果不指定ip，则给所有ip发
 //		for ipAddr, state := range clientStates {
@@ -85,24 +81,4 @@ import (
 //	return
 //}
 
-func returnResultToClient(pkgId uint16, imagedata header.ImageData) {
 
-	//log.Println("结果返回客户端")
-	//dealType := imagedata.DealType
-	//sendbyte, err := header.Encode(imagedata)
-	//if err != nil {
-	//	log.Println("encode data err", err)
-	//}
-	//log.Println("agent端返回给server端的数据", dealType, imagedata)
-	//var grade = tcpSocket.TCP_TPYE_CONTROLLER
-	//if dealType == header.FLAG_IMAG_SAVE {
-	//	grade = tcpSocket.TCP_TYPE_FILE
-	//}
-	//
-	//clientHandle, ok := PkgIdMap[pkgId]
-	//if ok {
-	//	writeClientData(clientHandle, grade, header.FLAG_IMAG, sendbyte)
-	//} else {
-	//	log.Println(time.Now().Nanosecond(), "server端接收agent镜像操作的返回信息,但是客户端IP丢失")
-	//}
-}

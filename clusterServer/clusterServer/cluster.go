@@ -2,7 +2,6 @@ package clusterServer
 
 import (
 	header "clusterHeader"
-	"fmt"
 	"math/rand"
 	"time"
 )
@@ -21,7 +20,6 @@ func updateClusterStats() {
 	clstStats.ExecServiceCount = 0
 	clstStats.RunState = true
 
-	fmt.Println("clstStats.NodeCount",clstStats.NodeCount)
 	// 报警信息更新
 	var wItem header.WarningItem
 	iType := uint8(rand.Uint32() % 3)

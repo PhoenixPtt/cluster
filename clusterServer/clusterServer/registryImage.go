@@ -1,144 +1,114 @@
 package clusterServer
 
 import (
-	"log"
-
 	"clusterHeader"
 	"clusterServer/registry"
+	"strings"
 	"tcpSocket"
 )
 
-func registryReceiveDataFromClient(handle string, pkgId uint16, sendbyte []byte) {
+func init() {
+	registry.InitialConnect()
+}
 
-	log.Println("registry处理client数据", handle, len(sendbyte))
+// 获取镜像列表
+func GetImageList(pkgId uint16, imageData *header.ImageData) {
+	// 如果镜像仓库不在线，直接返回错误
+	if !registry.IsOnline() {
+		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
+		return
+	}
 
-	var imagedata header.ImageData
-	err := header.Decode(sendbyte, &imagedata)
+	// 从镜像仓库获取镜像列表
+	imageList, _, err := registry.GetRepositoryList()
 	if err != nil {
-		log.Println("decode data false")
-		return
-	}
-
-	dealType := imagedata.DealType
-	imagename := imagedata.ImageName
-	tags := imagedata.Tags
-	if len(tags) <= 0 {
-		tags = append(tags, "latest")
-	}
-	imagebody := []byte(imagedata.ImageBody)
-	var grade = tcpSocket.TCP_TPYE_CONTROLLER
-	var sendData []byte
-
-	// 初始化私有镜像仓库连接
-	if registry.InitialConnect() {
-		// 获取私有镜像仓库是否在线
-		bOnline := registry.IsOnline()
-		// 如果镜像仓库在线，才可执行具体操作
-		if bOnline {
-
-			switch dealType {
-			case header.FLAG_IMAG_LIST:
-				{
-					imagelist, _, err := registry.GetRepositoryList()
-					if err != nil {
-						sendData = []byte("获取镜像列表失败!")
-						updateImageData(pkgId, sendData, "FALSE", err, imagedata)
-						return
-					}
-					imageListByte, err := header.Encode(imagelist)
-					if err != nil {
-						//结构体解析错误
-						sendData = []byte("获取镜像列表成功，返回结果过程中结构体解析错误!")
-						updateImageData(pkgId, sendData, "FALSE", err, imagedata)
-						return
-					}
-					sendData = imageListByte
-				}
-			case header.FLAG_IMAG_TGLS:
-				{
-					taglist, _, err := registry.GetTagList(imagename)
-					if err != nil {
-						sendData = []byte("获取镜像标签列表失败!")
-						updateImageData(pkgId, sendData, "FALSE", err, imagedata)
-						return
-					}
-					taglistByte, err := header.Encode(taglist)
-					if err != nil {
-						//结构体解析错误
-						sendData = []byte("获取镜像标签列表成功，返回结果过程中结构体解析错误!")
-						updateImageData(pkgId, sendData, "FALSE", err, imagedata)
-						return
-					}
-					sendData = taglistByte
-				}
-			case header.FLAG_IMAG_REMO:
-				{
-					for _, tag := range tags {
-						isDeleteSuccess := registry.DeleteRepsitory(imagename, tag)
-						if !isDeleteSuccess {
-							//结构体解析错误
-							sendData = []byte("删除私有仓库镜像失败!")
-							updateImageData(pkgId, sendData, "FALSE", nil, imagedata)
-							return
-						}
-					}
-					sendData = []byte("删除私有仓库镜像成功!")
-				}
-			case header.FLAG_IMAG_UPDT:
-				{
-					//更新操作
-					for _, tag := range tags {
-						isExist := registry.IsExistRepositoryTag(imagename, tag)
-						//judge if the image is exist
-						if isExist {
-							//delete image in registry
-							isDeleteSuccess := registry.DeleteRepsitory("library/"+imagename, tag)
-							if !isDeleteSuccess {
-								sendData = []byte("更新操作过程中，删除私有仓库镜像失败!")
-								updateImageData(pkgId, sendData, "FALSE", nil, imagedata)
-								return
-							}
-						}
-						//use tcp to agent
-						dealType = header.FLAG_IMAG_PUSH
-						newdata := header.ImageData{}.From(dealType, imagename, tags, imagebody, "", nil)
-						sendbyte, err := header.Encode(newdata)
-						if err != nil {
-							//结构体解析错误
-							sendData = []byte("更新镜像过程中，删除操作成功，push前结构体解析错误!")
-							updateImageData(pkgId, sendData, "FALSE", err, imagedata)
-							return
-						}
-						grade = tcpSocket.TCP_TYPE_FILE
-						writeAgentData("", grade, pkgId, header.FLAG_IMAG, sendbyte)
-					}
-				}
-			default:
-				{
-					sendData = []byte("没有匹配的操作类型")
-					updateImageData(pkgId, sendData, "FALSE", nil, imagedata)
-				}
-
-			}
-			updateImageData(pkgId, sendData, "SUCCESS", nil, imagedata)
-
-		} else {
-			sendData = []byte("镜像仓库不在线!")
-			updateImageData(pkgId, sendData, "FALSE", nil, imagedata)
-			return
-		}
+		AnswerRequestOfImage(pkgId, "获取镜像列表失败!", "FALSE", err, imageData)
 	} else {
-		sendData = []byte("私有镜像仓库连接失败!")
-		updateImageData(pkgId, sendData, "FALSE", nil, imagedata)
+		AnswerRequestOfImage(pkgId, header.JsonString(imageList), "TRUE", nil, imageData)
+	}
+}
+
+// 获取镜像标签列表
+func GetImageTagList(pkgId uint16, imageData *header.ImageData) {
+	// 如果镜像仓库不在线，直接返回错误
+	if !registry.IsOnline() {
+		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
 		return
 	}
+
+	// 获取镜像标签列表
+	tagList, _, err := registry.GetTagList(imageData.ImageName)
+		if err != nil {
+			AnswerRequestOfImage(pkgId, "获取镜像标签列表失败!", "FALSE", err, imageData)
+		} else {
+			AnswerRequestOfImage(pkgId, header.JsonString(tagList), "TRUE", nil, imageData)
+		}
 
 }
 
-func updateImageData(pkgId uint16, imagebody []byte, result string, err error, imagedata header.ImageData) {
+// 从镜像仓库删除镜像
+func RemoveImageFromRepository(pkgId uint16, imageData *header.ImageData) {
+	// 如果镜像仓库不在线，直接返回错误
+	if !registry.IsOnline() {
+		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
+		return
+	}
 
-	imagedata.ImageBody = string(imagebody)
-	imagedata.Result = result
-	imagedata.TipError = err.Error()
-	returnResultToClient(pkgId, imagedata)
+	// 处理不带标签的情况
+	tags := imageData.Tags
+	if len(tags) <= 0 {
+		tags = append(tags, "latest")
+	}
+
+	var errorList []string // 删除失败和成功信息
+	var errorCount int = 0 // 删除失败的总数
+
+	// 依次删除所有镜像
+		for _, tag := range tags {
+			// 删除一个镜像
+			isDeleteSuccess := registry.DeleteRepsitory(imageData.ImageName, tag)
+			if !isDeleteSuccess {
+				errorList = append(errorList, "从仓库删除镜像 " + imageData.ImageName + ":" + tag + " 失败")
+				errorCount++
+			} else {
+				errorList = append(errorList, "从仓库删除镜像 " + imageData.ImageName + ":" + tag + " 成功")
+			}
+		}
+
+		if errorCount > 0 {
+			AnswerRequestOfImage(pkgId, strings.Join(errorList, "\n"), "FALSE", nil, imageData)
+		} else {
+			AnswerRequestOfImage(pkgId, strings.Join(errorList, "\n"), "TRUE", nil, imageData)
+		}
+
+}
+
+func UpdateImageRepository(h string, pkgId uint16, imageData *header.ImageData) {
+	// 如果镜像仓库不在线，直接返回错误
+	if !registry.IsOnline() {
+		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
+		return
+	}
+
+	// 处理不带标签的情况
+	tags := imageData.Tags
+	if len(tags) <= 0 {
+		tags = append(tags, "latest")
+	}
+
+		// 更新操作
+		for _, tag := range tags {
+			isExist := registry.IsExistRepositoryTag(imageData.ImageName, tag)
+			//judge if the image is exist
+			if isExist {
+				//delete image in registry
+				registry.DeleteRepsitory("library/"+imageData.ImageName, tag)
+			}
+
+				//use tcp to agent
+		newdata := header.ImageData{}.From(header.FLAG_IMAG_PUSH, imageData.ImageName, tags, imageData.ImageBody, "", nil)
+		writeAgentData(h, tcpSocket.TCP_TYPE_FILE, pkgId, header.FLAG_IMAG, header.JsonByteArray(newdata))
+
+		}
+
 }

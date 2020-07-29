@@ -550,14 +550,14 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 	ioreader := bytes.NewBuffer(imagebody)
 	err = targz.Tar(ioreader, loadPath)
 	if err != nil {
-		returnResultToServer(handle, pkgId, dealType, imageName, tags, []byte("LOAD操作中，压缩字节流的过程失败！"), "FALSE", err)
+		returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，压缩字节流的过程失败！", "FALSE", err)
 		return err
 	}
 	//load image
 	err = LoadImage(loadPath, true)
 	if err != nil {
 		//返回客户端结果
-		returnResultToServer(handle, pkgId, dealType, imageName, tags, []byte("LOAD操作中，导入镜像的过程失败！"), "FALSE", err)
+		returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，导入镜像的过程失败！", "FALSE", err)
 		return err
 	}
 
@@ -568,7 +568,7 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 		err = TagImage(tagName, tagName, true)
 		if err != nil {
 			//返回客户端结果
-			returnResultToServer(handle, pkgId, dealType, imageName, tags, []byte("LOAD操作中，load成功后，tag"+tagName+"镜像的过程失败！"), "FALSE", err)
+			returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，load成功后，tag"+tagName+"镜像的过程失败！", "FALSE", err)
 			return err
 		}
 		//push image to registry
@@ -578,10 +578,10 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 			_, rmerr := RemoveImage(tagName, true, false)
 			if rmerr != nil {
 				//deal error
-				returnResultToServer(handle, pkgId, dealType, imageName, tags, []byte("LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，未能删除被tag的镜像！"), "FALSE", rmerr)
+				returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，未能删除被tag的镜像！", "FALSE", rmerr)
 				return rmerr
 			}
-			returnResultToServer(handle, pkgId, dealType, imageName, tags, []byte("LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，已经删除被tag的镜像！"), "FALSE", err)
+			returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，已经删除被tag的镜像！", "FALSE", err)
 			return err
 		}
 	}
@@ -609,7 +609,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 		err := BuildImageOfBinaryProcess(imagename, tags, []byte(imagebody), true)
 		if err != nil {
 			//返回客户端结果
-			returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("BUILD操作中，构建镜像过程失败！"), "FALSE", err)
+			returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，构建镜像过程失败！", "FALSE", err)
 			return
 		}
 
@@ -620,7 +620,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			err := TagImage(tagName, tagName, true)
 			if err != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("BUILD操作中，tag镜像过程失败！"), "FALSE", err)
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，tag镜像过程失败！", "FALSE", err)
 				return
 			}
 
@@ -632,7 +632,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 				_, rmerr := RemoveImage(pushname, true, false)
 				if rmerr != nil {
 					//返回客户端结果
-					returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("BUILD操作中，删除tag的镜像过程失败！"), "FALSE", rmerr)
+					returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，删除tag的镜像过程失败！", "FALSE", rmerr)
 					return
 				}
 			}
@@ -641,7 +641,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			_, rmerr := RemoveImage(tagName, true, true)
 			if rmerr != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("BUILD操作中，删除被tag的镜像过程失败！"), "FALSE", rmerr)
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，删除被tag的镜像过程失败！", "FALSE", rmerr)
 				return
 			}
 		}
@@ -668,7 +668,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			pusherr := PushImage(tagName, false)
 			if pusherr != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("PUSH操作中，推送镜像的过程失败！"), "FALSE", pusherr)
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "PUSH操作中，推送镜像的过程失败！", "FALSE", pusherr)
 				return
 			}
 		}
@@ -679,7 +679,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 		bodybyte, err := SaveImageToAgent(tags, ImageSavePath, saveName)
 		if err != nil {
 			//返回客户端结果
-			returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("SAVE操作中，保存镜像的过程失败！"), "FALSE", err)
+			returnResultToServer(handle, pkgId, dealType, imagename, tags, "SAVE操作中，保存镜像的过程失败！", "FALSE", err)
 			return
 		}
 		log.Println("agent端保存镜像成功")
@@ -709,7 +709,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			err := PullImage(tagName, false)
 			if err != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("DISTRACT操作中，分发"+tagName+"镜像的过程失败！"), "FALSE", err)
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "DISTRACT操作中，分发"+tagName+"镜像的过程失败！", "FALSE", err)
 				return
 			}
 		}
@@ -721,22 +721,22 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	// 		err := TagImage(tagName, tagName, true)
 	// 		if err != nil {
 	// 			//返回客户端结果
-	// 			returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("TAG操作中，tag"+tagName+"镜像的过程失败！"), "FALSE", err)
+	// 			returnResultToServer(handle, pkgId, dealType, imagename, tags, "TAG操作中，tag"+tagName+"镜像的过程失败！", "FALSE", err)
 	// 			return
 	// 		}
 	// 	}
 	// 	log.Println("agent端标签镜像成功")
 	// 	sendData = "agent端标签镜像成功"
 	default:
-		returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte("没有匹配的操作类型"), "FALSE", nil)
+		returnResultToServer(handle, pkgId, dealType, imagename, tags, "没有匹配的操作类型", "FALSE", nil)
 		return
 	}
 
-	returnResultToServer(handle, pkgId, dealType, imagename, tags, []byte(sendData), "SUCCESS", nil)
+	returnResultToServer(handle, pkgId, dealType, imagename, tags, sendData, "SUCCESS", nil)
 
 }
 
-func returnResultToServer(handle string, pkgId uint16, dealType string, imagename string, tags []string, imagebody []byte, result string, err error) {
+func returnResultToServer(handle string, pkgId uint16, dealType string, imagename string, tags []string, imagebody string, result string, err error) {
 
 	newdata := header.ImageData{}.From(dealType, imagename, tags, imagebody, result, err)
 	sendbyte, err := header.Encode(newdata)
@@ -749,5 +749,4 @@ func returnResultToServer(handle string, pkgId uint16, dealType string, imagenam
 		grade = tcpSocket.TCP_TYPE_FILE
 	}
 	tcpSocket.WriteData(handle, grade, pkgId, "IMAG", sendbyte)
-
 }

@@ -22,12 +22,12 @@ type ImageData struct {
 	TipError  		string
 }
 
-func (i ImageData) From(dealType string, imageName string, tags []string, imagebody []byte, result string, err error) *ImageData {
+func (i ImageData) From(dealType string, imageName string, tags []string, imagebody string, result string, err error) *ImageData {
 	ImageData := &ImageData{}
 	ImageData.DealType = dealType
 	ImageData.ImageName = imageName
 	ImageData.Tags = tags
-	ImageData.ImageBody = string(imagebody)
+	ImageData.ImageBody = imagebody
 	ImageData.Result = result
 	ImageData.TipError = err.Error()
 	return ImageData

@@ -90,6 +90,25 @@ func (n *Nodes)GetNode(h string) *Node {
 	return n.nodes[h]
 }
 
+func (n *Nodes)GetNodes() []header.Node {
+	n.mutex.RLock()
+	defer n.mutex.RUnlock()
+
+	nc := len(n.nodes)
+	if nc == 0 {
+		return []header.Node{}
+	}
+
+	ns := make([]header.Node, nc)
+	i := 0
+	for _,nd := range n.nodes {
+		ns[i] = nd.Node
+		i++
+	}
+
+	return ns
+}
+
 func (n *Nodes)GetState(h string) bool {
 	node := n.GetNode(h)
 	if node == nil {
