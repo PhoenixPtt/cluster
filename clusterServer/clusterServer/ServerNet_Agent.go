@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"tcpSocket"
+	"time"
 )
 
 func onAgentStateChanged(ip string, state uint8) {
@@ -27,6 +28,7 @@ func onAgentStateChanged(ip string, state uint8) {
 }
 
 func writeAgentData(ip string, tcpType uint8, pkgId uint16, flag string, data []byte) {
+	fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "writeAgentData", ip, pkgId, flag)
 	if len(ip) <= 0 { // 如果不指定ip，则给所有ip发
 		nodeIds := nodes.GetNodeIds()
 		for _, h := range nodeIds {
@@ -41,7 +43,7 @@ func writeAgentData(ip string, tcpType uint8, pkgId uint16, flag string, data []
 
 
 func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
-	//log.Println(time.Now().Nanosecond(), "接收到Agent数据：", ip, "flag=", flag, "dateLen=", len(data))
+	fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "onAgentReadData", ip, pkgId, flag)
 
 	switch flag {
 	case header.FLAG_CLST:
