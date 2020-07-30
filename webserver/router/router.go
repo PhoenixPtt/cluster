@@ -141,6 +141,17 @@ func onceToPost(c *gin.Context, reqinfo requestInf) {
 	onceToGet(c, reqinfo)
 }
 
+// 单次option请求
+func onceToOption(c *gin.Context) {
+	addAccessControlAllowOrigin(c)
+
+	// 将预检请求的结果缓存10分钟 86400一天
+	c.Writer.Header().Set("Access-Control-Max-Age", "600")
+
+	// 返回200，以及相关数据
+	c.Data(200, "", []byte(""))
+}
+
 // 获取post发送过来的数据内容，一般作为调试使用
 func getPostContent(c *gin.Context)  {
 	bodyByte, _ := ioutil.ReadAll(c.Request.Body)

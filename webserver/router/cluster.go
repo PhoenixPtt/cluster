@@ -33,5 +33,7 @@ func initClusterRouter(group *gin.RouterGroup) bool {
 		}
 	})
 
+	group.OPTIONS("/resource", onceToOption)
+
 	return true
 }

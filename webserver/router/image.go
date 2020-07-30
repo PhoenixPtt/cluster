@@ -24,6 +24,8 @@ func initImageRouter(group *gin.RouterGroup) bool {
 	group.DELETE("/delete", deleteImage)
 
 	// 处理非Get时，可能进行的OPTION请求
+	group.OPTIONS("/list", optionImage)
+	group.OPTIONS("/tags", optionImage)
 	group.OPTIONS("/create", optionImage)
 	group.OPTIONS("/load", optionImage)
 	group.OPTIONS("/distribute", optionImage)
@@ -129,13 +131,12 @@ func deleteImage(c *gin.Context)  {
 
 // 处理Image中的option请求
 func optionImage(c *gin.Context) {
-	addAccessControlAllowOrigin(c)
-
-	c.Data(200, "", []byte(""))
+	onceToOption(c)
 }
 
 // 读取并绑定指定的json结构体
 func readImageData(c *gin.Context, req *requestInf) {
+	getPostContent(c)
 	// 获取body中的内容，在本方法中是header.ImageData结构体类型的JSON数据
 	var jData header.ImageData
 	if err := c.ShouldBindJSON(&jData); err != nil {
