@@ -23,6 +23,12 @@ func initImageRouter(group *gin.RouterGroup) bool {
 	// Delete 相关命令
 	group.DELETE("/delete", deleteImage)
 
+	// 处理非Get时，可能进行的OPTION请求
+	group.OPTIONS("/create", optionImage)
+	group.OPTIONS("/load", optionImage)
+	group.OPTIONS("/distribute", optionImage)
+	group.OPTIONS("/delete", optionImage)
+
 	return true
 }
 
@@ -114,11 +120,18 @@ func deleteImage(c *gin.Context)  {
 		opertype: header.FLAG_IMAG_REMO,
 	}
 
-	// 读取Post中Body的内容，目前确定时JSON格式的
+	// 读取Post中Body的内容，目前确定是JSON格式的
 	readImageData(c, &req)
 
 	// 执行单次Post操作
 	onceToGet(c, req)
+}
+
+// 处理Image中的option请求
+func optionImage(c *gin.Context) {
+	addAccessControlAllowOrigin(c)
+
+	c.Data(200, "", []byte(""))
 }
 
 // 读取并绑定指定的json结构体

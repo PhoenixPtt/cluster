@@ -70,6 +70,8 @@ func getMessage(reqinfo requestInf) (bSuccess bool, msg *Message) {
 	// 分析返回的数据
 	bSuccess = analysisResponseData(temResp, msg)
 
+	fmt.Println("getMessage => msg :", msg)
+
 	return bSuccess, msg
 }
 

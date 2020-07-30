@@ -27,7 +27,7 @@ func main() {
 			fmt.Printf("当前进程资源占用率： cpu=%.2f%%\tmem=%.2f%%(%.2fMiB)\n", curCpuUsed, curMemUsed,
 				totalMem*curMemUsed)
 
-			time.Sleep(5e9)
+			time.Sleep(30e9)
 		}
 	}()
 

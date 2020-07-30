@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"io"
+	"io/ioutil"
 	"webserver/router/errcode"
 )
 
@@ -138,4 +139,11 @@ func onceToPost(c *gin.Context, reqinfo requestInf) {
 
 	// 目前同单次Get请求的操作，暂时使用这样的方法进行操作
 	onceToGet(c, reqinfo)
+}
+
+// 获取post发送过来的数据内容，一般作为调试使用
+func getPostContent(c *gin.Context)  {
+	bodyByte, _ := ioutil.ReadAll(c.Request.Body)
+	body := string(bodyByte)
+	fmt.Println(c.Request.URL, body)
 }
