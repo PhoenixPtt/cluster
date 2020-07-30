@@ -15,7 +15,7 @@ func Start() {
 	// 加载配置
 	LoadCfg()
 
-	fmt.Println("d.ServerTcpPortForListenAgent", d.ServerTcpPortForListenAgent)
+	fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "d.ServerTcpPortForListenAgent", d.ServerTcpPortForListenAgent)
 
 	// 监听 Agent 连接
 	netListenHandle_Agent = tcpSocket.Listen("0.0.0.0", int(d.ServerTcpPortForListenAgent), onAgentReadData, onAgentStateChanged)

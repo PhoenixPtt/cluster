@@ -3,9 +3,7 @@ module clusterServer
 go 1.14
 
 replace (
-	//github.com/docker/docker v1.13.1 => github.com/docker/engine v0.0.0-20200204220554-5f6d6f3f2203
 	clusterHeader => ../clusterHeader
-	//targz => ../targz
 	tcpSocket => ../tcpSocket
 )
 

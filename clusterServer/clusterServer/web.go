@@ -3,6 +3,8 @@ package clusterServer
 import (
 	"clusterHeader"
 	"errors"
+	"fmt"
+	"time"
 )
 
 // web 响应网络数据,非阻塞
@@ -11,6 +13,7 @@ import (
 // data		接收到的数据包，类型根据flag指定
 // respChan	回复当前消息的数据通道，需要在填充数据后立即关闭，且只能填充一次，不可读取
 func ResponseURL(flag string, token interface{}, data interface{}, respChan chan<- interface{}) (err error) {
+	fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "NewRequest", flag, token)
 
 	switch flag {
 	case header.FLAG_CLST:   	// 集群相关
