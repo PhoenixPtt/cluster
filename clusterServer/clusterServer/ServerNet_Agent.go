@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"log"
 	"tcpSocket"
-	"time"
 )
 
 func onAgentStateChanged(ip string, state uint8) {
@@ -28,7 +27,7 @@ func onAgentStateChanged(ip string, state uint8) {
 }
 
 func writeAgentData(ip string, tcpType uint8, pkgId uint16, flag string, data []byte) {
-	fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "writeAgentData", ip, pkgId, flag)
+	//fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "writeAgentData", ip, pkgId, flag)
 	if len(ip) <= 0 { // 如果不指定ip，则给所有ip发
 		nodeIds := nodes.GetNodeIds()
 		for _, h := range nodeIds {
@@ -43,7 +42,7 @@ func writeAgentData(ip string, tcpType uint8, pkgId uint16, flag string, data []
 
 
 func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
-	fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "onAgentReadData", ip, pkgId, flag)
+	//fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "onAgentReadData", ip, pkgId, flag)
 
 	switch flag {
 	case header.FLAG_CLST:
@@ -73,7 +72,6 @@ func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
 		}
 
 	case header.FLAG_IMAG: // 镜像和仓库相关
-		pkgId = NewPkgId()
 		ReceiveDataFromAgent(ip, pkgId, data)
 
 	case header.FLAG_CTNS: // 容器相关
