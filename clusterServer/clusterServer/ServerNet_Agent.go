@@ -74,8 +74,6 @@ func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
 
 	case header.FLAG_IMAG: // 镜像和仓库相关
 		ReceiveDataFromAgent(ip, pkgId, data)
-		log.Println("uuuuuuuuuuu",string(data))
-
 	case header.FLAG_CTNS: // 容器相关
 
 	default:
