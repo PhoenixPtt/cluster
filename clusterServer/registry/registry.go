@@ -2,10 +2,11 @@
 package registry
 
 import (
-	"clusterServer/registry/request"
-	"encoding/json"
 	"fmt"
+	// "io/ioutil"
+	"encoding/json"
 	"log"
+	"registry/request"
 )
 
 // 定义镜像列表结构体
@@ -278,6 +279,10 @@ func IsExistRepositoryTag(imagename string, tag string) (bExist bool) {
 	// 此时镜像名称和标签名称都不为空，则直接使用是否存在指定镜像名称和标签的表单函数
 	bExist, _ = existManifest(imagename, tag)
 
+	if bExist && DEBUG {
+		log.Println("Repository ", imagename, tag, "is exist!")
+	}
+
 	return bExist
 }
 
@@ -296,15 +301,10 @@ func DeleteRepsitory(imagename string, tag string) bool {
 	bGet, reposObject := getManifest(imagename, tag)
 	if !bGet {
 		if DEBUG {
-			fmt.Println("get manifest fail, imagename:", imagename, tag)
+			log.Println("get manifest fail, imagename:", imagename, tag)
 		}
 		return false
 	}
-
-	// 后续功能还需要测试，暂时删除功能都是返回false
-	//return false
-
-
 
 	// 执行删除对应镜像表单的操作
 	url := fmt.Sprintf("%v%v/manifests/%v", registry_API_Address, imagename, reposObject.dockerContentDigest)
@@ -318,6 +318,9 @@ func DeleteRepsitory(imagename string, tag string) bool {
 	}
 
 	if req.StatusCode == 202 {
+		if DEBUG {
+			log.Println(fmt.Sprintf("DeleteRepsitory %v:%v success!", imagename, tag))
+		}
 		return true
 	}
 
@@ -331,7 +334,7 @@ func existManifest(repository string, reference string) (bExist bool, strDigest 
 	// 生成url
 	url := fmt.Sprintf("%v%v/manifests/%v", registry_API_Address, repository, reference)
 
-	// 执行获取指定镜像的标签列表的命令
+	// 执行Head命令
 	req, err := request.Head(url, request.Param{})
 	if req == nil || err != nil {
 		if DEBUG {
@@ -359,7 +362,7 @@ func getManifest(repository string, reference string) (bSuccess bool, object rep
 	// 生成url
 	url := fmt.Sprintf("%v%v/manifests/%v", registry_API_Address, repository, reference)
 
-	// 执行获取指定镜像的标签列表的命令
+	// 执行获取指定镜像名称和标签的表单的命令
 	req, err := request.Get(url, request.Param{})
 	if req == nil || err != nil {
 		if DEBUG {
@@ -386,6 +389,60 @@ func getManifest(repository string, reference string) (bSuccess bool, object rep
 	}
 
 	return false, object
+}
+
+// 开始垃圾回收工作
+
+// 判断是否存在指定镜像名称和digest的blob
+func ExistBlobs(repository string, digest string) bool {
+	// """ check to see it blob exist """
+
+	// 生成url
+	url := fmt.Sprintf("%v%v/blobs/%v", registry_API_Address, repository, digest)
+
+	// 执行HEAD命令
+	req, err := request.Head(url, request.Param{})
+	if req == nil || err != nil {
+		if DEBUG {
+			log.Println("existBlobs() exec http HEAD is fail, ", err)
+		}
+		return false
+	}
+
+	// 判断http返回的状态值，如果不是200则说明失败
+	if req.StatusCode == 200 {
+		return true
+	} else {
+		if DEBUG {
+			log.Println("existBlobs(): response Status is ", req.Status)
+		}
+		return false
+	}
+}
+
+// 删除指定的镜像名称和digest的blob
+func DeleteBlobs(repository string, digest string) bool {
+	// 生成url
+	url := fmt.Sprintf("%v%v/blobs/%v", registry_API_Address, repository, digest)
+
+	// 执行HEAD命令
+	req, err := request.Delete(url, request.Param{})
+	if req == nil || err != nil {
+		if DEBUG {
+			log.Println("deleteBlobs() exec http DELETE is fail, ", err)
+		}
+		return false
+	}
+
+	// 判断http返回的状态值，如果不是202则说明失败
+	if req.StatusCode == 202 {
+		return true
+	} else {
+		if DEBUG {
+			log.Println("deleteBlobs(): response Status is ", req.Status)
+		}
+		return false
+	}
 }
 
 // 解析获取的表单内容，返回repositoryObject

@@ -148,14 +148,16 @@ func optionImage(c *gin.Context) {
 
 // 读取并绑定指定的json结构体
 func readImageData(c *gin.Context, req *requestInf) {
-	//getPostContent(c)
 	// 获取body中的内容，在本方法中是header.ImageData结构体类型的JSON数据
+	// 这里说一个需要注意的问题，如果是数据存储于 Body 里面的，gin是封装的标准库的http，而 Body 是io.ReadCloser 类型的
+	// 只能读取一次，之后就关闭，内容只允许读一次，也就是说，上述的 Bind 凡是读 Body 的，都不能再读第二次
+	// 这个可以用其他办法解决，那就是ShouldBindBodyWith方法，这个方法允许调用多次，因为它将内容暂时存在了gin.Context当中
 	var jData header.ImageData
-	if err := c.ShouldBindBodyWith(&jData, binding.JSON); err != nil {
-		fmt.Println("ShouldBindJSON fail: ", err)
+	if err := c.ShouldBindWith(&jData, binding.JSON); err != nil {
+		fmt.Println("ShouldBindWith binding.JSON fail: ", err)
 		req.body = ""
 	} else {
-		fmt.Println("ShouldBindJSON success")
+		fmt.Println("ShouldBindWith binding.JSON success")
 		req.body = jData
 	}
 	fmt.Println(jData)
