@@ -102,7 +102,7 @@ func UpdateImageRepository(h string, pkgId uint16, imageData *header.ImageData) 
 			//judge if the image is exist
 			if isExist {
 				//delete image in registry
-				registry.DeleteRepsitory("library/"+imageData.ImageName, tag)
+				registry.DeleteRepsitory(imageData.ImageName, tag)
 			}
 
 				//use tcp to agent
