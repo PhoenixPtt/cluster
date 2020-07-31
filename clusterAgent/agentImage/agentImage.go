@@ -271,7 +271,7 @@ func TagImage(source string, target string, isUpload bool) error {
 
 	var targetname string
 	if isUpload { //是否上传至私有仓库
-		targetname = ImagePullAdrr + ":5000/library/" + target
+		targetname = ImagePullAdrr + ":5000/" + target
 	} else {
 		targetname = target
 	}
@@ -497,7 +497,7 @@ func PullImage(imageName string, all bool /*, isRegisAuth bool, username string,
 	if err != nil {
 		return err
 	}
-	adrr := ImagePullAdrr + ":5000/library/" + imageName
+	adrr := ImagePullAdrr + ":5000/" + imageName
 	//pull镜像
 	reader, err := Cli.ImagePull(Ctx, adrr, types.ImagePullOptions{All: all, RegistryAuth: authStr})
 	if err != nil {
@@ -518,7 +518,7 @@ func PushImage(imageName string, all bool) error {
 
 	var adrr string
 	if !strings.Contains(imageName, ImagePullAdrr) {
-		adrr = ImagePullAdrr + ":5000/library/" + imageName
+		adrr = ImagePullAdrr + ":5000/" + imageName
 	} else {
 		adrr = imageName
 	}
@@ -625,7 +625,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			}
 
 			//push
-			pushname := ImagePullAdrr + ":5000/library/" + tagName
+			pushname := ImagePullAdrr + ":5000/" + tagName
 			pusherr := PushImage(pushname, false)
 			if pusherr != nil {
 				//deal error remove image
@@ -687,7 +687,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	// case header.DELETE:
 	// 	for _, tag := range tags {
 	// 		tagName := imagename + ":" + tag
-	// 		// RmimageName := ImagePullAdrr + ":5000/library/" + tagName
+	// 		// RmimageName := ImagePullAdrr + ":5000/" + tagName
 	// 		imageDeleteResponse, err := RemoveImage(tagName, true, true)
 	// 		if err != nil {
 	// 			//返回客户端结果
@@ -703,7 +703,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	case header.FLAG_IMAG_DIST:
 		for _, tag := range tags {
 			tagName := imagename + ":" + tag
-			// distractName := ImagePullAdrr + ":5000/library/" + tagName
+			// distractName := ImagePullAdrr + ":5000/" + tagName
 			//判断镜像是否存在
 			//不存在，将镜像tag后再push
 			err := PullImage(tagName, false)
