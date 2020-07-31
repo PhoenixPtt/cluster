@@ -3,10 +3,10 @@ package registry
 
 import (
 	"fmt"
+	"clusterServer/registry/request"
 	// "io/ioutil"
 	"encoding/json"
 	"log"
-	"registry/request"
 )
 
 // 定义镜像列表结构体
