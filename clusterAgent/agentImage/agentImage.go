@@ -739,10 +739,8 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 func returnResultToServer(handle string, pkgId uint16, dealType string, imagename string, tags []string, imagebody string, result string, err error) {
 
 	newdata := header.ImageData{}.From(dealType, imagename, tags, imagebody, result, err)
-	sendbyte, err := header.Encode(newdata)
-	if err != nil {
-		log.Println("encode data err", err)
-	}
+	sendbyte := header.JsonByteArray(newdata)
+
 	log.Println("agent端返回给server端的数据", dealType, imagename, tags, result, err)
 	var grade = tcpSocket.TCP_TPYE_CONTROLLER
 	if dealType == header.FLAG_IMAG_SAVE{

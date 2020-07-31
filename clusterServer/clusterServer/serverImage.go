@@ -3,6 +3,7 @@ package clusterServer
 import (
 	"clusterHeader"
 	"encoding/json"
+	"log"
 	"tcpSocket"
 )
 
@@ -10,8 +11,9 @@ func ReceiveDataFromAgent(handle string, pkgId uint16, data []byte) {
 
 	// 解析数据
 	var imageData header.ImageData
-	json.Unmarshal(data, imageData)
+	json.Unmarshal(data, &imageData)
 
+	log.Println("Oooooooooooooooo",string(data),imageData)
 	// 返回结果
 	AnswerRequest(pkgId, imageData)
 
