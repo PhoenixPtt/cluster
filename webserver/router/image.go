@@ -5,9 +5,19 @@ package router
 
 import (
 	header "clusterHeader"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"webserver/router/errcode"
 )
+
+type ImageData1 struct {
+	DealType  string   `json:"DealType"`
+	ImageName string   `json:"ImageName"`
+	Tags      []string `json:"Tags"`
+	ImageBody string   `json:"ImageBody"`
+	Result    string   `json:"Result"`
+	TipError  string   `json:"TipError"`
+}
 
 // 镜像操作相关内容的具体处理函数 /image
 func initImageRouter(group *gin.RouterGroup) bool {
@@ -35,7 +45,7 @@ func initImageRouter(group *gin.RouterGroup) bool {
 }
 
 // 获取私有镜像仓库中的镜像列表
-func getImageList(c *gin.Context)  {
+func getImageList(c *gin.Context) {
 	// 生成请求信息结构体
 	req := requestInf{
 		typeFlag: header.FLAG_IMAG,
@@ -46,7 +56,7 @@ func getImageList(c *gin.Context)  {
 }
 
 // 获取指定镜像名称的标签列表
-func getImageTagList(c *gin.Context)  {
+func getImageTagList(c *gin.Context) {
 	// 获取指定的镜像名称
 	name := c.DefaultQuery("name", "")
 	if name == "" {
@@ -58,11 +68,11 @@ func getImageTagList(c *gin.Context)  {
 	req := requestInf{
 		typeFlag: header.FLAG_IMAG,
 		opertype: header.FLAG_IMAG_TGLS,
-		pars: make([]header.OperPar, 1),
+		pars:     make([]header.OperPar, 1),
 	}
 	// 添加一个参数，用于指定镜像名称
 	req.pars[0] = header.OperPar{
-		Name: "imagename",
+		Name:  "imagename",
 		Value: name,
 	}
 	// 获取单次Get信息
@@ -70,7 +80,7 @@ func getImageTagList(c *gin.Context)  {
 }
 
 // 通过配置以及文件创建镜像
-func createImage(c *gin.Context)  {
+func createImage(c *gin.Context) {
 	// 生成请求信息结构体
 	req := requestInf{
 		typeFlag: header.FLAG_IMAG,
@@ -85,7 +95,7 @@ func createImage(c *gin.Context)  {
 }
 
 // 通过文件加载生成镜像
-func loadImage(c *gin.Context)  {
+func loadImage(c *gin.Context) {
 	// 生成请求信息结构体
 	req := requestInf{
 		typeFlag: header.FLAG_IMAG,
@@ -100,7 +110,7 @@ func loadImage(c *gin.Context)  {
 }
 
 // 从镜像仓库中分发镜像到agent
-func distributeImage(c *gin.Context)  {
+func distributeImage(c *gin.Context) {
 	// 生成请求信息结构体
 	req := requestInf{
 		typeFlag: header.FLAG_IMAG,
@@ -115,7 +125,7 @@ func distributeImage(c *gin.Context)  {
 }
 
 // 从镜像仓库中删除指定的镜像
-func deleteImage(c *gin.Context)  {
+func deleteImage(c *gin.Context) {
 	// 生成请求信息结构体
 	req := requestInf{
 		typeFlag: header.FLAG_IMAG,
@@ -138,10 +148,13 @@ func optionImage(c *gin.Context) {
 func readImageData(c *gin.Context, req *requestInf) {
 	getPostContent(c)
 	// 获取body中的内容，在本方法中是header.ImageData结构体类型的JSON数据
-	var jData header.ImageData
+	var jData ImageData1
 	if err := c.ShouldBindJSON(&jData); err != nil {
+		fmt.Println("ShouldBindJSON fail: ", err)
 		req.body = ""
 	} else {
+		fmt.Println("ShouldBindJSON success")
 		req.body = jData
 	}
+	fmt.Println(jData)
 }

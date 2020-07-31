@@ -82,10 +82,13 @@ func createImageData(req requestInf) header.ImageData {
 		DealType: req.opertype,
 	}
 
+	////////////////////////////////////////////////////
 	// 根据操作类型执行具体的操作
 	switch data.DealType {
-	case header.FLAG_IMAG_LIST:	// 获取所有镜像的列表
-	case header.FLAG_IMAG_TGLS:	// 获取指定镜像名称的tag列表
+		// 获取所有镜像的列表
+	case header.FLAG_IMAG_LIST:
+		// 获取指定镜像名称的tag列表
+	case header.FLAG_IMAG_TGLS:
 		// 从请求信息结构体中获取参数信息，必然有一个参数，如果个数大于等于1，则取首个参数的值为镜像名称
 		if len(req.pars) >= 1 {
 			data.ImageName = req.pars[0].Value
@@ -94,10 +97,6 @@ func createImageData(req requestInf) header.ImageData {
 		}
 		// 创建镜像、加载镜像、镜像推送
 	case header.FLAG_IMAG_BUID, header.FLAG_IMAG_LOAD, header.FLAG_IMAG_DIST:
-		if contentData, bok := req.body.(header.ImageData); bok {
-			return contentData
-		}
-	case header.FLAG_IMAG_REMO:	// 镜像删除
 		if contentData, bok := req.body.(header.ImageData); bok {
 			return contentData
 		}
@@ -113,10 +112,12 @@ func createImageData(req requestInf) header.ImageData {
 	//	if contentData, bok := req.body.(header.ImageData); bok {
 	//		return contentData
 	//	}
-	//case header.FLAG_IMAG_REMO:	// 镜像删除
-	//	if contentData, bok := req.body.(header.ImageData); bok {
-	//		return contentData
-	//	}
+		// 镜像删除
+	case header.FLAG_IMAG_REMO:
+		if contentData, bok := req.body.(header.ImageData); bok {
+			return contentData
+		}
+
 	default:
 
 	}

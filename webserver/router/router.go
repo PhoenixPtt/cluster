@@ -143,9 +143,12 @@ func onceToPost(c *gin.Context, reqinfo requestInf) {
 
 // 单次option请求
 func onceToOption(c *gin.Context) {
+	// 添加跨域头
 	addAccessControlAllowOrigin(c)
 
 	// 将预检请求的结果缓存10分钟 86400一天
+	// Access-Control-Max-Age方法对完全一样的url的缓存设置生效，多一个参数也视为不同url
+	// 也就是说，如果设置了10分钟的缓存，在10分钟内，所有请求第一次会产生options请求，以后就只发送真正的请求了
 	c.Writer.Header().Set("Access-Control-Max-Age", "600")
 
 	// 返回200，以及相关数据
@@ -153,8 +156,10 @@ func onceToOption(c *gin.Context) {
 }
 
 // 获取post发送过来的数据内容，一般作为调试使用
-func getPostContent(c *gin.Context)  {
+func getPostContent(c *gin.Context)  string {
 	bodyByte, _ := ioutil.ReadAll(c.Request.Body)
 	body := string(bodyByte)
 	fmt.Println(c.Request.URL, body)
+
+	return body
 }
