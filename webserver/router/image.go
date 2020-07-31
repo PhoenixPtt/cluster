@@ -7,16 +7,18 @@ import (
 	header "clusterHeader"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/gin-gonic/gin/binding"
 	"webserver/router/errcode"
 )
 
 type ImageData1 struct {
-	DealType  string   `json:"DealType"`
-	ImageName string   `json:"ImageName"`
-	Tags      []string `json:"Tags"`
-	ImageBody string   `json:"ImageBody"`
-	Result    string   `json:"Result"`
-	TipError  string   `json:"TipError"`
+	DealType  string
+	//DealType  string   `json:"DealType"`
+	//ImageName string   `json:"ImageName"`
+	//Tags      []string `json:"Tags"`
+	//ImageBody string   `json:"ImageBody"`
+	//Result    string   `json:"Result"`
+	//TipError  string   `json:"TipError"`
 }
 
 // 镜像操作相关内容的具体处理函数 /image
@@ -146,10 +148,10 @@ func optionImage(c *gin.Context) {
 
 // 读取并绑定指定的json结构体
 func readImageData(c *gin.Context, req *requestInf) {
-	getPostContent(c)
+	//getPostContent(c)
 	// 获取body中的内容，在本方法中是header.ImageData结构体类型的JSON数据
-	var jData ImageData1
-	if err := c.ShouldBindJSON(&jData); err != nil {
+	var jData header.ImageData
+	if err := c.ShouldBindBodyWith(&jData, binding.JSON); err != nil {
 		fmt.Println("ShouldBindJSON fail: ", err)
 		req.body = ""
 	} else {
