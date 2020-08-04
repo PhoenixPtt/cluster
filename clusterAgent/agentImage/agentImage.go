@@ -662,7 +662,8 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 		log.Println("文件删除成功")
 		sendData = "agent端构建镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 	case header.FLAG_IMAG_LOAD:
-		err := UploadImageToRegistry(handle, pkgId, imagename, tags, []byte(imagebody) )
+		basebd,_ := base64.StdEncoding.DecodeString(imagebody)
+		err := UploadImageToRegistry(handle, pkgId, imagename, tags, basebd )//[]byte(imagebody)
 		if err == nil {
 			log.Println("agent端加载镜像成功")
 			sendData = "agent端加载镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
