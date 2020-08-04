@@ -159,7 +159,6 @@ func onceToOption(c *gin.Context) {
 func getPostContent(c *gin.Context)  string {
 	bodyByte, _ := ioutil.ReadAll(c.Request.Body)
 	body := string(bodyByte)
-	//fmt.Println(c.Request.URL, body)
 
 	return body
 }
