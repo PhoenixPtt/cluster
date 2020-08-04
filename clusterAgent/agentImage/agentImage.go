@@ -602,6 +602,9 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	dealType := imagedata.DealType
 	imagename := imagedata.ImageName
 	tags := imagedata.Tags
+	if((dealType == "") || (imagename == "")){
+		returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "镜像信息不全，请重新操作！")
+	}
 	if len(tags) <= 0 {
 		tags = append(tags, "latest")
 	}
@@ -657,12 +660,12 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			log.Println("删除app两个文件失败")
 		}
 		log.Println("文件删除成功")
-		sendData = "agent端构建镜像成功"
+		sendData = "agent端构建镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 	case header.FLAG_IMAG_LOAD:
 		err := UploadImageToRegistry(handle, pkgId, imagename, tags, []byte(imagebody) )
 		if err == nil {
 			log.Println("agent端加载镜像成功")
-			sendData = "agent端加载镜像成功"
+			sendData = "agent端加载镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 		} else {
 			return
 		}
@@ -679,7 +682,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			}
 		}
 		log.Println("agent端推送镜像成功")
-		sendData = "agent端推送镜像成功"
+		sendData = "agent端推送镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 	case header.FLAG_IMAG_SAVE:
 		saveName := imagename + ".tar.gz"
 		bodybyte, err := SaveImageToAgent(tags, ImageSavePath, saveName)
@@ -690,6 +693,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 		}
 		log.Println("agent端保存镜像成功")
 		imagebody = string(bodybyte)
+		sendData = "agent端保存镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 		//sendData = string(bodybyte)
 	// case header.DELETE:
 	// 	for _, tag := range tags {
@@ -722,7 +726,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			}
 		}
 		log.Println("agent端分发镜像成功")
-				sendData = "agent端分发镜像成功"
+				sendData = "agent端分发镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 	// case header.TAG:
 	// 	for _, tag := range tags {
 	// 		tagName := imagename + ":" + tag
