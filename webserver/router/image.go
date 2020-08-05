@@ -11,16 +11,6 @@ import (
 	"webserver/router/errcode"
 )
 
-type ImageData1 struct {
-	DealType  string
-	//DealType  string   `json:"DealType"`
-	//ImageName string   `json:"ImageName"`
-	//Tags      []string `json:"Tags"`
-	//ImageBody string   `json:"ImageBody"`
-	//Result    string   `json:"Result"`
-	//TipError  string   `json:"TipError"`
-}
-
 // 镜像操作相关内容的具体处理函数 /image
 func initImageRouter(group *gin.RouterGroup) bool {
 	// Get 相关命令
@@ -36,8 +26,8 @@ func initImageRouter(group *gin.RouterGroup) bool {
 	group.DELETE("/delete", deleteImage)
 
 	// 处理非Get时，可能进行的OPTION请求
-	group.OPTIONS("/list", optionImage)
-	group.OPTIONS("/tags", optionImage)
+	//group.OPTIONS("/list", optionImage)
+	//group.OPTIONS("/tags", optionImage)
 	group.OPTIONS("/create", optionImage)
 	group.OPTIONS("/load", optionImage)
 	group.OPTIONS("/distribute", optionImage)

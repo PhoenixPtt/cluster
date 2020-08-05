@@ -5,7 +5,6 @@ package router
 
 import (
 	header "clusterHeader"
-	"fmt"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,20 +24,22 @@ func initNodeRouter(group *gin.RouterGroup) bool {
 
 // 获取节点资源的信息
 func getNodeResource(c *gin.Context) {
-	// 解析参数内容，确定是否时连续获取操作
-	continueFlag := c.DefaultQuery("continue", "true")
+	// 解析参数内容，获取指定的节点名称或IP或标志
+	nodeID := c.DefaultQuery("name", "")
 
-	// 如果连续获取标识为true，则调用连续获取方法
-	if continueFlag == "true" {
-		// 持续获取集群资源监控数据，并及时返回给前端
-		continueToGet(c, fmt.Sprintf("/%v/%v", header.FLAG_NODE, header.FLAG_NODE))
-	} else { // 否则仅进行一次数据获取
-		// 生成请求信息结构体
-		req := requestInf{
-			typeFlag: header.FLAG_NODE,
-			opertype: header.FLAG_NODE,
-		}
-		// 获取单次Get信息
-		onceToGet(c, req)
+	// 生成请求信息结构体
+	req := requestInf{
+		typeFlag: header.FLAG_NODE,
+		opertype: header.FLAG_NODE,
 	}
+
+	// 如果为空，则获取全部节点的资源
+	if nodeID == "" {
+
+	} else { // 否则获取指定节点的资源
+
+	}
+
+	// 获取单次Get信息
+	onceToGet(c, req)
 }
