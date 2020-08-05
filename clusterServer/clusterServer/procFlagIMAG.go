@@ -21,13 +21,14 @@ func procFlagIMAG(token interface{}, data interface{}, respChan chan<- interface
 }
 
 // 对请求进行回复
-func AnswerRequestOfImage(pkgId uint16, imageBody string, result string, err error, imageData *header.ImageData) {
+func AnswerRequestOfImage(pkgId uint16, imageBody string, result string, err string, imageData *header.ImageData) {
 	imageData.ImageBody = imageBody
 	imageData.Result = result
-	if err == nil {
-		imageData.TipError = ""
-	} else {
-		imageData.TipError = err.Error()
-	}
+	imageData.TipError = err
+	//if err == nil {
+	//	imageData.TipError = ""
+	//} else {
+	//	imageData.TipError = err.Error()
+	//}
 	AnswerRequest(pkgId, *imageData)
 }

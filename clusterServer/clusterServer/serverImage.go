@@ -38,7 +38,7 @@ func ProcessImageFlagDataFromClient(pkgId uint16, imageData *header.ImageData) {
 	// 镜像操作需要最优的节点进行处理，如果未找到有效最优节点，则直接返回失败
 	h := GetBestAgentForImageOper()
 	if h == "" {
-		AnswerRequestOfImage(pkgId, "当前无在线计算节点，无法执行此操作", "FALSE", nil, imageData)
+		AnswerRequestOfImage(pkgId, "", "FALSE", "当前无在线计算节点，无法执行此操作", imageData)
 		return
 	}
 
@@ -62,7 +62,7 @@ func ProcessImageFlagDataFromClient(pkgId uint16, imageData *header.ImageData) {
 		header.FLAG_IMAG_LOAD: // 构建镜像、下载镜像
 		writeAgentData(h, tcpSocket.TCP_TYPE_FILE, pkgId, header.FLAG_IMAG, header.JsonByteArray(imageData))
 	default: // 子标识/操作错误
-		AnswerRequestOfImage(pkgId, "子标识/操作错误!", "FALSE", nil, imageData)
+		AnswerRequestOfImage(pkgId, "", "FALSE", "子标识/操作错误!", imageData)
 	}
 }
 

@@ -3,6 +3,7 @@ package clusterServer
 import (
 	"clusterHeader"
 	"clusterServer/registry"
+	"errors"
 	"strings"
 	"tcpSocket"
 )
@@ -15,16 +16,16 @@ func init() {
 func GetImageList(pkgId uint16, imageData *header.ImageData) {
 	// 如果镜像仓库不在线，直接返回错误
 	if !registry.IsOnline() {
-		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
+		AnswerRequestOfImage(pkgId, "", "FALSE", "镜像仓库不在线!", imageData)
 		return
 	}
 
 	// 从镜像仓库获取镜像列表
 	imageList, _, err := registry.GetRepositoryList()
 	if err != nil {
-		AnswerRequestOfImage(pkgId, "获取镜像列表失败!", "FALSE", err, imageData)
+		AnswerRequestOfImage(pkgId, "", "FALSE", "获取镜像列表失败!"+err.Error(), imageData)
 	} else {
-		AnswerRequestOfImage(pkgId, header.JsonString(imageList), "TRUE", nil, imageData)
+		AnswerRequestOfImage(pkgId, header.JsonString(imageList), "SUCCESS", "获取镜像列表成功!", imageData)
 	}
 }
 
@@ -32,16 +33,16 @@ func GetImageList(pkgId uint16, imageData *header.ImageData) {
 func GetImageTagList(pkgId uint16, imageData *header.ImageData) {
 	// 如果镜像仓库不在线，直接返回错误
 	if !registry.IsOnline() {
-		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
+		AnswerRequestOfImage(pkgId, "", "FALSE", "镜像仓库不在线!", imageData)
 		return
 	}
 
 	// 获取镜像标签列表
 	tagList, _, err := registry.GetTagList(imageData.ImageName)
 		if err != nil {
-			AnswerRequestOfImage(pkgId, "获取镜像标签列表失败!", "FALSE", err, imageData)
+			AnswerRequestOfImage(pkgId, "", "FALSE", "获取镜像"+imageData.ImageName+"的标签列表失败!"+err.Error(), imageData)
 		} else {
-			AnswerRequestOfImage(pkgId, header.JsonString(tagList), "TRUE", nil, imageData)
+			AnswerRequestOfImage(pkgId, header.JsonString(tagList), "SUCCESS", "获取镜像"+imageData.ImageName+"的标签列表成功!", imageData)
 		}
 
 }
@@ -50,7 +51,7 @@ func GetImageTagList(pkgId uint16, imageData *header.ImageData) {
 func RemoveImageFromRepository(pkgId uint16, imageData *header.ImageData) {
 	// 如果镜像仓库不在线，直接返回错误
 	if !registry.IsOnline() {
-		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
+		AnswerRequestOfImage(pkgId, "", "FALSE", "镜像仓库不在线!", imageData)
 		return
 	}
 
@@ -75,10 +76,12 @@ func RemoveImageFromRepository(pkgId uint16, imageData *header.ImageData) {
 			}
 		}
 
+		err := errors.New(strings.Join(errorList, "\n"))
+
 		if errorCount > 0 {
-			AnswerRequestOfImage(pkgId, strings.Join(errorList, "\n"), "FALSE", nil, imageData)
+			AnswerRequestOfImage(pkgId, "", "FALSE", err.Error(), imageData)
 		} else {
-			AnswerRequestOfImage(pkgId, strings.Join(errorList, "\n"), "TRUE", nil, imageData)
+			AnswerRequestOfImage(pkgId, "", "SUCCESS", err.Error(), imageData)
 		}
 
 }
@@ -86,7 +89,7 @@ func RemoveImageFromRepository(pkgId uint16, imageData *header.ImageData) {
 func UpdateImageRepository(h string, pkgId uint16, imageData *header.ImageData) {
 	// 如果镜像仓库不在线，直接返回错误
 	if !registry.IsOnline() {
-		AnswerRequestOfImage(pkgId, "镜像仓库不在线!", "FALSE", nil, imageData)
+		AnswerRequestOfImage(pkgId, "", "FALSE", "镜像仓库不在线!", imageData)
 		return
 	}
 
@@ -106,7 +109,7 @@ func UpdateImageRepository(h string, pkgId uint16, imageData *header.ImageData) 
 			}
 
 				//use tcp to agent
-		newdata := header.ImageData{}.From(header.FLAG_IMAG_PUSH, imageData.ImageName, tags, imageData.ImageBody, "", nil)
+		newdata := header.ImageData{}.From(header.FLAG_IMAG_PUSH, imageData.ImageName, tags, imageData.ImageBody, "", "")
 		writeAgentData(h, tcpSocket.TCP_TYPE_FILE, pkgId, header.FLAG_IMAG, header.JsonByteArray(newdata))
 
 		}

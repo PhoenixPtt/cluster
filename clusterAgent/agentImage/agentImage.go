@@ -161,6 +161,7 @@ func BuildImageOfBinaryProcess(imageName string, tags []string, bodybyte []byte,
 	var err error
 	Cli.SetCustomHTTPHeaders(map[string]string{"Content-type": "application/x-tar"})
 	tarName := "app"
+	log.Println("&&&&&&&&&&&&&&&&&bodybyte&&&&&&&&&&&&&&&")
 
 	readerr := header.ReadByteTofile(DockerfilePath, imageName, bodybyte)
 	if readerr != nil {
@@ -550,14 +551,14 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 	ioreader := bytes.NewBuffer(imagebody)
 	err = targz.Tar(ioreader, loadPath)
 	if err != nil {
-		returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，压缩字节流的过程失败！", "FALSE", err)
+		returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", "LOAD操作中，压缩字节流的过程失败！"+err.Error())
 		return err
 	}
 	//load image
 	err = LoadImage(loadPath, true)
 	if err != nil {
 		//返回客户端结果
-		returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，导入镜像的过程失败！", "FALSE", err)
+		returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", "LOAD操作中，导入镜像的过程失败！"+err.Error())
 		return err
 	}
 
@@ -568,7 +569,8 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 		err = TagImage(tagName, tagName, true)
 		if err != nil {
 			//返回客户端结果
-			returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，load成功后，tag"+tagName+"镜像的过程失败！", "FALSE", err)
+			errstr := "LOAD操作中，load成功后，tag"+tagName+"镜像的过程失败！"
+			returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", errstr+err.Error())
 			return err
 		}
 		//push image to registry
@@ -578,10 +580,13 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 			_, rmerr := RemoveImage(tagName, true, false)
 			if rmerr != nil {
 				//deal error
-				returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，未能删除被tag的镜像！", "FALSE", rmerr)
+				rmerrstr := "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，未能删除被tag的镜像！"
+
+				returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE",rmerrstr+ rmerr.Error())
 				return rmerr
 			}
-			returnResultToServer(handle, pkgId, dealType, imageName, tags, "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，已经删除被tag的镜像！", "FALSE", err)
+			pusherr := "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，已经删除被tag的镜像！"
+			returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", pusherr+err.Error())
 			return err
 		}
 	}
@@ -597,6 +602,9 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	dealType := imagedata.DealType
 	imagename := imagedata.ImageName
 	tags := imagedata.Tags
+	if((dealType == "") || (imagename == "")){
+		returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "镜像信息不全，请重新操作！")
+	}
 	if len(tags) <= 0 {
 		tags = append(tags, "latest")
 	}
@@ -605,11 +613,12 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	var sendData string
 	switch dealType {
 	case header.FLAG_IMAG_BUID:
-		// build image
-		err := BuildImageOfBinaryProcess(imagename, tags, []byte(imagebody), true)
+		// build image 先将接收到的base64编码的二进制文件进行解码
+		basebd,_ := base64.StdEncoding.DecodeString(imagebody)
+		err := BuildImageOfBinaryProcess(imagename, tags, basebd, true)
 		if err != nil {
 			//返回客户端结果
-			returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，构建镜像过程失败！", "FALSE", err)
+			returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "BUILD操作中，构建镜像过程失败！"+err.Error())
 			return
 		}
 
@@ -620,7 +629,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			err := TagImage(tagName, tagName, true)
 			if err != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，tag镜像过程失败！", "FALSE", err)
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "BUILD操作中，tag镜像过程失败！"+err.Error())
 				return
 			}
 
@@ -632,7 +641,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 				_, rmerr := RemoveImage(pushname, true, false)
 				if rmerr != nil {
 					//返回客户端结果
-					returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，删除tag的镜像过程失败！", "FALSE", rmerr)
+					returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "BUILD操作中，删除tag的镜像过程失败！"+rmerr.Error())
 					return
 				}
 			}
@@ -641,7 +650,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			_, rmerr := RemoveImage(tagName, true, true)
 			if rmerr != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, "BUILD操作中，删除被tag的镜像过程失败！", "FALSE", rmerr)
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "BUILD操作中，删除被tag的镜像过程失败！"+rmerr.Error())
 				return
 			}
 		}
@@ -651,12 +660,13 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			log.Println("删除app两个文件失败")
 		}
 		log.Println("文件删除成功")
-		sendData = "agent端构建镜像成功"
+		sendData = "agent端构建镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 	case header.FLAG_IMAG_LOAD:
-		err := UploadImageToRegistry(handle, pkgId, imagename, tags, []byte(imagebody) )
+		basebd,_ := base64.StdEncoding.DecodeString(imagebody)
+		err := UploadImageToRegistry(handle, pkgId, imagename, tags, basebd )//[]byte(imagebody)
 		if err == nil {
 			log.Println("agent端加载镜像成功")
-			sendData = "agent端加载镜像成功"
+			sendData = "agent端加载镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 		} else {
 			return
 		}
@@ -668,22 +678,24 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			pusherr := PushImage(tagName, false)
 			if pusherr != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, "PUSH操作中，推送镜像的过程失败！", "FALSE", pusherr)
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "PUSH操作中，推送镜像的过程失败！"+pusherr.Error())
 				return
 			}
 		}
 		log.Println("agent端推送镜像成功")
-		sendData = "agent端推送镜像成功"
+		sendData = "agent端推送镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 	case header.FLAG_IMAG_SAVE:
 		saveName := imagename + ".tar.gz"
 		bodybyte, err := SaveImageToAgent(tags, ImageSavePath, saveName)
 		if err != nil {
 			//返回客户端结果
-			returnResultToServer(handle, pkgId, dealType, imagename, tags, "SAVE操作中，保存镜像的过程失败！", "FALSE", err)
+			returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "SAVE操作中，保存镜像的过程失败！"+err.Error())
 			return
 		}
 		log.Println("agent端保存镜像成功")
-		sendData = string(bodybyte)
+		imagebody = string(bodybyte)
+		sendData = "agent端保存镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
+		//sendData = string(bodybyte)
 	// case header.DELETE:
 	// 	for _, tag := range tags {
 	// 		tagName := imagename + ":" + tag
@@ -709,12 +721,13 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			err := PullImage(tagName, false)
 			if err != nil {
 				//返回客户端结果
-				returnResultToServer(handle, pkgId, dealType, imagename, tags, "DISTRACT操作中，分发"+tagName+"镜像的过程失败！", "FALSE", err)
+				errstr := "DISTRACT操作中，分发"+tagName+"镜像的过程失败！"
+				returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", errstr+err.Error())
 				return
 			}
 		}
 		log.Println("agent端分发镜像成功")
-		sendData = "agent端分发镜像成功"
+				sendData = "agent端分发镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
 	// case header.TAG:
 	// 	for _, tag := range tags {
 	// 		tagName := imagename + ":" + tag
@@ -728,15 +741,18 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	// 	log.Println("agent端标签镜像成功")
 	// 	sendData = "agent端标签镜像成功"
 	default:
-		returnResultToServer(handle, pkgId, dealType, imagename, tags, "没有匹配的操作类型", "FALSE", nil)
+		returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "没有匹配的操作类型")
 		return
 	}
 
-	returnResultToServer(handle, pkgId, dealType, imagename, tags, sendData, "SUCCESS", nil)
+	if(dealType != header.FLAG_IMAG_SAVE){
+		imagebody = ""
+	}
+	returnResultToServer(handle, pkgId, dealType, imagename, tags, imagebody, "SUCCESS", sendData)
 
 }
 
-func returnResultToServer(handle string, pkgId uint16, dealType string, imagename string, tags []string, imagebody string, result string, err error) {
+func returnResultToServer(handle string, pkgId uint16, dealType string, imagename string, tags []string, imagebody string, result string, err string) {
 
 	newdata := header.ImageData{}.From(dealType, imagename, tags, imagebody, result, err)
 	sendbyte := header.JsonByteArray(newdata)
