@@ -155,10 +155,9 @@ func onceToOption(c *gin.Context) {
 	c.Data(200, "", []byte(""))
 }
 
-// 获取post发送过来的数据内容，一般作为调试使用
+// 获取post发送过来的数据内容，一般作为调试使用，此时读取将导致无法再次读取本次POST的内容
 func getPostContent(c *gin.Context)  string {
 	bodyByte, _ := ioutil.ReadAll(c.Request.Body)
 	body := string(bodyByte)
-
 	return body
 }
