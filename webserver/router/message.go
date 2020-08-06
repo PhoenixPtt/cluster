@@ -13,10 +13,10 @@ import (
 
 // 请求信息 结构体
 type requestInf struct {
-	typeFlag string				// 根操作类型字符串
-	opertype string				// 操作类型字符串
-	pars     []header.OperPar	// 参数切片，每个参数就是一个OperPar结构体
-	body     interface{}		// 当存在body时，填充本项内容
+	typeFlag string           // 根操作类型字符串
+	opertype string           // 操作类型字符串
+	pars     []header.OperPar // 参数切片，每个参数就是一个OperPar结构体
+	body     interface{}      // 当存在body时，填充本项内容
 }
 
 // 信息 对象结构体
@@ -30,7 +30,7 @@ type Message struct {
 func getMessage(reqinfo requestInf) (bSuccess bool, msg *Message) {
 	// 创建返回值对象，初始时仅设定消息类型
 	msg = &Message{
-		msgType:  reqinfo.typeFlag,
+		msgType: reqinfo.typeFlag,
 	}
 
 	// 根据requestInf中的typeFlag，生成对应的结构体并赋值给data变量
@@ -78,14 +78,14 @@ func getMessage(reqinfo requestInf) (bSuccess bool, msg *Message) {
 // 生成镜像操作使用的结构体
 func createImageData(req requestInf) header.ImageData {
 	// 根据请求信息中的opertype信息，创建ImageData结构体
-	data := header.ImageData {
+	data := header.ImageData{
 		DealType: req.opertype,
 	}
 
 	////////////////////////////////////////////////////
 	// 根据操作类型执行具体的操作
 	switch data.DealType {
-		// 获取所有镜像的列表
+	// 获取所有镜像的列表
 	case header.FLAG_IMAG_LIST:
 		// 获取指定镜像名称的tag列表
 	case header.FLAG_IMAG_TGLS:
@@ -112,7 +112,7 @@ func createImageData(req requestInf) header.ImageData {
 	//	if contentData, bok := req.body.(header.ImageData); bok {
 	//		return contentData
 	//	}
-		// 镜像删除
+	// 镜像删除
 	case header.FLAG_IMAG_REMO:
 		if contentData, bok := req.body.(header.ImageData); bok {
 			return contentData
@@ -133,7 +133,7 @@ func analysisResponseData(resp interface{}, msg *Message) bool {
 		msg.content = data
 	case header.NODE: // 节点相关
 		msg.content = data
-	case header.ImageData:	// 镜像相关
+	case header.ImageData: // 镜像相关
 		msg.content = data
 	case string:
 		msg.content = fmt.Sprintf("  Message type is:%v - the time is %v", msg.msgType, time.Now())

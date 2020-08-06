@@ -10,8 +10,8 @@ import (
 
 // 应用服务操作使用的结构体
 type deploymentData struct {
-	name string		// 应用服务名称
-	replicas uint8	// 应用服务的副本数量
+	name     string // 应用服务名称
+	replicas uint8  // 应用服务的副本数量
 }
 
 // 应用服务操作相关内容的具体处理函数 /deployment(暂定)
@@ -60,12 +60,12 @@ func getDeploymentResource(c *gin.Context) {
 }
 
 // 启动应用服务，可指定应用服务名称和副本数量
-func startDeployment(c *gin.Context)  {
+func startDeployment(c *gin.Context) {
 
 }
 
 // 停止应用服务，可指定应用服务名称
-func stopDeployment(c *gin.Context)  {
+func stopDeployment(c *gin.Context) {
 
 }
 

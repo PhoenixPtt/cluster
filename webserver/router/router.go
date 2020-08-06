@@ -9,6 +9,12 @@ import (
 )
 
 func Init(rout *gin.Engine) bool {
+	// 用户登录
+	rout.POST("/login", login)
+
+	// 刷新token操作
+	//rout.GET("/refreshToken", refreshToken)
+
 	// 采样频率相关功能
 	initFreqRouter(rout.Group("/frequency"))
 
@@ -156,7 +162,7 @@ func onceToOption(c *gin.Context) {
 }
 
 // 获取post发送过来的数据内容，一般作为调试使用，此时读取将导致无法再次读取本次POST的内容
-func getPostContent(c *gin.Context)  string {
+func getPostContent(c *gin.Context) string {
 	bodyByte, _ := ioutil.ReadAll(c.Request.Body)
 	body := string(bodyByte)
 	return body
