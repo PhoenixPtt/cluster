@@ -15,9 +15,7 @@ func initNodeRouter(group *gin.RouterGroup) bool {
 
 	// Post 相关命令
 
-
 	// Options 相关命令
-
 
 	return true
 }

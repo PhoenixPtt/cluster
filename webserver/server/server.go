@@ -31,7 +31,7 @@ func Init() error {
 			Addr:    ":8000",
 			Handler: serEngine,
 		}
-		
+
 		// Initializing the server in a goroutine so that
 		// it won't block the graceful shutdown handling below
 		go func() {

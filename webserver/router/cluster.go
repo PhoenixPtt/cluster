@@ -1,24 +1,29 @@
 // "cluster.go" file is create by Huxd 2020.07.13
 // about cluster operation
+// myjwt "webserver/router/jwt"
 
 package router
 
 import (
 	header "clusterHeader"
 	"fmt"
+
 	"github.com/gin-gonic/gin"
+	myjwt "webserver/router/jwt"
 )
 
 // 集群操作相关内容的具体处理函数 /cluster
 func initClusterRouter(group *gin.RouterGroup) bool {
+	// 使用token验证中间件
+	group.Use(myjwt.JWTAuth())
+
 	// Get 相关命令
 	group.GET("/resource", getClusterResource)
 
 	// Post 相关命令
 
-
 	// Options 相关命令
-	//group.OPTIONS("/resource", onceToOption)
+	group.OPTIONS("/resource", onceToOption)
 
 	return true
 }

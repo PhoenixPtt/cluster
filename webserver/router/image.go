@@ -4,11 +4,13 @@
 package router
 
 import (
-	header "clusterHeader"
 	"fmt"
+
+	header "clusterHeader"
+	"webserver/router/errcode"
+
 	"github.com/gin-gonic/gin"
 	"github.com/gin-gonic/gin/binding"
-	"webserver/router/errcode"
 )
 
 // 镜像操作相关内容的具体处理函数 /image
@@ -26,8 +28,8 @@ func initImageRouter(group *gin.RouterGroup) bool {
 	group.DELETE("/delete", deleteImage)
 
 	// 处理非Get时，可能进行的OPTION请求
-	//group.OPTIONS("/list", optionImage)
-	//group.OPTIONS("/tags", optionImage)
+	group.OPTIONS("/list", optionImage)
+	group.OPTIONS("/tags", optionImage)
 	group.OPTIONS("/create", optionImage)
 	group.OPTIONS("/load", optionImage)
 	group.OPTIONS("/distribute", optionImage)
