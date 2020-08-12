@@ -1,5 +1,6 @@
 // "cluster.go" file is create by Huxd 2020.07.13
 // about cluster operation
+// myjwt "webserver/router/jwt"
 
 package router
 
@@ -22,7 +23,7 @@ func initClusterRouter(group *gin.RouterGroup) bool {
 	// Post 相关命令
 
 	// Options 相关命令
-	//group.OPTIONS("/resource", onceToOption)
+	group.OPTIONS("/resource", onceToOption)
 
 	return true
 }

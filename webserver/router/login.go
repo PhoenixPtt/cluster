@@ -45,14 +45,14 @@ func login(c *gin.Context) {
 	if err := c.ShouldBindWith(&user, binding.JSON); err != nil {
 		// 此时解析用户内容不是符合格式的内容，返回错误信息
 		serveErrorJSON(c,
-			errcode.ErrorCodeDenied.WithMessage("待登录的用户信息格式错误"))
+			errcode.ErrorCodeUnauthorized.WithMessage("待登录的用户信息格式错误"))
 	} else { // 此时用户登录信息格式正确，执行验证等后续操作
 		// 对用户名和密码进行验证，一般是登录验证服务器
 		if bSuccess, userInfor := verifyUser(user); bSuccess {
 			generateToken(c, userInfor)
 		} else {
 			serveErrorJSON(c,
-				errcode.ErrorCodeDenied.WithMessage("用户名或密码输入错误"))
+				errcode.ErrorCodeUnauthorized.WithMessage("用户名或密码输入错误"))
 		}
 	}
 }
@@ -60,8 +60,7 @@ func login(c *gin.Context) {
 // 刷新用户token的请求处理方法，此时需要使用创建时生成的CustomClaims对象，暂时不实现刷新token功能
 func refreshToken(c *gin.Context) {
 	// 从请求头中获取token的内容
-	// 虽然一般的实现是将token内容放在Authorization头的Bearer中，但目前可以暂时将token放在token头中
-	token := c.Request.Header.Get("token")
+	token := myjwt.GetHeaderToken(c)
 	// 如果token的内容为空，则直接返回并忽略后续的操作
 	if token == "" {
 		serveErrorJSON(c,
@@ -99,7 +98,7 @@ var guest userLogin = userLogin{
 
 // 对用户名和密码进行验证
 func verifyUser(user userLogin) (bool, userInformation) {
-	// 目前进行简单验证
+	// 目前进行简单验证，将来将使用专用的用户认证模块
 	if user == administrator {
 		return true, userInformation{
 			ID:   "001",
@@ -108,7 +107,7 @@ func verifyUser(user userLogin) (bool, userInformation) {
 		}
 	} else if user.User == "guest" {
 		return true, userInformation{
-			ID:   "999",
+			ID:   "9999",
 			Name: user.User,
 			Auth: "low",
 		}
@@ -129,9 +128,9 @@ func generateToken(c *gin.Context, user userInformation) {
 		user.Name,
 		user.Auth,
 		jwtgo.StandardClaims{
-			NotBefore: int64(time.Now().Unix() - 1000), // 签名生效时间
-			ExpiresAt: int64(time.Now().Unix() + 3600), // 过期时间 一小时
-			Issuer:    "cetc15clusterserver",           //签名的发行者
+			NotBefore: int64(time.Now().Unix() - 10),               // 签名生效时间
+			ExpiresAt: int64(time.Now().Unix() + myjwt.ExpireTime), // 过期时间
+			Issuer:    "cetc15clusterserver",                       // 签名的发行者
 		},
 	}
 

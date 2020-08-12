@@ -9,8 +9,12 @@ import (
 )
 
 func Init(rout *gin.Engine) bool {
+	// 使用添加响应头中间件
+	rout.Use(AddAccessControl())
+
 	// 用户登录
 	rout.POST("/login", login)
+	rout.OPTIONS("/login", onceToOption)
 
 	// 刷新token操作
 	//rout.GET("/refreshToken", refreshToken)
@@ -63,6 +67,13 @@ func initFreqRouter(group *gin.RouterGroup) bool {
 	return true
 }
 
+// 在响应头部添加跨域访问控制头信息的中间件
+func AddAccessControl() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		addAccessControlAllowOrigin(c)
+	}
+}
+
 // 添加解决跨域问题的请求头
 func addAccessControlAllowOrigin(c *gin.Context) {
 	// 注意:在前后端分离过程中，需要注意跨域问题，因此需要设置请求头
@@ -72,7 +83,7 @@ func addAccessControlAllowOrigin(c *gin.Context) {
 // 返回错误信息
 func serveErrorJSON(c *gin.Context, err errcode.Error) {
 	// 添加跨域头
-	addAccessControlAllowOrigin(c)
+	//addAccessControlAllowOrigin(c)
 
 	// 返回客户端错误信息
 	errcode.ServeJSON(c, err)
@@ -81,7 +92,7 @@ func serveErrorJSON(c *gin.Context, err errcode.Error) {
 // 处理Get命令中连续获取指定URL的内容
 func continueToGet(c *gin.Context, msgType string) {
 	// 添加跨域头
-	addAccessControlAllowOrigin(c)
+	//addAccessControlAllowOrigin(c)
 
 	// 在Gin引入的sse扩展代码中，并未设置Header中Connection属性，所以在这里补充一下
 	c.Writer.Header().Set("Connection", "keep-alive")
@@ -115,7 +126,7 @@ func continueToGet(c *gin.Context, msgType string) {
 // 单次Get请求指定URL的方法
 func onceToGet(c *gin.Context, reqinfo requestInf) {
 	// 添加跨域头
-	addAccessControlAllowOrigin(c)
+	//addAccessControlAllowOrigin(c)
 
 	// 创建通道，等待通道数据返回，将该通道的信息返回给前端
 	bOK, msg := getMessage(reqinfo)
@@ -150,7 +161,7 @@ func onceToPost(c *gin.Context, reqinfo requestInf) {
 // 单次option请求
 func onceToOption(c *gin.Context) {
 	// 添加跨域头
-	addAccessControlAllowOrigin(c)
+	//addAccessControlAllowOrigin(c)
 
 	// 将预检请求的结果缓存10分钟 86400一天
 	// Access-Control-Max-Age方法对完全一样的url的缓存设置生效，多一个参数也视为不同url
