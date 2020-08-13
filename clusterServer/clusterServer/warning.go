@@ -140,6 +140,7 @@ func (w *Warnings) Clear() {
 
 	w.maxLevel = header.WARNING_LEVEL_COUNT
 	w.count = 0
-	w.countPerLevel = make(map[uint8]uint32)
+	w.countPerLevel = make(map[uint8]*header.WarningCountOfType)
+	w.countPerNode = make(map[string]*header.WarningCountOfType)
 	w.list = list.List{}
 }
