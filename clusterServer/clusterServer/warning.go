@@ -6,11 +6,19 @@ import (
 	"sync"
 )
 
+const (
+	CPUTYPE = "CPU"
+	MEMTYPE = "内存"
+	FILESYSTEMTYPE = "硬盘"
+	APPSERVICETYPE = "应用服务"
+)
+
 // 告警信息，
 type Warnings struct {
 	count         uint32           // 总数量
 	maxLevel      uint8            // 最大等级
-	countPerLevel map[uint8]uint32 // 每个级别的数量
+	countPerLevel map[uint8]*header.WarningCountOfType // 每个级别的数量
+	countPerNode  map[string]*header.WarningCountOfType // 每个节点的告警数量
 	list          list.List        // 所有的报警列表，只记录最近
 	listCount     uint32           // 当前列表条目数量
 	hasChanged    bool             // 标识是否有新增告警条目
@@ -34,12 +42,22 @@ func (w *Warnings) WarningInfo() *header.WarningInfo {
 
 		// 如果告警条目发生变化，则重新更新填充
 		w.info.Count = w.count
-		w.info.CountPerLevel = make([]uint32, levelCount)
+
+		// 每个级别的信息填充
+		w.info.CountPerLevel = make([]header.WarningCountOfType, levelCount)
 		for i:=uint8(0); i<levelCount; i++ {
-			w.info.CountPerLevel[i] = w.countPerLevel[i]
+			w.info.CountPerLevel[i] = *w.countPerLevel[i]
 		}
 
-		i := w.list.Len()-1
+		// 每个节点的信息填充
+		w.info.CountPerNode = make([]header.WarningCountOfType, len(w.countPerNode))
+		i := 0
+		for _,wct := range w.countPerNode {
+			w.info.CountPerNode[i] = *wct
+			i++
+		}
+
+		i = w.list.Len()-1
 		w.info.Warning = make([]header.WarningItem, w.list.Len())
 		for e := w.list.Front(); e != nil; e = e.Next() {
 			w.info.Warning[i] = e.Value.(header.WarningItem)
@@ -72,9 +90,39 @@ func (w *Warnings) Add(item header.WarningItem) {
 
 	// 根据告警条目的等级分别累计数量
 	if w.countPerLevel == nil {
-		w.countPerLevel = make(map[uint8]uint32)
+		w.countPerLevel = make(map[uint8]*header.WarningCountOfType)
 	}
-	w.countPerLevel[item.Level]++
+	wct := w.countPerLevel[item.Level]
+	if wct == nil {
+		wct = new(header.WarningCountOfType)
+		w.countPerLevel[item.Level] = wct
+	}
+	wct.All++
+	switch item.Type {
+	case CPUTYPE:			wct.Cpu++
+	case MEMTYPE:			wct.Mem++
+	case FILESYSTEMTYPE:	wct.FileSystem++
+	case APPSERVICETYPE:	wct.AppService++
+	default: 				wct.Other++
+	}
+
+	// 根据告警条目的节点分别累计数量
+	if w.countPerNode == nil {
+		w.countPerNode = make(map[string]*header.WarningCountOfType)
+	}
+	wct = w.countPerNode[item.NodeId]
+	if wct == nil {
+		wct = new(header.WarningCountOfType)
+		w.countPerNode[item.NodeId] = wct
+	}
+	wct.All++
+	switch item.Type {
+	case CPUTYPE:			wct.Cpu++
+	case MEMTYPE:			wct.Mem++
+	case FILESYSTEMTYPE:	wct.FileSystem++
+	case APPSERVICETYPE:	wct.AppService++
+	default: 				wct.Other++
+	}
 
 	// 更新最大警告级别
 	if item.Level > w.maxLevel {
