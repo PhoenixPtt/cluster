@@ -13,10 +13,11 @@ import (
 
 // 请求信息 结构体
 type requestInf struct {
-	typeFlag string           // 根操作类型字符串
-	opertype string           // 操作类型字符串
-	pars     []header.OperPar // 参数切片，每个参数就是一个OperPar结构体
-	body     interface{}      // 当存在body时，填充本项内容
+	typeFlag string                 // 根操作类型字符串
+	opertype string                 // 操作类型字符串
+	pars     []header.OperPar       // 参数切片，每个参数就是一个OperPar结构体
+	user     header.UserInformation // 请求用户的信息
+	body     interface{}            // 当存在body时，填充本项内容
 }
 
 // 信息 对象结构体
@@ -61,7 +62,7 @@ func getMessage(reqinfo requestInf) (bSuccess bool, msg *Message) {
 
 	// 调用集群服务端的指定接口函数
 	//fmt.Println("ResponseURL data is： ", data)
-	cluster.ResponseURL(reqinfo.typeFlag, "", data, temRespChan)
+	cluster.ResponseURL(reqinfo.typeFlag, reqinfo.user, data, temRespChan)
 	// 等待读取通道对象内的数据
 	temResp := <-temRespChan
 
