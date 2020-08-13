@@ -5,6 +5,8 @@
     <content url="file://$MODULE_DIR$/../clusterAgent" />
     <content url="file://$MODULE_DIR$/../clusterHeader" />
     <content url="file://$MODULE_DIR$" />
+    <content url="file://$MODULE_DIR$/../tcpSocket" />
+    <content url="file://$MODULE_DIR$/../webservermain" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>

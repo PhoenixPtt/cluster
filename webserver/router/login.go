@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"time"
 
+	header "clusterHeader"
+
 	"webserver/router/errcode"
 	myjwt "webserver/router/jwt"
 
@@ -23,18 +25,11 @@ type userLogin struct {
 	Password string `json:"password"`
 }
 
-// 用户信息结构体
-type userInformation struct {
-	ID   string // 用户ID
-	Name string // 用户名称
-	Auth string // 用户权限
-}
-
 // 登录结果信息
 type loginResult struct {
 	LoginStatus bool            // 登录验证状态，true表示成功，false表示失败
 	Message     string          // 登录相关信息
-	User        userInformation // 用户信息结构体对象
+	User        header.UserInformation // 用户信息结构体对象
 	Token       string          // token内容
 }
 
@@ -97,16 +92,16 @@ var guest userLogin = userLogin{
 }
 
 // 对用户名和密码进行验证
-func verifyUser(user userLogin) (bool, userInformation) {
+func verifyUser(user userLogin) (bool, header.UserInformation) {
 	// 目前进行简单验证，将来将使用专用的用户认证模块
 	if user == administrator {
-		return true, userInformation{
+		return true, header.UserInformation{
 			ID:   "001",
 			Name: user.User,
 			Auth: "high",
 		}
 	} else if user.User == "guest" {
-		return true, userInformation{
+		return true, header.UserInformation{
 			ID:   "9999",
 			Name: user.User,
 			Auth: "low",
@@ -114,11 +109,11 @@ func verifyUser(user userLogin) (bool, userInformation) {
 	}
 
 	// 未验证通过返回失败以及空的用户信息
-	return false, userInformation{}
+	return false, header.UserInformation{}
 }
 
 // 根据用户信息，生成token
-func generateToken(c *gin.Context, user userInformation) {
+func generateToken(c *gin.Context, user header.UserInformation) {
 	// 生成一个基本的JWT对象，默认使用
 	j := myjwt.NewJWT()
 

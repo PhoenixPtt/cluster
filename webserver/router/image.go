@@ -129,8 +129,8 @@ func deleteImage(c *gin.Context) {
 	// 读取Post中Body的内容，目前确定是JSON格式的
 	readImageData(c, &req)
 
-	// 执行单次Post操作
-	onceToGet(c, req)
+	// 执行单次Delete操作
+	onceToDelete(c, req)
 }
 
 // 处理Image中的option请求

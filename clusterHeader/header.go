@@ -42,5 +42,12 @@ type OperPar struct {
 	Value		string
 }
 
+// 用户信息结构体
+type UserInformation struct {
+	ID   string // 用户ID
+	Name string // 用户名称
+	Auth string // 用户权限
+}
+
 
 
