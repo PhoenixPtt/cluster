@@ -148,8 +148,11 @@ func continueToGet(c *gin.Context, msgType string) {
 	// 在Gin引入的sse扩展代码中，并未设置Header中Connection属性，所以在这里补充一下
 	c.Writer.Header().Set("Connection", "keep-alive")
 
+	// 获取执行请求的用户信息
+	user, _ := getUserInformation(c)
+
 	// 获取信息管理者对象 [按需生成]
-	m, msg := NewManager(msgType)
+	m, msg := NewManager(msgType, user)
 
 	// 启用获取节点资源的协程，获取结果后再返回信息
 	// 获取链接关闭标志通道对象

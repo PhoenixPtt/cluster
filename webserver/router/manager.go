@@ -3,6 +3,7 @@
 package router
 
 import (
+	header "clusterHeader"
 	"log"
 	"strings"
 	"sync"
@@ -12,6 +13,7 @@ import (
 // 信息管理者 对象结构体，包括管理的消息类型、客户列表(可扩展为添加/关闭/删除)、添加客户、删除客户、消息message集合、暂停标识
 type Manager struct {
 	msgType    string
+	user       header.UserInformation // 请求用户的信息
 	clients    map[chan Message]bool
 	newClients chan chan Message
 	delClients chan chan Message
@@ -26,7 +28,7 @@ var listOperaMutex sync.Mutex
 var managerList map[string]*Manager = make(map[string]*Manager)
 
 // 创建新的信息管理者
-func NewManager(maType string) (*Manager, chan Message) {
+func NewManager(maType string, user header.UserInformation) (*Manager, chan Message) {
 	// 管理者对象列表操作锁定
 	listOperaMutex.Lock()
 	defer listOperaMutex.Unlock()
@@ -40,6 +42,7 @@ func NewManager(maType string) (*Manager, chan Message) {
 	// 创建Manager实例
 	manager = &Manager{
 		msgType:    maType,
+		user:       user,
 		clients:    make(map[chan Message]bool),
 		newClients: make(chan (chan Message)),
 		delClients: make(chan (chan Message)),
@@ -135,6 +138,8 @@ func (m *Manager) getRequestInformation() (req requestInf) {
 	// 根据msgType的内容，填充req对象
 	req.typeFlag = data[1]
 	req.opertype = data[2]
+
+	req.user = m.user	// 赋值用户信息
 
 	return req
 }
