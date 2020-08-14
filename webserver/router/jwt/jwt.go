@@ -46,7 +46,7 @@ func JWTAuth() gin.HandlerFunc {
 		if token == "" {
 			// 返回错误信息内容
 			serveErrorJSON(c,
-				errcode.ErrorCodeDenied.WithMessage("请求未携带有效格式的token，无权限访问"))
+				errcode.ErrorCodeUnauthorized.WithMessage("请求未携带有效格式的token，无权限访问"))
 			// 后续操作被忽略
 			c.Abort()
 			return
@@ -104,7 +104,7 @@ var (
 
 	SignKey string = "cetc15clusterserver" // 签名使用的关键字
 
-	ExpireTime int64 = 3600 // token过期时间，单位s
+	ExpireTime int64 = 30 // token过期时间，单位s
 )
 
 // 载荷，可以加一些自己需要的信息
