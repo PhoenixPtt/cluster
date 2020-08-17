@@ -11,7 +11,10 @@ import (
 func main() {
 	// 输出集群服务端启动信息，并启动集群服务端
 	fmt.Println("集群服务端 启动")
-	go clusterServer.Start()
+	if err := clusterServer.Init(); err != nil {
+		fmt.Println("cluster server init failure, error is : ", err)
+		return
+	}
 
 	// 初始化集群的web服务端
 	fmt.Println("集群web服务端 启动")
@@ -45,5 +48,5 @@ func main() {
 
 	// 停止集群服务端
 	fmt.Println("集群服务端 正在停止...")
-
+	clusterServer.Stop()
 }
