@@ -2,8 +2,9 @@ package main
 
 import (
 	"fmt"
-	"time"
-
+	"os"
+	"os/signal"
+	"syscall"
 	"tcpSocket"
 
 	"clusterAgent/agentImage"
@@ -27,8 +28,11 @@ func main() {
 	defer tcpSocket.AbortAll()
 	defer StopMonitor()
 
-	// 不退出 阻塞
-	for {
-		time.Sleep(time.Second)
-	}
+	// Wait for interrupt signal to gracefully shutdown the server with a timeout of 5 seconds.
+	quit := make(chan os.Signal)
+	// kill (no param) default send syscall.SIGTERM
+	// kill -2 is syscall.SIGINT
+	// kill -9 is syscall.SIGKILL but can't be catch, so don't need add it
+	signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM, syscall.SIGHUP)
+	<-quit
 }
