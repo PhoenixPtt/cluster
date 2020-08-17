@@ -59,7 +59,7 @@ func refreshToken(c *gin.Context) {
 	// 如果token的内容为空，则直接返回并忽略后续的操作
 	if token == "" {
 		serveErrorJSON(c,
-			errcode.ErrorCodeDenied.WithMessage("请求未携带token，无法刷新token"))
+			errcode.ErrorCodeUnauthorized.WithMessage("请求未携带token，无法刷新token"))
 		return
 	}
 

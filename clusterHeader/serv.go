@@ -35,6 +35,7 @@ type ServiceInfo struct {
 	ReplicaCount uint32 // 应用服务的当前副本数量
 	CreateTime   string // 服务创建时间
 	StartTime    string // 服务启动时间
+	NameSpace    string //服务的命名空间
 }
 
 // 副本信息

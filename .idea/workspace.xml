@@ -32,9 +32,10 @@
     <option name="version" value="2" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="623" y="266" width="438" height="492" key="FileChooserDialogImpl" timestamp="1596102412055">
-      <screen x="0" y="0" width="1680" height="1010" />
+    <state x="712" y="274" width="438" height="492" key="FileChooserDialogImpl" timestamp="1597290421668">
+      <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="623" y="266" width="438" height="492" key="FileChooserDialogImpl/0.0.1680.1010@0.0.1680.1010" timestamp="1596102412055" />
+    <state x="712" y="274" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1597290421668" />
   </component>
 </project>
