@@ -6,6 +6,7 @@
     <content url="file://$MODULE_DIR$/../clusterHeader" />
     <content url="file://$MODULE_DIR$" />
     <content url="file://$MODULE_DIR$/../tcpSocket" />
+    <content url="file://$MODULE_DIR$/../webserver" />
     <content url="file://$MODULE_DIR$/../webservermain" />
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />

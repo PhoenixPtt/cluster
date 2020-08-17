@@ -14,7 +14,7 @@ func clusterServerDiscovery() {
 	conn, err := net.ListenUDP("udp", laddr)
 	if err != nil {
 		fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "clusterServerDiscovery Listen UDP error:", err)
-		panic(err)
+		return
 	}
 	defer conn.Close()
 
@@ -23,7 +23,7 @@ func clusterServerDiscovery() {
 	conn.WriteToUDP(sendData, raddr)
 
 	data := make([]byte, 1024)
-	for {
+	for isRunning {
 		read, raddr, _ := conn.ReadFromUDP(data)
 		if read == 0 {
 			continue
@@ -32,7 +32,7 @@ func clusterServerDiscovery() {
 		fmt.Println(time.Now().Format("2006-01-02 15:04:05.000000"), "clusterServerDiscovery ReadFromUDP", read, raddr.IP.String(), raddr.Port, string(data[:read]))
 
 		// 当接收到Agent发送的我是客户端消息后，服务端立即回复
-		if string(data[:read]) == string("I'm clusterAgent!") {
+		if string(data[:read]) == "I'm clusterAgent!" {
 			conn.WriteToUDP(sendData, raddr)
 		}
 	}
