@@ -1,12 +1,19 @@
 package header
 
 // 应用服务相关
-
 const (
 	FLAG_SERV       = "SVCS"
 	FLAG_SERV_CTRL  = "SVCS_CTRL"
 	FLAG_SERV_STATS = "SVCS_STATS"
 	FLAG_SERV_INFO  = "SVCS_INFO"
+)
+
+// 容器操作
+const (
+	FLAG_CTNS   	 = "CTNS"
+	FLAG_CTNS_CTRL   = "CTNS_CTRL"
+	FLAG_CTNS_STATS  = "CTNS_STATS"
+	FLAG_CTNS_INFO   = "CTNS_INFO"
 )
 
 // 服务结构体
@@ -44,8 +51,8 @@ type Replica struct {
 	CreateTime string    // 副本创建时间
 	NodeId     string    // 所在节点
 	State      uint32    // 副本的状态
-	Ctn        CTN       // 容器的副本信息
-	CtnStats   CTN_STATS // 服务的CPU使用率、内存使用量和内存使用率
+	//Ctn        CTN       // 容器的副本信息
+	//CtnStats   CTN_STATS // 服务的CPU使用率、内存使用量和内存使用率
 }
 
 //// 服务静态配置结构体
