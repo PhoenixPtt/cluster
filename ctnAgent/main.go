@@ -1,7 +1,7 @@
 package main
 
 import (
-	"clusterServer/ctnA"
+	"ctnAgent/ctnA"
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"fmt"

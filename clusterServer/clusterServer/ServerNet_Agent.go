@@ -2,6 +2,9 @@ package clusterServer
 
 import (
 	header "clusterHeader"
+	"ctnCommon/ctn"
+	"ctnCommon/headers"
+	"ctnServer/ctnS"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -75,7 +78,14 @@ func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
 	case header.FLAG_IMAG: // 镜像和仓库相关
 		ReceiveDataFromAgent(ip, pkgId, data)
 	case header.FLAG_CTNS: // 容器相关
+		//fmt.Println("\n从agent端收取数据", h, pkgId,i)
+		pSaTruck := &ctn.SA_TRUCK{}
+		err := headers.Decode(data, pSaTruck)
+		if err != nil {
+			fmt.Errorf(err.Error())
+		}
 
+		ctnS.GetRecvChan() <- pSaTruck
 	default:
 	}
 }

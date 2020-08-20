@@ -1,4 +1,4 @@
-module clusterServer
+module ctnAgent
 
 go 1.14
 

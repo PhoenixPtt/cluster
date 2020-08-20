@@ -2,8 +2,11 @@ package clusterServer
 
 import (
 	header "clusterHeader"
+	"ctnServer/cluster"
+	"ctnServer/ctnS"
 	"github.com/shirou/gopsutil/host"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -43,6 +46,30 @@ func updateClusterStats() {
 
 	//wstr := header.JsonString(*warings.WarningInfo())
 	//fmt.Println(wstr)
+}
+
+const (
+	FLAG_CTRL  = "CTRL"
+	FLAG_CTN   = "INFO"
+	FLAG_STATS = "STAT"
+	FLAG_EVENT = "EVTM"
+
+	CLUSTER_NAME = "集群管理平台"
+	SERVICE_WATCH = "集群管理平台"+"_"+"服务监视"
+	NODE_WATCH = "集群管理平台"+"_"+"节点监视"
+)
+
+var (
+	exit    bool
+	mMutex  sync.Mutex
+	g_cluster *cluster.CLUSTER
+)
+
+func init() {
+	g_cluster = cluster.NewCluster(CLUSTER_NAME)
+	ctnS.Config(writeAgentData)
+	g_cluster.Start(SERVICE_WATCH,NODE_WATCH)
+	//go cluster.MsgEvent()
 }
 
 
