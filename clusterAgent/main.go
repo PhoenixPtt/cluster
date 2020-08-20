@@ -8,6 +8,7 @@ import (
 	"tcpSocket"
 
 	"clusterAgent/agentImage"
+	"ctnAgent/ctnA"
 )
 
 func main() {
@@ -15,7 +16,9 @@ func main() {
 
 	// 启动容器引擎
 	//启动容器事件监测
-	go CtnEvents()   // 启动容器事件监测
+	ctnA.Config(writeData)
+	go ctnA.CtnEvents("")   // 启动容器事件监测
+
 	agentImage.ImageInit()
 
 	// 发出广播通知server连接

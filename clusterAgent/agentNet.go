@@ -4,7 +4,11 @@ import (
 	"clusterAgent/agentImage"
 	"clusterAgent/servers"
 	header "clusterHeader"
+	"ctnAgent/ctnA"
+	"ctnCommon/ctn"
+	"ctnCommon/headers"
 	"encoding/json"
+	"fmt"
 	"log"
 	"tcpSocket"
 	"time"
@@ -101,11 +105,19 @@ func onNetReadData(ip string, pkgId uint16, flag string, data []byte) {
 		json.Unmarshal(data, &imageData)
 		agentImage.RecieveDataFromServer(ip, pkgId, imageData)
 
-	case header.FLAG_SERV, header.FLAG_CTNS: // 任务相关
+	case header.FLAG_CTNS: // 容器相关
 		// 处理接收到的任务相关的数据，然后返回结果
-		//ProcessTaskFlag(ip, tcpSocket.TCP_TPYE_CONTROLLER, pkgId, flag, data)
+		pSaTruck := new(ctn.SA_TRUCK)
+		err := headers.Decode(data, pSaTruck)
+		if err != nil {
+			fmt.Errorf(err.Error())
+			return
+		}
 
-	default:
+		pRecvChan := ctnA.GetRecvChan()
+		fmt.Println(pSaTruck)
+		pRecvChan <- pSaTruck
+
 	}
 
 }
