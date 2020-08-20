@@ -2,8 +2,7 @@ package main
 
 import (
 	"ctnCommon/headers"
-	"ctnCommon/pool"
-	"ctnServer/cluster"
+	"ctnServer/controller"
 	"ctnServer/ctnS"
 	"fmt"
 
@@ -27,13 +26,13 @@ const (
 var (
 	exit    bool
 	mMutex  sync.Mutex
-	g_cluster *cluster.CLUSTER
+	g_controller *controller.CONTROLLER
 )
 
 func init() {
-	g_cluster = cluster.NewCluster(CLUSTER_NAME)
+	g_controller = controller.NewController(CLUSTER_NAME)
 	ctnS.Config(mySendCtn)
-	g_cluster.Start(SERVICE_WATCH,NODE_WATCH)
+	g_controller.Start(SERVICE_WATCH,NODE_WATCH)
 	//go cluster.MsgEvent()
 }
 
@@ -68,7 +67,7 @@ func main() {
 					case 0: //获取服务列表
 						{
 							fmt.Println("服务列表如下：")
-							sNames := g_cluster.GetSvcNames()
+							sNames := g_controller.GetSvcNames()
 							sLen := len(sNames)
 							if sLen == 0 {
 								fmt.Println("当前无服务！")
@@ -81,19 +80,19 @@ func main() {
 					case 1,7: //创建服务
 						{
 							//创建服务
-							g_cluster.CreateSvc("config/service1.yaml", cluster.YML_FILE)
+							g_controller.CreateSvc("config/service1.yaml", controller.YML_FILE)
 						}
 					case 2,3,4,5,6: //启动服务
 						{
 							var svcOpers map[int]string
 							svcOpers=make(map[int]string)
-							svcOpers[2]=cluster.SSTART
-							svcOpers[3]=cluster.SSTOP
-							svcOpers[4]=cluster.SREMOVE
-							svcOpers[5]=cluster.SSCALE
-							svcOpers[6]=cluster.SRESTART
+							svcOpers[2]=controller.SSTART
+							svcOpers[3]=controller.SSTOP
+							svcOpers[4]=controller.SREMOVE
+							svcOpers[5]=controller.SSCALE
+							svcOpers[6]=controller.SRESTART
 							fmt.Println("请选择服务：")
-							sNames:=g_cluster.GetSvcNames()
+							sNames:=g_controller.GetSvcNames()
 							for index, val := range sNames{
 								fmt.Printf("%d.%s\n", index, val)
 							}
@@ -102,22 +101,22 @@ func main() {
 							if sIndex>=len(sNames){
 								break
 							}
-							rlt := g_cluster.Contains(sNames[sIndex])
+							rlt := g_controller.Contains(sNames[sIndex])
 							if rlt {
-								service := g_cluster.GetSvc(sNames[sIndex])
+								service := g_controller.GetSvc(sNames[sIndex])
 								fmt.Printf("您选择的服务：%#v\n", service)
 								switch index {
 								case 2:
-									g_cluster.StartSvc(service.SvcName)
+									g_controller.StartSvc(service.SvcName)
 								case 3:
-									g_cluster.StopSvc(service.SvcName)
+									g_controller.StopSvc(service.SvcName)
 								case 4:
-									g_cluster.RemoveSvc(service.SvcName)
+									g_controller.RemoveSvc(service.SvcName)
 								case 5:
-									g_cluster.ScaleSvc(service.SvcName, 8)
+									g_controller.ScaleSvc(service.SvcName, 8)
 								case 6:
-									g_cluster.StopSvc(service.SvcName)
-									g_cluster.StartSvc(service.SvcName)
+									g_controller.StopSvc(service.SvcName)
+									g_controller.StartSvc(service.SvcName)
 								}
 								//g_cluster.cr
 								//if index==2||index==5||index==6{//启动或扩容缩容或重启
@@ -177,7 +176,7 @@ func main() {
 							var addrIndex int
 							for {
 								for {
-									agentNames = g_cluster.GetNodeList(cluster.ACTIVE_NODES)
+									agentNames = g_controller.GetNodeList(controller.ACTIVE_NODES)
 									for index, agentName:=range agentNames{
 											fmt.Printf("%d:%s\n", index, agentName)
 									}
@@ -274,16 +273,15 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 
 func myStateChange(id string, mystring uint8) {
 	fmt.Println(id, mystring)
-	nodeStatusMap := make(map[string]bool)
+	var status bool
 	switch mystring {
 	case 1:
-		nodeStatusMap[id] = true
+		status = true
 	case 2:
-		nodeStatusMap[id] = false
+		status = false
 	}
 
-	pChan:=pool.GetPrivateChanStr(NODE_WATCH)
-	pChan<-nodeStatusMap
+	g_controller.PutNode(id, status)
 }
 
 //向Agent端发送容器操作命令

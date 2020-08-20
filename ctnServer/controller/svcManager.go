@@ -1,4 +1,4 @@
-package cluster
+package controller
 
 //服务管理接口
 type SVC_MANAGEMENT interface {
@@ -12,22 +12,22 @@ type SVC_MANAGEMENT interface {
 }
 
 //创建服务
-func (cluster *CLUSTER) CreateSvc(fileName string, fileType string) (err error) {
-	cluster.Mutex.Lock()
-	defer cluster.Mutex.Unlock()
+func (controller *CONTROLLER) CreateSvc(fileName string, fileType string) (err error) {
+	controller.Mutex.Lock()
+	defer controller.Mutex.Unlock()
 
 	//执行创建操作
 	pSvc := NewServiceFromFile(fileName, fileType)//创建服务对象
 	go pSvc.WatchRpl()
-	for nodeName, status:=range cluster.NodeStatusMap{//服务更新节点信息
+	for nodeName, status:=range controller.NodeStatusMap{//服务更新节点信息
 		pSvc.SetNodeStatus(nodeName, status)
 	}
 
-	err = cluster.check(pSvc.SvcName, SCREATE)//检查服务名的合法性
+	err = controller.check(pSvc.SvcName, SCREATE)//检查服务名的合法性
 	if err!=nil{
 		return err
 	}
-	cluster.ServiceMap[pSvc.SvcName] = pSvc//添加服务至集群
+	controller.ServiceMap[pSvc.SvcName] = pSvc//添加服务至集群
 
 	err = pSvc.Create()
 	if err!=nil{
@@ -38,13 +38,13 @@ func (cluster *CLUSTER) CreateSvc(fileName string, fileType string) (err error) 
 }
 
 //启动服务
-func (cluster *CLUSTER) StartSvc(svcName string) (err error)  {
-	err = cluster.check(svcName, SSTART)//检查服务名的合法性
+func (controller *CONTROLLER) StartSvc(svcName string) (err error)  {
+	err = controller.check(svcName, SSTART)//检查服务名的合法性
 	if err!=nil{
 		return err
 	}
 
-	pSvc:=cluster.GetSvc(svcName)
+	pSvc:=controller.GetSvc(svcName)
 
 	err = pSvc.Start()
 	if err!=nil{
@@ -55,13 +55,13 @@ func (cluster *CLUSTER) StartSvc(svcName string) (err error)  {
 }
 
 //调整服务规模
-func (cluster *CLUSTER) ScaleSvc(svcName string, scalNum int) (err error)  {
-	err = cluster.check(svcName, SSCALE)//检查服务名的合法性
+func (controller *CONTROLLER) ScaleSvc(svcName string, scalNum int) (err error)  {
+	err = controller.check(svcName, SSCALE)//检查服务名的合法性
 	if err!=nil{
 		return err
 	}
 
-	pSvc:=cluster.GetSvc(svcName)
+	pSvc:=controller.GetSvc(svcName)
 	err = pSvc.Scale(scalNum)
 	if err!=nil{
 		return err
@@ -70,13 +70,13 @@ func (cluster *CLUSTER) ScaleSvc(svcName string, scalNum int) (err error)  {
 }
 
 //停止服务
-func (cluster *CLUSTER) StopSvc(svcName string) (err error)  {
-	err = cluster.check(svcName, SSTOP)//检查服务名的合法性
+func (controller *CONTROLLER) StopSvc(svcName string) (err error)  {
+	err = controller.check(svcName, SSTOP)//检查服务名的合法性
 	if err!=nil{
 		return err
 	}
 
-	pSvc:=cluster.GetSvc(svcName)
+	pSvc:=controller.GetSvc(svcName)
 	err = pSvc.Stop()
 	if err!=nil{
 		return err
@@ -85,13 +85,13 @@ func (cluster *CLUSTER) StopSvc(svcName string) (err error)  {
 }
 
 //删除服务
-func (cluster *CLUSTER) RemoveSvc(svcName string) (err error)  {
-	err = cluster.check(svcName, SREMOVE)//检查服务名的合法性
+func (controller *CONTROLLER) RemoveSvc(svcName string) (err error)  {
+	err = controller.check(svcName, SREMOVE)//检查服务名的合法性
 	if err!=nil{
 		return err
 	}
 
-	pSvc:=cluster.GetSvc(svcName)
+	pSvc:=controller.GetSvc(svcName)
 	err = pSvc.Remove()
 	if err!=nil{
 		return err
@@ -103,26 +103,26 @@ func (cluster *CLUSTER) RemoveSvc(svcName string) (err error)  {
 }
 
 //获取集群中所有的服务名称
-func (cluster *CLUSTER) GetSvcNames() []string{
+func (controller *CONTROLLER) GetSvcNames() []string{
 	var svcNames []string
-	for key,_:=range cluster.ServiceMap{
+	for key,_:=range controller.ServiceMap{
 		svcNames=append(svcNames,key)
 	}
 	return svcNames
 }
 
 //从集群获取指定的服务
-func (cluster *CLUSTER) GetSvc(svcName string) *SERVICE {
-	_, ok := cluster.ServiceMap[svcName]
+func (controller *CONTROLLER) GetSvc(svcName string) *SERVICE {
+	_, ok := controller.ServiceMap[svcName]
 	if ok {
-		return cluster.ServiceMap[svcName]
+		return controller.ServiceMap[svcName]
 	}
 	return nil
 }
 
 //判断服务是否在集群中已经存在
-func (cluster *CLUSTER) Contains(svcName string) bool {
-	_, ok := cluster.ServiceMap[svcName]
+func (controller *CONTROLLER) Contains(svcName string) bool {
+	_, ok := controller.ServiceMap[svcName]
 	if ok {
 		return true
 	}
@@ -130,9 +130,9 @@ func (cluster *CLUSTER) Contains(svcName string) bool {
 }
 
 //检查服务对象
-func(cluster *CLUSTER) check (svcName string, operName string) (err error) {
+func(controller *CONTROLLER) check (svcName string, operName string) (err error) {
 	//判断服务是否已经存在
-	if !cluster.Contains(svcName) {
+	if !controller.Contains(svcName) {
 		switch operName {
 		case SCREATE:
 		case SSTART:
@@ -147,7 +147,7 @@ func(cluster *CLUSTER) check (svcName string, operName string) (err error) {
 		}
 	}
 
-	if cluster.Contains(svcName) {
+	if controller.Contains(svcName) {
 		switch operName {
 		case SCREATE:
 			err = errString(svcName, "已存在，无法执行创建操作。")

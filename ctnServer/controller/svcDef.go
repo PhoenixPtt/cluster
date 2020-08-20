@@ -1,4 +1,4 @@
-package cluster
+package controller
 
 const(
 	CTN_SIZE = 1000

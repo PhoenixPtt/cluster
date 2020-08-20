@@ -1,4 +1,4 @@
-package cluster
+package controller
 
 import (
 	"sync"
@@ -22,12 +22,14 @@ var(
 	ACTIVE_NODES = 1
 )
 
-type CLUSTER struct {
+type CONTROLLER struct {
 	ClstName string//集群名称
 	ServiceMap map[string]*SERVICE //集群内部的所有服务
 	ServiceCfgMap map[string]*SVC_CFG//服务名称与服务配置的映射
 	NodeStatusMap map[string]bool//节点状态列表
 
+	watchServicesKey string
+	watchNodesKey string
 	exitWatchServicesChan chan int
 	exitWatchNodesChan chan int
 
@@ -71,14 +73,14 @@ type SERVICE_OPER_TRUCK struct {
 	ScaleNum int			//规模
 }
 
-func NewCluster(clusterName string) (cluster *CLUSTER) {
-	cluster = &CLUSTER{}
-	cluster.ClstName = clusterName
-	cluster.ServiceMap = make(map[string]*SERVICE, SVC_NUM) //为集群中的服务变量分配内存空间
-	cluster.ServiceCfgMap = make(map[string]*SVC_CFG, SVC_NUM)
-	cluster.NodeStatusMap = make(map[string]bool, NODE_NUM)//节点状态列表
-	cluster.exitWatchServicesChan = make(chan int, 100)
-	cluster.exitWatchNodesChan = make(chan int, 100)
+func NewController(clusterName string) (controller *CONTROLLER) {
+	controller = &CONTROLLER{}
+	controller.ClstName = clusterName
+	controller.ServiceMap = make(map[string]*SERVICE, SVC_NUM) //为集群中的服务变量分配内存空间
+	controller.ServiceCfgMap = make(map[string]*SVC_CFG, SVC_NUM)
+	controller.NodeStatusMap = make(map[string]bool, NODE_NUM)//节点状态列表
+	controller.exitWatchServicesChan = make(chan int, 100)
+	controller.exitWatchNodesChan = make(chan int, 100)
 	return
 }
 
