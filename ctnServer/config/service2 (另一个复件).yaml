@@ -1,0 +1,27 @@
+Version: v1
+Name: 'service1'
+Image: 'oldservertest:1.0'
+Cmd: ''
+CmdPars: ''
+EntryPoint: ''
+EntryPointPars: ''
+Deploy:
+  Mode: ''
+  Replicas: 10
+  Placement:
+    constraints:
+    - 192.168.43.166
+  Resources:
+  - name: limits
+    cpus: 0
+    memory: 0
+    harddisk: 0
+  - name: requests
+    cpus: 0
+    memory: 0
+    harddisk: 0
+  RcWeight:
+    NodeWeight: 0
+    CpuWeight: 0
+    MemWeight: 0
+    HardDiskWeight: 0

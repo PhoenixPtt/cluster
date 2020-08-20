@@ -2,6 +2,7 @@ package clusterServer
 
 import (
 	header "clusterHeader"
+	"github.com/shirou/gopsutil/host"
 	"math/rand"
 	"time"
 )
@@ -9,6 +10,7 @@ import (
 var nodes Nodes
 var warings Warnings	// 所有的报警信息
 var clstStats *header.ClstStats = new(header.ClstStats)
+var hostInfo *host.InfoStat // 主机信息
 
 func init() {
 	nodes.Init()

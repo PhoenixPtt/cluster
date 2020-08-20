@@ -1,0 +1,30 @@
+{
+  "version": "v1",
+  "services": [
+    {
+      "name": "service1",
+      "image": "oldservertest:1.0",
+      "deploy": {
+        "mode": "replicated",
+        "replicas": 6,
+        "placement": {
+          "constraints": [
+            "node.hostname == 192.168.43.166"
+          ]
+        },
+        "resources": [
+          {
+            "name": "limits",
+            "cpus": "0.50",
+            "memory": "50M"
+          },
+          {
+            "name": "requests",
+            "cpus": "0.25",
+            "memory": "20M"
+          }
+        ]
+      }
+    }
+  ]
+}
