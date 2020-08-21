@@ -19,8 +19,8 @@ func init()  {
 
 func main() {
 	//tcpSocket.ConnectToHost("192.168.43.100", 10000, "192.168.43.100", 0, myReceiveData, myStateChange)
-	//tcpSocket.ConnectToHost("192.168.43.166", 10000, "192.168.43.166", 0, myReceiveData, myStateChange)
-	tcpSocket.ConnectToHost("192.168.92.141", 10000, "192.168.92.141", 0,myReceiveData, myStateChange)
+	tcpSocket.ConnectToHost("192.168.43.166", 10000, "192.168.43.166", 0, myReceiveData, myStateChange)
+	//tcpSocket.ConnectToHost("192.168.92.141", 10000, "192.168.92.141", 0,myReceiveData, myStateChange)
 
 	//启动容器事件监测
 	//go CtnEvents(G_id,mySendCtn)

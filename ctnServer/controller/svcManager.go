@@ -18,10 +18,10 @@ func (controller *CONTROLLER) CreateSvc(fileName string, fileType string) (err e
 
 	//执行创建操作
 	pSvc := NewServiceFromFile(fileName, fileType)//创建服务对象
-	go pSvc.WatchRpl()
 	for nodeName, status:=range controller.NodeStatusMap{//服务更新节点信息
 		pSvc.SetNodeStatus(nodeName, status)
 	}
+	go pSvc.WatchRpl()
 
 	err = controller.check(pSvc.SvcName, SCREATE)//检查服务名的合法性
 	if err!=nil{

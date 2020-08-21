@@ -17,10 +17,6 @@ const (
 	FLAG_CTN   = "INFO"
 	FLAG_STATS = "STAT"
 	FLAG_EVENT = "EVTM"
-
-	CLUSTER_NAME = "集群管理平台"
-	SERVICE_WATCH = "集群管理平台"+"_"+"服务监视"
-	NODE_WATCH = "集群管理平台"+"_"+"节点监视"
 )
 
 var (
@@ -30,9 +26,8 @@ var (
 )
 
 func init() {
-	g_controller = controller.NewController(CLUSTER_NAME)
-	ctnS.Config(mySendCtn)
-	g_controller.Start(SERVICE_WATCH,NODE_WATCH)
+	g_controller = controller.NewController(mySendCtn)
+	g_controller.Start()
 	//go cluster.MsgEvent()
 }
 
@@ -281,6 +276,7 @@ func myStateChange(id string, mystring uint8) {
 		status = false
 	}
 
+	fmt.Println("888888888888888888888888888888888",g_controller)
 	g_controller.PutNode(id, status)
 }
 

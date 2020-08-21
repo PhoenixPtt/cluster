@@ -19,6 +19,7 @@ func (service *SERVICE) EScale() (agentAddrNumMap map[string]int, err error) {
 	}
 
 	//从agent列表中找到在线的agent进行分配
+	fmt.Println("KKKKKKKKKKKKKKKKKKKKKKKK",service.SvcName, service.NodeStatusMap)
 	for node,status:=range service.NodeStatusMap{
 		if status == true{
 			agentAddr = append(agentAddr, node)

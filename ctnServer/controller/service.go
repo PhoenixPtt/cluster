@@ -40,7 +40,7 @@ func (service *SERVICE) SetNodeStatus(nodeName string, status bool){
 		service.NodeStatusMap[nodeName] = status
 	}
 
-	fmt.Println("1111111111111111111111111111111111", service.NodeStatusMap)
+	fmt.Println("1111111111111111111111111111111111", service.SvcName, service.NodeStatusMap)
 
 	for _,rpl:=range service.Replicas{//通知关联副本
 		rpl.SetNodeStatus(nodeName, status)

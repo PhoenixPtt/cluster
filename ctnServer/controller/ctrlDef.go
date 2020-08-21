@@ -1,6 +1,8 @@
 package controller
 
 import (
+	"ctnCommon/pool"
+	"ctnServer/ctnS"
 	"sync"
 )
 
@@ -20,6 +22,9 @@ var(
 
 	ALL_NODES = 0
 	ACTIVE_NODES = 1
+
+	NODE_WATCH = "NODE_WATCH"
+	SERVICE_WATCH = "SVC_WATCH"
 )
 
 type CONTROLLER struct {
@@ -28,9 +33,7 @@ type CONTROLLER struct {
 	ServiceCfgMap map[string]*SVC_CFG//服务名称与服务配置的映射
 	NodeStatusMap map[string]bool//节点状态列表
 
-	watchServicesKey string
-	watchNodesKey string
-	exitWatchServicesChan chan int
+	svcExitChanMap map[string]chan int
 	exitWatchNodesChan chan int
 
 	Mutex sync.Mutex
@@ -73,14 +76,19 @@ type SERVICE_OPER_TRUCK struct {
 	ScaleNum int			//规模
 }
 
-func NewController(clusterName string) (controller *CONTROLLER) {
+func NewController(sendObjFunc pool.SendObjFunc) (controller *CONTROLLER) {
 	controller = &CONTROLLER{}
-	controller.ClstName = clusterName
 	controller.ServiceMap = make(map[string]*SERVICE, SVC_NUM) //为集群中的服务变量分配内存空间
 	controller.ServiceCfgMap = make(map[string]*SVC_CFG, SVC_NUM)
 	controller.NodeStatusMap = make(map[string]bool, NODE_NUM)//节点状态列表
-	controller.exitWatchServicesChan = make(chan int, 100)
+	controller.svcExitChanMap = make(map[string]chan int,SVC_NUM)
 	controller.exitWatchNodesChan = make(chan int, 100)
+	ctnS.Config(sendObjFunc)
+	return
+}
+
+func GetServiceWatchKey(svcName string) (watchKey string) {
+	watchKey = svcName+"_"+SERVICE_WATCH
 	return
 }
 
