@@ -4,7 +4,7 @@ service:
   image: oldservertest:1.0 #镜像
   deploy:
    mode: replicated # 指定 deploy 的模式	global:每个集群节点都只有一个容器;replicated:用户可以指定集群中容器的数量(默认) 
-   replicas: 1 #副本数量
+   replicas: 2 #副本数量
    placement: 
      constraints:
      - node.hostname == 192.168.43.166 #1.node.role == worker 2.node.hostname  3.node.labels.role == db

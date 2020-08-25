@@ -3,6 +3,7 @@ module ctnServer
 go 1.14
 
 replace (
+	clusterHeader => ../clusterHeader
 	ctnCommon => ../ctnCommon
 	github.com/docker/docker v1.13.1 => github.com/docker/engine v0.0.0-20200204220554-5f6d6f3f2203
 	tcpSocket => ../tcpSocket
@@ -10,6 +11,7 @@ replace (
 )
 
 require (
+	clusterHeader v0.0.0-00010101000000-000000000000
 	ctnCommon v0.0.0-00010101000000-000000000000
 	github.com/containerd/containerd v1.3.7 // indirect
 	github.com/docker/distribution v2.7.1+incompatible // indirect

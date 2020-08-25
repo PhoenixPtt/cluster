@@ -12,7 +12,32 @@ type SVC_MANAGEMENT interface {
 }
 
 //创建服务
-func (controller *CONTROLLER) CreateSvc(fileName string, fileType string) (err error) {
+func (controller *CONTROLLER) CreateSvc(svcCfg *SVC_CFG) (err error) {
+	controller.Mutex.Lock()
+	defer controller.Mutex.Unlock()
+
+	//执行创建操作
+	pSvc := NewService(svcCfg)//创建服务对象
+	for nodeName, status:=range controller.NodeStatusMap{//服务更新节点信息
+		pSvc.SetNodeStatus(nodeName, status)
+	}
+
+	err = controller.check(pSvc.SvcName, SCREATE)//检查服务名的合法性
+	if err!=nil{
+		return err
+	}
+	controller.ServiceMap[pSvc.SvcName] = pSvc//添加服务至集群
+
+	err = pSvc.Create()
+	if err!=nil{
+		return err
+	}
+
+	return
+}
+
+//创建服务
+func (controller *CONTROLLER) CreateSvcFromFile(fileName string, fileType string) (err error) {
 	controller.Mutex.Lock()
 	defer controller.Mutex.Unlock()
 
@@ -21,7 +46,6 @@ func (controller *CONTROLLER) CreateSvc(fileName string, fileType string) (err e
 	for nodeName, status:=range controller.NodeStatusMap{//服务更新节点信息
 		pSvc.SetNodeStatus(nodeName, status)
 	}
-	go pSvc.WatchRpl()
 
 	err = controller.check(pSvc.SvcName, SCREATE)//检查服务名的合法性
 	if err!=nil{

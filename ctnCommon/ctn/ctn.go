@@ -1,9 +1,10 @@
 package ctn
 
 import (
+	"io"
+
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
-	"io"
 )
 
 const (
@@ -16,7 +17,7 @@ const (
 	//操作标识
 	CREATE  = "CREATE"
 	START   = "START"
-	RUN		= "RUN"
+	RUN     = "RUN"
 	STOP    = "STOP"
 	KILL    = "KILL"
 	REMOVE  = "REMOVE"
@@ -27,30 +28,30 @@ const (
 
 //容器结构体声明
 type CTN struct {
-	CtnName		string		`json:"ctn_name"`
-	AgentAddr   string      `json:"agentaddr"`
+	CtnName   string `json:"ctn_name"`
+	AgentAddr string `json:"agentaddr"`
 
 	//容器状态，容器创建事件，容器状态更新时间
-	State string			`json:"state"`
-	Dirty bool 				`json:"dirty"`
-	Created    	int64
-	CreatedString string	`json:"created_string"`
-	Updated		int64
-	UpdatedString string		`json:"update_string"`
+	State         string `json:"state"`
+	Dirty         bool   `json:"dirty"`
+	Created       int64
+	CreatedString string `json:"created_string"`
+	Updated       int64
+	UpdatedString string `json:"update_string"`
 
 	//操作类型和时间
-	OperType    string	//记录最近一次的操作
-	OperStrategy bool	//是否启动
-	OperNum	    int
-	OperTime	int64
-	OperTimeStr	string
+	OperType     string //记录最近一次的操作
+	OperStrategy bool   //是否启动
+	OperNum      int
+	OperTime     int64
+	OperTimeStr  string
 
 	//容器信息和时间
 	types.Container
 
 	//容器事件和时间
-	CtnAction	string		`json:"ctn_action"`
-	CtnActionTime string	`json:"ctn_action_time"`
+	CtnAction        string `json:"ctn_action"`
+	CtnActionTime    string `json:"ctn_action_time"`
 	CtnActionTimeInt int64
 }
 
@@ -67,22 +68,23 @@ type ctnO interface {
 }
 
 type REQ_ANS struct {
-	CtnName	string//容器名称
-	CtnOper string//容器操作
-	CtnImage string//容器镜像
-	CtnErr error//具体错误信息
+	CtnName  string //容器名称
+	CtnOper  string //容器操作
+	CtnImage string //容器镜像
+	CtnErr   error  //具体错误信息
+	CtnState string //容器状态
 
-	CtnID []string
-	CtnLog []string
+	CtnID      []string
+	CtnLog     []string
 	CtnInspect []CTN_INSPECT
 
-	CtnErrType []string//错误类型
+	CtnErrType []string //错误类型
 }
 
 type CTN_MSG struct {
 	CtnName string
 	OperNum int
-	CtnErr error
+	CtnErr  error
 
 	CtnMsg string
 }
@@ -90,21 +92,23 @@ type CTN_MSG struct {
 //Server端与Agent端通信结构体
 type SA_TRUCK struct {
 	//基本信息
-	Flag    string
-	Index  int//计数
-	Addr string//接收方ip
+	Flag  string
+	Index int    //计数
+	Addr  string //接收方ip
+	SrcAddr string //源地址
 
 	//Server请求
 	//Agent响应
 	Req_Ans []REQ_ANS
 
 	//Agent主动发送
-	EvtMsg []events.Message
+	EvtMsg  []events.Message
+	ErrMsg  []error
 	CtnList []types.Container
 	CtnStat []CTN_STATS
-	CtnMsg []CTN_MSG
+	CtnMsg  []CTN_MSG
 
 	//消息发送时间
 	MsgTimeStr string
-	MsgTime	int64
+	MsgTime    int64
 }

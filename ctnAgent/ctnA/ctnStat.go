@@ -6,12 +6,10 @@ import (
 	"ctnCommon/pool"
 	"encoding/json"
 	"fmt"
+	"github.com/docker/docker/client"
 	"io"
 	"runtime"
 	"time"
-	"unsafe"
-
-	"github.com/docker/docker/client"
 )
 
 //阻塞方式获取容器的资源使用状态
@@ -124,7 +122,7 @@ for {
 				}
 
 				//直接发给server端
-				fmt.Println(ctnStats.ID, ctnStats.Read, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
+				//fmt.Println(ctnStats.ID, ctnStats.Read, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
 				//fmt.Printf("内存限值：%.2f\n", ctnStats.MemoryStats.Limit)
 				//fmt.Printf("内存占有量：%.2f\n", ctnStats.MemoryStats.Stats.ActiveAnon)
 				//sum := 0.0
@@ -142,8 +140,7 @@ for {
 				pSaTruck.CtnStat = make([]ctn.CTN_STATS,0,1)
 				pSaTruck.CtnStat = append(pSaTruck.CtnStat,ctnStats)
 
-				pObj := (*interface{})(unsafe.Pointer(&pSaTruck))
-				GetSendChan() <- pObj
+				GetSendChan() <- pSaTruck
 			}
 		}
 	}

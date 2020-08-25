@@ -20,8 +20,8 @@ const (
 )
 
 var (
-	exit    bool
-	mMutex  sync.Mutex
+	exit         bool
+	mMutex       sync.Mutex
 	g_controller *controller.CONTROLLER
 )
 
@@ -72,34 +72,34 @@ func main() {
 							}
 							break
 						}
-					case 1,7: //创建服务
+					case 1, 7: //创建服务
 						{
 							//创建服务
-							g_controller.CreateSvc("config/service1.yaml", controller.YML_FILE)
+							g_controller.CreateSvcFromFile("config/service1.yaml", controller.YML_FILE)
 						}
-					case 2,3,4,5,6: //启动服务
+					case 2, 3, 4, 5, 6: //启动服务
 						{
 							var svcOpers map[int]string
-							svcOpers=make(map[int]string)
-							svcOpers[2]=controller.SSTART
-							svcOpers[3]=controller.SSTOP
-							svcOpers[4]=controller.SREMOVE
-							svcOpers[5]=controller.SSCALE
-							svcOpers[6]=controller.SRESTART
+							svcOpers = make(map[int]string)
+							svcOpers[2] = controller.SSTART
+							svcOpers[3] = controller.SSTOP
+							svcOpers[4] = controller.SREMOVE
+							svcOpers[5] = controller.SSCALE
+							svcOpers[6] = controller.SRESTART
 							fmt.Println("请选择服务：")
-							sNames:=g_controller.GetSvcNames()
-							for index, val := range sNames{
+							sNames := g_controller.GetSvcNames()
+							for index, val := range sNames {
 								fmt.Printf("%d.%s\n", index, val)
 							}
 							var sIndex int
 							fmt.Scanln(&sIndex)
-							if sIndex>=len(sNames){
+							if sIndex >= len(sNames) {
 								break
 							}
 							rlt := g_controller.Contains(sNames[sIndex])
 							if rlt {
 								service := g_controller.GetSvc(sNames[sIndex])
-								fmt.Printf("您选择的服务：%#v\n", service)
+								//fmt.Printf("您选择的服务：%#v\n", service)
 								switch index {
 								case 2:
 									g_controller.StartSvc(service.SvcName)
@@ -172,13 +172,13 @@ func main() {
 							for {
 								for {
 									agentNames = g_controller.GetNodeList(controller.ACTIVE_NODES)
-									for index, agentName:=range agentNames{
-											fmt.Printf("%d:%s\n", index, agentName)
+									for index, agentName := range agentNames {
+										fmt.Printf("%d:%s\n", index, agentName)
 									}
 									fmt.Println("请输入agent端IP地址序号：\n")
 
 									fmt.Scanln(&addrIndex)
-									if addrIndex >= 0 && addrIndex < len(agentNames){
+									if addrIndex >= 0 && addrIndex < len(agentNames) {
 										goto TT
 									}
 								}
@@ -190,19 +190,19 @@ func main() {
 							fmt.Scanln(&imageName)
 							fmt.Printf("%s\n", imageName)
 							var config map[string]string
-							pCtn = ctnS.NewCtnS(imageName, agentNames[addrIndex],config)
+							pCtn = ctnS.NewCtnS(imageName, agentNames[addrIndex], config)
 							pCtn.Oper(ctn.CREATE)
 						}
-					case 2,3,4,5,6,7: //启动容器
+					case 2, 3, 4, 5, 6, 7: //启动容器
 						{
 							var flagMap map[int]string
-							flagMap=make(map[int]string)
-							flagMap[2]=ctn.START
-							flagMap[3]=ctn.STOP
-							flagMap[4]=ctn.KILL
-							flagMap[5]=ctn.REMOVE
-							flagMap[6]=ctn.INSPECT
-							flagMap[7]=ctn.GETLOG
+							flagMap = make(map[int]string)
+							flagMap[2] = ctn.START
+							flagMap[3] = ctn.STOP
+							flagMap[4] = ctn.KILL
+							flagMap[5] = ctn.REMOVE
+							flagMap[6] = ctn.INSPECT
+							flagMap[7] = ctn.GETLOG
 
 							ctnName := chooseCtnName()
 							if ctnName == "" {
@@ -234,7 +234,7 @@ func main() {
 
 func chooseCtnName() string {
 	for {
-		sliceAddr:=ctnS.GetCtnNames()
+		sliceAddr := ctnS.GetCtnNames()
 		for i, value := range sliceAddr {
 			fmt.Printf("%d:%s\n", i, value)
 		}
@@ -257,6 +257,7 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byte) {
 	//fmt.Println("\n从agent端收取数据", h, pkgId,i)
 	pSaTruck := &ctn.SA_TRUCK{}
+	pSaTruck.SrcAddr = h
 	err := headers.Decode(s, pSaTruck)
 	if err != nil {
 		fmt.Errorf(err.Error())
@@ -264,7 +265,6 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 
 	ctnS.GetRecvChan() <- pSaTruck
 }
-
 
 func myStateChange(id string, mystring uint8) {
 	fmt.Println(id, mystring)
@@ -276,13 +276,11 @@ func myStateChange(id string, mystring uint8) {
 		status = false
 	}
 
-	fmt.Println("888888888888888888888888888888888",g_controller)
 	g_controller.PutNode(id, status)
 }
 
 //向Agent端发送容器操作命令
-func mySendCtn (ip string, level uint8, pkgId uint16, flag string, data []byte){
+func mySendCtn(ip string, level uint8, pkgId uint16, flag string, data []byte) {
 	fmt.Println("\nmySendCtn:", ip)
 	tcpSocket.WriteData(ip, level, pkgId, flag, data)
 }
-

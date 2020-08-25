@@ -25,12 +25,12 @@ type CHAN_POOL struct {
 }
 
 //注册以整型变量为关键字的私有通道
-func (pChanPool *CHAN_POOL) RegPrivateChanInt(keyInt int){
+func (pChanPool *CHAN_POOL) RegPrivateChanInt(keyInt int, bufferSize int){
 	pChanPool.intMutex.Lock()
 	defer pChanPool.intMutex.Unlock()
 	_,ok:= pChanPool.private_chan_int_map[keyInt]
 	if !ok{
-		pChan:=make(chan interface{},1)
+		pChan:=make(chan interface{},bufferSize)
 		pChanPool.private_chan_int_map[keyInt]=pChan
 	}
 }
@@ -58,12 +58,12 @@ func (pChanPool *CHAN_POOL) UnregPrivateChanInt(keyInt int)  {
 }
 
 //注册以整型变量为关键字的私有通道
-func (pChanPool *CHAN_POOL) RegPrivateChanStr(keyStr string){
+func (pChanPool *CHAN_POOL) RegPrivateChanStr(keyStr string, bufferSize int){
 	pChanPool.strMutex.Lock()
 	defer pChanPool.strMutex.Unlock()
 	_,ok:= pChanPool.private_chan_string_map[keyStr]
 	if !ok{
-		pChan:=make(chan interface{},1)
+		pChan:=make(chan interface{},bufferSize)
 		pChanPool.private_chan_string_map[keyStr]=pChan
 	}
 }
@@ -105,8 +105,8 @@ func NewChanPool() (pChanPool *CHAN_POOL){
 }
 
 //注册以整型变量为关键字的私有通道
-func RegPrivateChanInt(keyInt int){
-	pChanPool.RegPrivateChanInt(keyInt)
+func RegPrivateChanInt(keyInt int, bufferSize int){
+	pChanPool.RegPrivateChanInt(keyInt, bufferSize)
 }
 
 func GetPrivateChanInt(keyInt int) (pChan chan interface{}) {
@@ -119,8 +119,8 @@ func UnregPrivateChanInt(keyInt int)  {
 }
 
 //注册以整型变量为关键字的私有通道
-func RegPrivateChanStr(keyStr string){
-	pChanPool.RegPrivateChanStr(keyStr)
+func RegPrivateChanStr(keyStr string, bufferSize int){
+	pChanPool.RegPrivateChanStr(keyStr, bufferSize)
 }
 
 func GetPrivateChanStr(keyStr string) (pChan chan interface{})  {

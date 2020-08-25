@@ -14,6 +14,8 @@ type CTNS_WORK_POOL struct {
 	pool.WORK_POOL
 }
 
+const DAQ = "DAQ"
+
 //发送网络消息
 func (workPool *CTNS_WORK_POOL) Send()  {
 	for obj := range workPool.GetSendChan(){
@@ -47,12 +49,27 @@ func (workPool *CTNS_WORK_POOL) Recv(){
 				UpdateCtnInfo(pSaTruck.CtnList)
 			case ctn.FLAG_STATS://更新资源使用情况
 			case ctn.FLAG_EVENT://更新事件
-				if len(pSaTruck.EvtMsg)>1{
+				//这些信息都要返回给上层
+				if len(pSaTruck.EvtMsg)>0{
 					eventMsg := pSaTruck.EvtMsg[0]
 					//fmt.Printf("%#v", eventMsg)
 					UpdateCtnEvent(eventMsg)
 				}
+
+				if len(pSaTruck.ErrMsg)>0{
+					//更新错误信息
+				}
 			}
+
+			uploadChan := pool.GetPrivateChanStr(DAQ)
+			if uploadChan==nil{
+				continue
+			}
+			select {
+			case uploadChan <- pSaTruck:
+			default:
+			}
+
 		default:
 		}
 	}

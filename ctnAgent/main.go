@@ -13,18 +13,19 @@ var (
 	G_id string
 )
 
-func init()  {
+func init() {
 	ctnA.Config(mySendCtn)
 }
 
 func main() {
 	//tcpSocket.ConnectToHost("192.168.43.100", 10000, "192.168.43.100", 0, myReceiveData, myStateChange)
 	tcpSocket.ConnectToHost("192.168.43.166", 10000, "192.168.43.166", 0, myReceiveData, myStateChange)
-	//tcpSocket.ConnectToHost("192.168.92.141", 10000, "192.168.92.141", 0,myReceiveData, myStateChange)
+	//tcpSocket.ConnectToHost("192.168.92.141", 10000, "192.168.92.141", 0, myReceiveData, myStateChange)
 
 	//启动容器事件监测
-	//go CtnEvents(G_id,mySendCtn)
-
+	go ctnA.CtnEvents(G_id)
+	go ctnA.CtnInfoAll(G_id)
+	go ctnA.CtnStatsAll(G_id)
 	for {
 		fmt.Println("请选择下列操作：")
 		fmt.Println("1.实时上传所有容器资源使用状态")
@@ -78,10 +79,9 @@ func myStateChange(id string, mystring uint8) {
 }
 
 //向Server端发送容器操作命令
-func mySendCtn (ip string, level uint8, pkgId uint16, flag string, data []byte){
-	fmt.Println("mySendCtn:", ip, G_id)
+func mySendCtn(ip string, level uint8, pkgId uint16, flag string, data []byte) {
+	//fmt.Println("mySendCtn:", ip, G_id)
 	tcpSocket.WriteData(G_id, level, pkgId, flag, data)
 }
 
-type SendObjFunc func (ip string, level uint8, pkgId uint16, flag string, data []byte)
-
+type SendObjFunc func(ip string, level uint8, pkgId uint16, flag string, data []byte)

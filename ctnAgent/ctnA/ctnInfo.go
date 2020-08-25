@@ -3,13 +3,15 @@ package ctnA
 import (
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
-	"fmt"
-	"github.com/docker/docker/api/types"
+
+	// "fmt"
 	"time"
+
+	"github.com/docker/docker/api/types"
 )
 
 var (
-	freq int
+	freq      int
 	exit_info bool
 )
 
@@ -43,23 +45,24 @@ func CtnInfoAll(distAddr string) {
 		pSaTruck.CtnList = containers
 
 		//还要判一下是否有容器池中有，但是实时获取不到的的容器，也做一下状态更新，打上时间标签
-		for _,ctnName:=range GetCtnNames(){
-			pCtn:=GetCtn(ctnName)
-			ctnID:=pCtn.ID
+		for _, ctnName := range GetCtnNames() {
+			pCtn := GetCtn(ctnName)
+			ctnID := pCtn.ID
 			bExisted := false
-			for _,container:=range containers{
-				if container.ID == ctnID{
+			for _, container := range containers {
+				if container.ID == ctnID {
 					bExisted = true
 					break
 				}
 			}
-			if !bExisted{
+
+			if !bExisted {
 				var container types.Container
 				pSaTruck.CtnList = append(pSaTruck.CtnList, container)
 			}
 		}
 
-		fmt.Printf("%#v\n", pSaTruck)
+		// fmt.Printf("%#v\n", pSaTruck)
 
 		GetSendChan() <- &pSaTruck
 
