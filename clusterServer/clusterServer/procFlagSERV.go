@@ -2,7 +2,6 @@ package clusterServer
 
 import (
 	header "clusterHeader"
-	"ctnCommon/pool"
 	"errors"
 )
 
@@ -22,9 +21,9 @@ func procFlagSERV(token interface{}, data interface{}, respChan chan<- interface
 	switch r.Oper.Type {
 	case header.FLAG_SERV_CTRL:
 			// 生成一个请求，需要用AnswerRequest(handle uint16, data interface{})回复
-			h := NewRequest(respChan)
-			ch := pool.GetPrivateChanStr(SERVICE_WATCH)
-			ch <- r
+			//h := NewRequest(respChan)
+			//ch := pool.GetPrivateChanStr(SERVICE_WATCH)
+			//ch <- r
 	case header.FLAG_SERV:
 
 	case header.FLAG_SERV_INFO:
