@@ -28,8 +28,8 @@ func initImageRouter(group *gin.RouterGroup) bool {
 	group.DELETE("/delete", deleteImage)
 
 	// 处理非Get时，可能进行的OPTION请求
-	group.OPTIONS("/list", optionImage)
-	group.OPTIONS("/tags", optionImage)
+	//group.OPTIONS("/list", optionImage)
+	//group.OPTIONS("/tags", optionImage)
 	group.OPTIONS("/create", optionImage)
 	group.OPTIONS("/load", optionImage)
 	group.OPTIONS("/distribute", optionImage)

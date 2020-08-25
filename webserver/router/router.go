@@ -11,14 +11,14 @@ import (
 )
 
 func Init(rout *gin.Engine) bool {
-	// 使用添加响应头中间件
+	// 使用添加响应头处理跨域问题的中间件
 	rout.Use(AddAccessControl())
 
 	// 用户登录
 	rout.POST("/login", login)
 	//rout.OPTIONS("/login", onceToOption)
 
-	// 刷新token操作
+	// 主动刷新token操作
 	//rout.GET("/refreshToken", refreshToken)
 
 	// 采样频率相关功能
