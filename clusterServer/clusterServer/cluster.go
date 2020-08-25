@@ -2,6 +2,8 @@ package clusterServer
 
 import (
 	header "clusterHeader"
+	"ctnServer/controller"
+	"github.com/shirou/gopsutil/host"
 	"math/rand"
 	"time"
 )
@@ -9,6 +11,7 @@ import (
 var nodes Nodes
 var warings Warnings	// 所有的报警信息
 var clstStats *header.ClstStats = new(header.ClstStats)
+var hostInfo *host.InfoStat // 主机信息
 
 func init() {
 	nodes.Init()
@@ -41,6 +44,15 @@ func updateClusterStats() {
 
 	//wstr := header.JsonString(*warings.WarningInfo())
 	//fmt.Println(wstr)
+}
+
+const (
+	SERVICE_WATCH = "集群管理平台"+"_"+"服务监视"
+)
+
+func init() {
+	asm := controller.NewController(writeAgentData)
+	asm.Start()
 }
 
 

@@ -2,8 +2,6 @@ package servers
 
 import (
 	"sync"
-
-	"clusterAgent/ctn"
 )
 
 // 记录当前已连接的所有的server的ip
@@ -41,12 +39,12 @@ func RemoveServer(h string) {
 		return
 	}
 
-	// 遍历隶属于当前服务器的所有容器，依次remove
-	for _,ctnId := range s.GetAllCtnId() {
-		cctn := ctn.CTN{}
-		cctn.ID = ctnId
-		cctn.Remove()
-	}
+	//// 遍历隶属于当前服务器的所有容器，依次remove
+	//for _,ctnId := range s.GetAllCtnId() {
+	//	cctn := ctn.CTN{}
+	//	cctn.ID = ctnId
+	//	cctn.Remove()
+	//}
 
 	delete(clusterServer, h)
 }

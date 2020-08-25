@@ -16,8 +16,19 @@ func procFlagSERV(token interface{}, data interface{}, respChan chan<- interface
 	r.Oper.Progress = 100		// 默认操作完成
 	r.Oper.Err = ""				// 默认无错误
 
+
 	// 根据子标识类型，执行相关操作
 	switch r.Oper.Type {
+	case header.FLAG_SERV_CTRL:
+			// 生成一个请求，需要用AnswerRequest(handle uint16, data interface{})回复
+			//h := NewRequest(respChan)
+			//ch := pool.GetPrivateChanStr(SERVICE_WATCH)
+			//ch <- r
+	case header.FLAG_SERV:
+
+	case header.FLAG_SERV_INFO:
+
+	case header.FLAG_SERV_STATS:
 	default:						// 其它操作处理
 		r.Oper.Success = false					// 操作失败
 		r.Oper.Err = "子标识错误！"				// 操作失败信息
