@@ -14,4 +14,6 @@ replace (
 	clusterServer => ../clusterServer
 	targz => ../targz
 	tcpSocket => ../tcpSocket
+	ctnCommon => ../ctnCommon
+    ctnServer => ../ctnServer
 )
