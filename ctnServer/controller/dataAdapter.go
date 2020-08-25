@@ -3,8 +3,9 @@ package controller
 import (
 	header "clusterHeader"
 	"ctnCommon/ctn"
-	"ctnServer/ctnS"
 	"github.com/docker/docker/api/types"
+
+	//"github.com/docker/docker/api/types"
 )
 
 //数据格式适配器
@@ -63,11 +64,11 @@ func ToWebService(pController *CONTROLLER, ctnInfoMap map[string]types.Container
 			pWebRpl := &header.Replica{}
 			pWebRpl.Id = pRpl.RplName
 			pWebRpl.CreateTime = pRpl.CreateTime
-			pCtn:=ctnS.GetCtn(pRpl.CtnName)
-			if pCtn!=nil{
-				pWebRpl.Ctn = ctnInfoMap[pCtn.ID]
-				pWebRpl.CtnStats = ctnStatMap[pCtn.ID]
-			}
+			//pCtn:=ctnS.GetCtn(pRpl.CtnName)
+			//if pCtn!=nil{
+			//	pWebRpl.Ctn = ctnInfoMap[pCtn.ID]
+			//	pWebRpl.CtnStats = ctnStatMap[pCtn.ID]
+			//}
 			pWebSvc.Replica = append(pWebSvc.Replica, *pWebRpl)
 		}
 

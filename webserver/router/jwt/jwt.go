@@ -104,7 +104,7 @@ var (
 
 	SignKey string = "cetc15clusterserver" // 签名使用的关键字
 
-	ExpireTime int64 = 30 // token过期时间，单位s
+	ExpireTime int64 = 60000 // token过期时间，单位s
 )
 
 // 载荷，可以加一些自己需要的信息
