@@ -11,6 +11,9 @@ import (
 )
 
 func Init(rout *gin.Engine) bool {
+	// 给表单限制上传大小 (默认 32 MiB)
+	// rout.MaxMultipartMemory = 8 << 20  // 8 MiB
+
 	// 使用添加响应头处理跨域问题的中间件
 	rout.Use(AddAccessControl())
 
@@ -126,9 +129,9 @@ func addAccessControlAllowOptions(c *gin.Context) {
 	c.Writer.Header().Set("Access-Control-Allow-Methods", "*");
 
 	// 调试使用，正式版本可删除
-	for key, val := range c.Request.Header {
-		fmt.Println(key, ":", val)
-	}
+	//for key, val := range c.Request.Header {
+	//	fmt.Println(key, ":", val)
+	//}
 }
 
 // 返回错误信息

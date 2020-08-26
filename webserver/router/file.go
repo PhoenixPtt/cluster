@@ -1,5 +1,6 @@
 // "file.go" file is create by Huxd 2020.07.27
 // it used to transfer file operation.
+// 前端使用webuploader进行文件的传输，所以在文件接收时目前仅针对webuploader的信息格式进行处理
 
 package router
 
@@ -8,13 +9,13 @@ import (
 	"github.com/gin-gonic/gin"
 	"os"
 	"time"
-	_ "webserver/router/errcode"
+	"webserver/router/errcode"
 	mymd5 "webserver/router/md5"
 )
 
 // 文件信息结构体，表明接收或发送的文件基本信息
 type FileInformation struct {
-	UUID	 string	// 文件的唯一标识
+	UUID     string // 文件的唯一标识
 	FileType string // 文件类型
 	FilePath string // 文件路径
 	FileName string // 文件名称
@@ -31,9 +32,9 @@ type ReceiveFileObject struct {
 
 // 文件块信息结构体
 type FileBlock struct {
-	BlockIndex   int    // 文件块的序号，基于0
-	BlockSize    string // 文件块的大小
-	MD5          string // 文件块的MD5值
+	BlockIndex int    // 文件块的序号，基于0
+	BlockSize  string // 文件块的大小
+	MD5        string // 文件块的MD5值
 }
 
 // 文件操作相关内容的具体处理函数 /file
@@ -54,16 +55,44 @@ func initFileRouter(group *gin.RouterGroup) bool {
 }
 
 // 接收文件的方法
-func receiveFile(c *gin.Context)  {
+func receiveFile(c *gin.Context) {
+	// 读取multipart/form内容
+	form, err := c.MultipartForm()
+	// 如果没有错误，则执行解析并处理
+	if err == nil {
+		// 解析包含的关系信息，这里需要注意单文件和多文件的问题
+		fmt.Println(form.Value)
+		// 根据webuploader的相关协议，暂时不需要遍历File对象
+		files := form.File["file"]
+		// 目前在FileHeader切片中，一般只会有一个FileHeader对象
+		for _, file := range files {
+			fmt.Println(file.Filename)
+			fmt.Println(file.Header)
+			fmt.Println(file.Size)
+
+			//f,_ := file.Open()
+			//buf,_:= ioutil.ReadAll(f)
+		}
+	} else {
+		serveErrorJSON(c,
+			errcode.ErrorCodeUnknown.WithMessage(fmt.Sprintf("获取multipart/form内容失败，错误信息:%v", err)))
+		return
+	}
 	// 读取文件的信息内容
 	//info := getFileInformation(c)
 
 	// 读取文件块的信息内容
 	//block := getFileBlackInformation(c)
 
-	getPostContent(c)
-	//form, _ := c.MultipartForm()
-	//println(form)
+	// 下面的步骤是一次发送就可以上传文件到服务端并存储的过程
+	//file, err := c.FormFile("file")
+	//if err == nil {
+	//			fmt.Println(file.Filename)
+	//			fmt.Println(file.Header)
+	//			fmt.Println(file.Size)
+	//
+	//			c.SaveUploadedFile(file, fmt.Sprintf("/home/cetc/%v", file.Filename))
+	//}
 	fmt.Println("=====================================================")
 
 	c.JSON(200, gin.H{"status": "ok"})
