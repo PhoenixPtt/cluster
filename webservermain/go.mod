@@ -8,6 +8,8 @@ replace (
 	targz => ../targz
 	tcpSocket => ../tcpSocket
 	webserver => ../webserver
+		ctnCommon => ../ctnCommon
+    	ctnServer => ../ctnServer
 )
 
 require (

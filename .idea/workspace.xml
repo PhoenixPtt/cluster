@@ -1,7 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="dee31262-2c25-4ab6-adab-e962473677aa" name="Default Changelist" comment="" />
+    <list default="true" id="dee31262-2c25-4ab6-adab-e962473677aa" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/cluster.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cluster.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clusterAgent/.idea/clusterAgent.iml" beforeDir="false" afterPath="$PROJECT_DIR$/clusterAgent/.idea/clusterAgent.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clusterAgent/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/clusterAgent/go.sum" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clusterAgent/go_build_clusterAgent" beforeDir="false" afterPath="$PROJECT_DIR$/clusterAgent/go_build_clusterAgent" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/webserver/router/jwt/jwt.go" beforeDir="false" afterPath="$PROJECT_DIR$/webserver/router/jwt/jwt.go" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -28,14 +35,60 @@
     <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/clusterServer" />
   </component>
+  <component name="RunManager" selected="Go Build.go build webservermain/">
+    <configuration name="go build clusterAgent/" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+      <module name="cluster" />
+      <working_directory value="$PROJECT_DIR$/clusterAgent" />
+      <go_parameters value="-i" />
+      <kind value="DIRECTORY" />
+      <filePath value="$PROJECT_DIR$/" />
+      <directory value="$PROJECT_DIR$/clusterAgent" />
+      <output_directory value="$PROJECT_DIR$/clusterAgent" />
+      <method v="2" />
+    </configuration>
+    <configuration name="go build webservermain/" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
+      <module name="cluster" />
+      <working_directory value="$PROJECT_DIR$/webservermain" />
+      <go_parameters value="-i" />
+      <kind value="DIRECTORY" />
+      <filePath value="$PROJECT_DIR$/" />
+      <directory value="$PROJECT_DIR$/webservermain" />
+      <output_directory value="$PROJECT_DIR$/webservermain" />
+      <method v="2" />
+    </configuration>
+    <list>
+      <item itemvalue="Go Build.go build webservermain/" />
+      <item itemvalue="Go Build.go build clusterAgent/" />
+    </list>
+  </component>
   <component name="TypeScriptGeneratedFilesManager">
     <option name="version" value="2" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="712" y="274" width="438" height="492" key="FileChooserDialogImpl" timestamp="1597290421668">
+    <state x="418" y="181" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1598344013622">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state x="418" y="181" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1598344013622" />
+    <state x="720" y="337" width="438" height="492" key="FileChooserDialogImpl" timestamp="1598344247586">
       <screen x="0" y="0" width="1920" height="1040" />
     </state>
     <state x="623" y="266" width="438" height="492" key="FileChooserDialogImpl/0.0.1680.1010@0.0.1680.1010" timestamp="1596102412055" />
-    <state x="712" y="274" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1597290421668" />
+    <state x="720" y="337" width="438" height="492" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1598344247586" />
+    <state width="1870" height="272" key="GridCell.Tab.0.bottom" timestamp="1598344249605">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1870" height="272" key="GridCell.Tab.0.bottom/0.0.1920.1040@0.0.1920.1040" timestamp="1598344249605" />
+    <state width="1870" height="272" key="GridCell.Tab.0.center" timestamp="1598344249605">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1870" height="272" key="GridCell.Tab.0.center/0.0.1920.1040@0.0.1920.1040" timestamp="1598344249605" />
+    <state width="1870" height="272" key="GridCell.Tab.0.left" timestamp="1598344249604">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1870" height="272" key="GridCell.Tab.0.left/0.0.1920.1040@0.0.1920.1040" timestamp="1598344249604" />
+    <state width="1870" height="272" key="GridCell.Tab.0.right" timestamp="1598344249605">
+      <screen x="0" y="0" width="1920" height="1040" />
+    </state>
+    <state width="1870" height="272" key="GridCell.Tab.0.right/0.0.1920.1040@0.0.1920.1040" timestamp="1598344249605" />
   </component>
 </project>
