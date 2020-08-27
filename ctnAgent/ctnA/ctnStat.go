@@ -124,16 +124,16 @@ func CtnStats(ctnId string, distAddr string) {
 					ctnStats.PercpuUsageCalc[i] = (ctnStats.CpuStats.CPUUsage.PercpuUsage[i] - ctnStats.PrecpuStats.CPUUsage.PercpuUsage[i]) * 100 / (ctnStats.CpuStats.SystemCPUUsage - ctnStats.PrecpuStats.SystemCPUUsage)
 				}
 
-				//直接发给server端
-				fmt.Println(ctnStats.ID, ctnStats.Read, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
-				fmt.Printf("内存限值：%.2f\n", ctnStats.MemoryStats.Limit)
-				fmt.Printf("内存占有量：%.2f\n", ctnStats.MemoryStats.Stats.ActiveAnon)
-				sum := 0.0
-				for index, val := range ctnStats.PercpuUsageCalc {
-					fmt.Printf("核序号：%d， 单核CPU占有率：%.2f\n", index, val)
-					sum += val
-				}
-				fmt.Printf("单核累加：%.2f，总的CPU占有率：%.2f\n", sum, ctnStats.CPUUsageCalc)
+				////直接发给server端
+				//fmt.Println(ctnStats.ID, ctnStats.Read, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
+				//fmt.Printf("内存限值：%.2f\n", ctnStats.MemoryStats.Limit)
+				//fmt.Printf("内存占有量：%.2f\n", ctnStats.MemoryStats.Stats.ActiveAnon)
+				//sum := 0.0
+				//for index, val := range ctnStats.PercpuUsageCalc {
+				//	fmt.Printf("核序号：%d， 单核CPU占有率：%.2f\n", index, val)
+				//	sum += val
+				//}
+				//fmt.Printf("单核累加：%.2f，总的CPU占有率：%.2f\n", sum, ctnStats.CPUUsageCalc)
 
 				pSaTruck := &ctn.SA_TRUCK{}
 				pSaTruck.Flag = ctn.FLAG_STATS

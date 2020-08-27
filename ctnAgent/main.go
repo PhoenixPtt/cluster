@@ -24,8 +24,8 @@ func main() {
 
 	//启动容器事件监测
 	go ctnA.CtnEvents(G_id)
-	//go ctnA.CtnInfoAll(G_id)
-	//go ctnA.CtnStatsAll(G_id)
+	go ctnA.CtnInfoAll(G_id)
+	go ctnA.CtnStatsAll(G_id)
 	for {
 		fmt.Println("请选择下列操作：")
 		fmt.Println("1.实时上传所有容器资源使用状态")
