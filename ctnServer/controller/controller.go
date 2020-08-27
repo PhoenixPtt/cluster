@@ -65,7 +65,6 @@ func (pController *CONTROLLER) WatchService(svcWatch string, exitChan chan int) 
 			close(pController.svcExitChanMap[svcWatch])
 			delete(pController.svcExitChanMap, svcWatch)
 			return
-		default:
 		}
 	}
 }
@@ -123,7 +122,6 @@ func (pController *CONTROLLER) WatchNodes() {
 			pool.UnregPrivateChanStr(NODE_WATCH)
 			close(pController.exitWatchNodesChan)
 			return
-		default:
 		}
 	}
 }

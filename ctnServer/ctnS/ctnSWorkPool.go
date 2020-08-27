@@ -69,8 +69,6 @@ func (workPool *CTNS_WORK_POOL) Recv(){
 			case uploadChan <- pSaTruck:
 			default:
 			}
-
-		default:
 		}
 	}
 }
