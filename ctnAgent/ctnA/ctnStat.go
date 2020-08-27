@@ -73,24 +73,27 @@ func CancelCtnStatsAll() {
 func CtnStats(ctnId string, distAddr string) {
 	//ctx_Stats context.Context
 	//cancel_Stats context.CancelFunc
-	ctx_Stats, cancel_Stats := context.WithCancel(context.Background())
-	stats, err := cli.ContainerStats(ctx_Stats, ctnId, true)
-	if err != nil {
-		fmt.Errorf("%s", err.Error())
-	}
+	for {
+		ctx_Stats, cancel_Stats := context.WithCancel(context.Background())
+		//cancel_Stats = cancel_Stats
+		stats, err := cli.ContainerStats(ctx_Stats, ctnId, true)
+		if err != nil {
+			fmt.Errorf("%s", err.Error())
+		}
 
-	var count int //采集频率计数
-	count = 0
+		var count int //采集频率计数
+		count = 0
+		//count = count
 
-	decoder := json.NewDecoder(stats.Body)
-	var ctnStats ctn.CTN_STATS
-	cpuNum := runtime.NumCPU()
-	ctnStats.PercpuUsageCalc = make([]float64, cpuNum)
-	for i := 0; i < cpuNum; i++ {
-		ctnStats.CpuStats.CPUUsage.PercpuUsage = make([]float64, cpuNum)
-		ctnStats.PrecpuStats.CPUUsage.PercpuUsage = make([]float64, cpuNum)
-	}
-for {
+		decoder := json.NewDecoder(stats.Body)
+		//decoder = decoder
+		var ctnStats ctn.CTN_STATS
+		cpuNum := runtime.NumCPU()
+		ctnStats.PercpuUsageCalc = make([]float64, cpuNum)
+		for i := 0; i < cpuNum; i++ {
+			ctnStats.CpuStats.CPUUsage.PercpuUsage = make([]float64, cpuNum)
+			ctnStats.PrecpuStats.CPUUsage.PercpuUsage = make([]float64, cpuNum)
+		}
 		select {
 		case <-ctx_Stats.Done():
 			stats.Body.Close()
@@ -122,15 +125,15 @@ for {
 				}
 
 				//直接发给server端
-				//fmt.Println(ctnStats.ID, ctnStats.Read, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
-				//fmt.Printf("内存限值：%.2f\n", ctnStats.MemoryStats.Limit)
-				//fmt.Printf("内存占有量：%.2f\n", ctnStats.MemoryStats.Stats.ActiveAnon)
-				//sum := 0.0
-				//for index, val := range ctnStats.PercpuUsageCalc {
-				//	fmt.Printf("核序号：%d， 单核CPU占有率：%.2f\n", index, val)
-				//	sum += val
-				//}
-				//fmt.Printf("单核累加：%.2f，总的CPU占有率：%.2f\n", sum, ctnStats.CPUUsageCalc)
+				fmt.Println(ctnStats.ID, ctnStats.Read, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
+				fmt.Printf("内存限值：%.2f\n", ctnStats.MemoryStats.Limit)
+				fmt.Printf("内存占有量：%.2f\n", ctnStats.MemoryStats.Stats.ActiveAnon)
+				sum := 0.0
+				for index, val := range ctnStats.PercpuUsageCalc {
+					fmt.Printf("核序号：%d， 单核CPU占有率：%.2f\n", index, val)
+					sum += val
+				}
+				fmt.Printf("单核累加：%.2f，总的CPU占有率：%.2f\n", sum, ctnStats.CPUUsageCalc)
 
 				pSaTruck := &ctn.SA_TRUCK{}
 				pSaTruck.Flag = ctn.FLAG_STATS
