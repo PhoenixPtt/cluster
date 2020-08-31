@@ -102,7 +102,6 @@ func (workPool *CTNA_WORKPOOL) Recv() {
 			pSaTruck.Req_Ans[0] = reqAns
 			pSendChan := workPool.GetSendChan()
 			pSendChan <- pSaTruck
-		default:
 		}
 	}
 }
