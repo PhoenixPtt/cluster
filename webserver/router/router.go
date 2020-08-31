@@ -10,6 +10,8 @@ import (
 	myjwt "webserver/router/jwt"
 )
 
+var DebugMode bool = false
+
 func Init(rout *gin.Engine) bool {
 	// 给表单限制上传大小 (默认 32 MiB)
 	// rout.MaxMultipartMemory = 8 << 20  // 8 MiB
