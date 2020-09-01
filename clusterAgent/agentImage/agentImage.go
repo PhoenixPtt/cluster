@@ -175,7 +175,7 @@ func BuildImageOfBinaryProcess(imageName string, tags []string, filename string,
 		}
 		content := "#!/bin/sh\n# 可执行程序名\nappname=$1\n# 目标文件夹\ndst=\"./app\"\n# 利用 ldd 提取依赖库的具体路径\n" +
 			"liblist=$(ldd $appname | awk '{ if (match($3,\"/\")){ printf(\"%s \"), $3 } }')\n# 目标文件夹的检测\n" +
-			"if [ ! -d $dst ];then\nmkdir $dst\nfi\n# 拷贝库文件和可执行程序到目标文件夹\ncp $liblist $dst\nmv $appname $dst\ncp $appname $dst\n\n" +
+			"if [ ! -d $dst ];then\nmkdir $dst\nfi\n# 拷贝库文件和可执行程序到目标文件夹\ncp $liblist $dst\n#mv $appname $dst\ncp $appname $dst\n\n" +
 			"chmod -R 777 $dst\ncd $dst\n\n#写dockerfile文件\necho FROM ubuntu:16.04.3 > Dockerfile\necho MAINTAINER Docker CETC15 >> Dockerfile\n" +
 			"echo ADD ./app/* /lib/ >> Dockerfile\necho ADD ./app/$appname /a.out >> Dockerfile\necho WORKDIR / >> Dockerfile\n" +
 			"#echo CMD [ \"mv\",\"/lib/\"$appname,\"/\" ] >> Dockerfile\necho CMD [ '\"./a.out\"' ] >> Dockerfile\n\n" +
