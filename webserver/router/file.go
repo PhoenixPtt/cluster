@@ -34,9 +34,10 @@ type FileInformation struct {
 
 // 接收文件对象，用于在接收文件时对文件数据的管理
 type ReceiveFileObject struct {
-	FileInformation
-	BlockArray     []FileBlock // 文件块数组
-	RecBlockStatus []bool      // 接收块的状态
+	FInfo          FileInformation // 文件信息结构体
+	BlockArray     []FileBlock     // 文件块数组
+	RecBlockStatus []bool          // 接收块的状态
+	WriteIndex     int             // 待写入块号序号
 }
 
 // 文件块信息结构体
@@ -102,6 +103,8 @@ func receiveFile(c *gin.Context) {
 					errcode.ErrorCodeUnknown.WithMessage(fmt.Sprintf("写入文件出现问题：", err)))
 				return
 			}
+		} else if info.SumBlock > 0 {
+			// 此时为多块文件，需要创建多块文件处理对象，进行多块文件的处理
 		}
 	} else {
 		serveErrorJSON(c,
@@ -150,8 +153,9 @@ func singleWriteFile(fileInfo FileInformation, content []byte) (bool, error) {
 	disFilePath := fileInfo.FilePath + fileInfo.FileName
 	// 如果目标文件存在，则进行删除操作
 	if IsExist(disFilePath) {
-		err := os.Remove(disFilePath)
-		return false, err
+		if err := os.Remove(disFilePath); err != nil {
+			return false, err
+		}
 	}
 
 	// 目前是由当前程序创建的文件才能使用
@@ -306,7 +310,7 @@ func getFileInformation(origin map[string][]string) (FileInformation, int) {
 		}
 	}
 
-	// 存储文件的路径目前有全局变量设置，所以在这里暂定为路径下
+	// 存储文件的路径目前有全局变量设置，所以在这里暂定为以下路径
 	u, err := user.Current()
 	if nil == err {
 		info.FilePath = u.HomeDir + "/test/"
