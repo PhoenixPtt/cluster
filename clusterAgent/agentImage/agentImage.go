@@ -33,7 +33,8 @@ var UserName string
 var PassWord string
 var DockerfilePath = "/home/cetc15/dockfileimage/"
 var ImageSavePath = "/home/cetc15/桌面/"
-var ImageLoadPath = "/home/cetc15/下载/images/"
+//var ImageLoadPath = "/home/cetc15/下载/images/"
+var ImageLoadPath = "/home/cetc15/test/"
 
 const (
 	TagImages = iota //0
@@ -156,32 +157,54 @@ func BuildImage(sourcePath string, imageName string, tags []string, remove bool)
 }
 
 //通过客户端的字节流（应用程序）构建镜像
-func BuildImageOfBinaryProcess(imageName string, tags []string, bodybyte []byte, remove bool) error {
-
+//func BuildImageOfBinaryProcess(imageName string, tags []string, bodybyte []byte, remove bool) error {
+func BuildImageOfBinaryProcess(imageName string, tags []string, filename string, remove bool) error {
 	var err error
+	err = os.Chdir(ImageLoadPath)
+	if err != nil {
+		return err
+	}
+	//判断可执行文件是否存在
+	execfile := "exe-to-app.sh"
+	_, filestat := os.Stat(execfile)
+	if filestat != nil {
+		dstFile, fileerr := os.Create(execfile)
+		if fileerr != nil {
+			return fileerr
+		}
+		defer dstFile.Close()
+		content := "#!/bin/sh\n# 可执行程序名\nappname=$1\n# 目标文件夹\ndst=\"./app\"\n# 利用 ldd 提取依赖库的具体路径\n" +
+			"liblist=$(ldd $appname | awk '{ if (match($3,\"/\")){ printf(\"%s \"), $3 } }')\n# 目标文件夹的检测\n" +
+			"if [ ! -d $dst ];then\nmkdir $dst\nfi\n# 拷贝库文件和可执行程序到目标文件夹\ncp $liblist $dst\nmv $appname $dst\n\n" +
+			"chmod -R 777 $dst\ncd $dst\n\n#写dockerfile文件\necho FROM ubuntu:16.04.3 > Dockerfile\necho MAINTAINER Docker CETC15 >> Dockerfile\n" +
+			"echo ADD ./app/* /lib/ >> Dockerfile\necho ADD ./app/$appname /a.out >> Dockerfile\necho WORKDIR / >> Dockerfile\n" +
+			"#echo CMD [ \"mv\",\"/lib/\"$appname,\"/\" ] >> Dockerfile\necho CMD [ '\"./a.out\"' ] >> Dockerfile\n\n" +
+			"chmod -R 777 Dockerfile\n#mv Dockerfile $dst"
+		dstFile.WriteString(content + "\n")
+	}
+	log.Println("111111111111111111111111111")
+	_, execerr := header.ExecCmd("chmod", "777", execfile)
+	if execerr != nil {
+		return execerr
+	}
+	log.Println("222222222222222222222222222")
+
 	Cli.SetCustomHTTPHeaders(map[string]string{"Content-type": "application/x-tar"})
 	tarName := "app"
-	log.Println("&&&&&&&&&&&&&&&&&bodybyte&&&&&&&&&&&&&&&")
 
-	readerr := header.ReadByteTofile(DockerfilePath, imageName, bodybyte)
-	if readerr != nil {
-		return readerr
-	}
+	//readerr := header.ReadByteTofile(DockerfilePath, imageName, bodybyte)
+	//if readerr != nil {
+	//	return readerr
+	//}
 
-	log.Println("&&&&&&&&&&&&&&&&&111&&&&&&&&&&&&&&&")
-	//create the binary process cli
-	err = os.Chdir(DockerfilePath)
+	//exec image file create the binary process cli
+	_, err = header.ExecCmd("./exe-to-app.sh", filename)
 	if err != nil {
 		return err
 	}
-	_, err = header.ExecCmd("./exe-to-app.sh", imageName)
-	if err != nil {
-		return err
-	}
-	log.Println("&&&&&&&&&&&&&&&&&222&&&&&&&&&&&&&&&")
 
 	//tar file
-	sourcePath := DockerfilePath + tarName
+	sourcePath := ImageLoadPath + tarName
 	tarfilename := sourcePath + ".tar"
 	err = targz.TarGz(sourcePath, tarfilename, true)
 	if err != nil {
@@ -191,8 +214,6 @@ func BuildImageOfBinaryProcess(imageName string, tags []string, bodybyte []byte,
 			return err
 		}
 	}
-	log.Println("&&&&&&&&&&&&&&&&&333&&&&&&&&&&&&&&&")
-
 	dockerBuildContext, err := os.Open(tarfilename)
 	if err != nil {
 		log.Printf(err.Error())
@@ -218,7 +239,6 @@ func BuildImageOfBinaryProcess(imageName string, tags []string, bodybyte []byte,
 		log.Printf(err.Error())
 		return err
 	}
-	log.Println("&&&&&&&&&&&&&&&&&444&&&&&&&&&&&&&&&")
 
 	image, err := ioutil.ReadAll(imagebuildresp.Body)
 	if err != nil {
@@ -226,8 +246,6 @@ func BuildImageOfBinaryProcess(imageName string, tags []string, bodybyte []byte,
 		return err
 
 	}
-	log.Println("&&&&&&&&&&&&&&&&&555&&&&&&&&&&&&&&&")
-
 	log.Printf("成功构建镜像的时间是 : %s\n body is %s", time.Since(mtime), string(image))
 
 	for _, image := range imageNameList {
@@ -542,18 +560,19 @@ func PushImage(imageName string, all bool) error {
 	return nil
 }
 
-func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags []string, imagebody []byte) error {
-
+//func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags []string, imagebody []byte) error {
+func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags []string, filename string) error {
 	var err error
 	dealType := header.FLAG_IMAG_LOAD
-	//add image to docker image list
-	loadPath := ImageLoadPath + imageName + ".tar"
-	ioreader := bytes.NewBuffer(imagebody)
-	err = targz.Tar(ioreader, loadPath)
-	if err != nil {
-		returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", "LOAD操作中，压缩字节流的过程失败！"+err.Error())
-		return err
-	}
+	////add image to docker image list
+	//loadPath := ImageLoadPath + imageName + ".tar"
+	//ioreader := bytes.NewBuffer(imagebody)
+	//err = targz.Tar(ioreader, loadPath)
+	//if err != nil {
+	//	returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", "LOAD操作中，压缩字节流的过程失败！"+err.Error())
+	//	return err
+	//}
+	loadPath := ImageLoadPath + filename
 	//load image
 	err = LoadImage(loadPath, true)
 	if err != nil {
@@ -569,7 +588,7 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 		err = TagImage(tagName, tagName, true)
 		if err != nil {
 			//返回客户端结果
-			errstr := "LOAD操作中，load成功后，tag"+tagName+"镜像的过程失败！"
+			errstr := "LOAD操作中，load成功后，tag" + tagName + "镜像的过程失败！"
 			returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", errstr+err.Error())
 			return err
 		}
@@ -580,12 +599,12 @@ func UploadImageToRegistry(handle string, pkgId uint16, imageName string, tags [
 			_, rmerr := RemoveImage(tagName, true, false)
 			if rmerr != nil {
 				//deal error
-				rmerrstr := "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，未能删除被tag的镜像！"
+				rmerrstr := "LOAD操作中，load成功后，tag" + tagName + "成功," + "push失败后，未能删除被tag的镜像！"
 
-				returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE",rmerrstr+ rmerr.Error())
+				returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", rmerrstr+rmerr.Error())
 				return rmerr
 			}
-			pusherr := "LOAD操作中，load成功后，tag"+tagName+"成功,"+"push失败后，已经删除被tag的镜像！"
+			pusherr := "LOAD操作中，load成功后，tag" + tagName + "成功," + "push失败后，已经删除被tag的镜像！"
 			returnResultToServer(handle, pkgId, dealType, imageName, tags, "", "FALSE", pusherr+err.Error())
 			return err
 		}
@@ -602,8 +621,11 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	dealType := imagedata.DealType
 	imagename := imagedata.ImageName
 	tags := imagedata.Tags
-	if((dealType == "") || (imagename == "")){
+
+	fmt.Println("imagedataimagedataimagedata6666666666666666", imagedata)
+	if (dealType == "") || (imagename == "") {
 		returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "镜像信息不全，请重新操作！")
+		return
 	}
 	if len(tags) <= 0 {
 		tags = append(tags, "latest")
@@ -614,8 +636,12 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 	switch dealType {
 	case header.FLAG_IMAG_BUID:
 		// build image 先将接收到的base64编码的二进制文件进行解码
-		basebd,_ := base64.StdEncoding.DecodeString(imagebody)
-		err := BuildImageOfBinaryProcess(imagename, tags, basebd, true)
+		//basebd, _ := base64.StdEncoding.DecodeString(imagebody)
+		if strings.Contains(imagebody, ".") {
+			returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "BUILD操作中，导入的文件非二进制文件！")
+			return
+		}
+		err := BuildImageOfBinaryProcess(imagename, tags, imagebody, true)
 		if err != nil {
 			//返回客户端结果
 			returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "BUILD操作中，构建镜像过程失败！"+err.Error())
@@ -624,8 +650,6 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 
 		for _, tag := range tags {
 			tagName := imagename + ":" + tag
-			log.Println("tagName", tagName)
-
 			err := TagImage(tagName, tagName, true)
 			if err != nil {
 				//返回客户端结果
@@ -655,19 +679,25 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			}
 		}
 		//删除app两个文件
-		_, execerr := header.ExecCmd("rm", "-rf", DockerfilePath+"app", DockerfilePath+"app.tar")
-		if execerr != nil {
-			log.Println("删除app两个文件失败")
-		}
+		//_, execerr := header.ExecCmd("rm", "-rf", DockerfilePath+"app", DockerfilePath+"app.tar")
+		//if execerr != nil {
+		//	log.Println("删除app两个文件失败")
+		//}
 		log.Println("文件删除成功")
-		sendData = "agent端构建镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
+		sendData = "agent端构建镜像" + imagename + ":[" + strings.Join(tags, ",") + "] 成功"
 	case header.FLAG_IMAG_LOAD:
-		basebd,_ := base64.StdEncoding.DecodeString(imagebody)
-		err := UploadImageToRegistry(handle, pkgId, imagename, tags, basebd )//[]byte(imagebody)
+		//basebd,_ := base64.StdEncoding.DecodeString(imagebody)
+
+		if !strings.Contains(imagebody, "tar") {
+			returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "LOAD操作中，导入的文件格式错误！")
+			return
+		}
+		err := UploadImageToRegistry(handle, pkgId, imagename, tags, imagebody) //[]byte(imagebody)
 		if err == nil {
 			log.Println("agent端加载镜像成功")
-			sendData = "agent端加载镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
+			sendData = "agent端加载镜像" + imagename + ":[" + strings.Join(tags, ",") + "] 成功"
 		} else {
+			returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", "LOAD操作失败！"+err.Error())
 			return
 		}
 	case header.FLAG_IMAG_PUSH:
@@ -683,9 +713,9 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			}
 		}
 		log.Println("agent端推送镜像成功")
-		sendData = "agent端推送镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
+		sendData = "agent端推送镜像" + imagename + ":[" + strings.Join(tags, ",") + "] 成功"
 	case header.FLAG_IMAG_SAVE:
-		saveName := imagename + ".tar.gz"
+		saveName := imagename + ".tar"
 		bodybyte, err := SaveImageToAgent(tags, ImageSavePath, saveName)
 		if err != nil {
 			//返回客户端结果
@@ -694,7 +724,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 		}
 		log.Println("agent端保存镜像成功")
 		imagebody = string(bodybyte)
-		sendData = "agent端保存镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
+		sendData = "agent端保存镜像" + imagename + ":[" + strings.Join(tags, ",") + "] 成功"
 		//sendData = string(bodybyte)
 	// case header.DELETE:
 	// 	for _, tag := range tags {
@@ -721,13 +751,13 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 			err := PullImage(tagName, false)
 			if err != nil {
 				//返回客户端结果
-				errstr := "DISTRACT操作中，分发"+tagName+"镜像的过程失败！"
+				errstr := "DISTRACT操作中，分发" + tagName + "镜像的过程失败！"
 				returnResultToServer(handle, pkgId, dealType, imagename, tags, "", "FALSE", errstr+err.Error())
 				return
 			}
 		}
 		log.Println("agent端分发镜像成功")
-				sendData = "agent端分发镜像"+imagename+":["+strings.Join(tags,",") +"] 成功"
+		sendData = "agent端分发镜像" + imagename + ":[" + strings.Join(tags, ",") + "] 成功"
 	// case header.TAG:
 	// 	for _, tag := range tags {
 	// 		tagName := imagename + ":" + tag
@@ -745,7 +775,7 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 		return
 	}
 
-	if(dealType != header.FLAG_IMAG_SAVE){
+	if dealType != header.FLAG_IMAG_SAVE {
 		imagebody = ""
 	}
 	returnResultToServer(handle, pkgId, dealType, imagename, tags, imagebody, "SUCCESS", sendData)
@@ -753,14 +783,49 @@ func RecieveDataFromServer(handle string, pkgId uint16, imagedata header.ImageDa
 }
 
 func returnResultToServer(handle string, pkgId uint16, dealType string, imagename string, tags []string, imagebody string, result string, err string) {
-
+	if dealType == header.FLAG_IMAG_BUID {
+		//删除生成的文件
+		fileerr := deleteDockerfile()
+		if fileerr != "" {
+			err = err + "fileerr: " + fileerr
+		}
+	}
 	newdata := header.ImageData{}.From(dealType, imagename, tags, imagebody, result, err)
 	sendbyte := header.JsonByteArray(newdata)
 
 	log.Println("agent端返回给server端的数据", dealType, imagename, tags, result, err)
 	var grade = tcpSocket.TCP_TPYE_CONTROLLER
-	if dealType == header.FLAG_IMAG_SAVE{
+	if dealType == header.FLAG_IMAG_SAVE {
 		grade = tcpSocket.TCP_TYPE_FILE
 	}
+
 	tcpSocket.WriteData(handle, grade, pkgId, "IMAG", sendbyte)
+}
+
+
+func FileChecker(filename string) bool {
+	//file_path := BasePath + filename
+	_, err := os.Stat(filename)
+	if err == nil {
+		return true
+	} else {
+		return false
+	}
+}
+func deleteDockerfile() string {
+	fileNameList := []string{ImageLoadPath + "app", ImageLoadPath + "app.tar"}
+	errstr := []string{}
+	for _, value := range fileNameList {
+		if(FileChecker(value)){
+			_, execerr := header.ExecCmd("rm", "-rf", value)
+			if execerr != nil {
+				errstr = append(errstr, "删除"+value+"失败: "+execerr.Error())
+			}
+		}
+	}
+	if len(errstr) <= 0 {
+		return strings.Join(errstr, ",")
+	}
+	log.Println("文件删除成功")
+	return ""
 }
