@@ -23,6 +23,9 @@ func Init() error {
 	// logger and recovery (crash-free) 中间件
 	serEngine := gin.Default()
 
+	// 设置Debug模式
+	router.DebugMode = true
+
 	// 初始化路由对象，如果不能正常初始化，则返回false以及错误信息
 	if !router.Init(serEngine) {
 		err := fmt.Errorf("router initial is fail")
