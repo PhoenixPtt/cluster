@@ -167,27 +167,30 @@ func BuildImageOfBinaryProcess(imageName string, tags []string, filename string,
 	//判断可执行文件是否存在
 	execfile := "exe-to-app.sh"
 	_, filestat := os.Stat(execfile)
+
 	if filestat != nil {
 		dstFile, fileerr := os.Create(execfile)
 		if fileerr != nil {
 			return fileerr
 		}
-		defer dstFile.Close()
 		content := "#!/bin/sh\n# 可执行程序名\nappname=$1\n# 目标文件夹\ndst=\"./app\"\n# 利用 ldd 提取依赖库的具体路径\n" +
 			"liblist=$(ldd $appname | awk '{ if (match($3,\"/\")){ printf(\"%s \"), $3 } }')\n# 目标文件夹的检测\n" +
-			"if [ ! -d $dst ];then\nmkdir $dst\nfi\n# 拷贝库文件和可执行程序到目标文件夹\ncp $liblist $dst\nmv $appname $dst\n\n" +
+			"if [ ! -d $dst ];then\nmkdir $dst\nfi\n# 拷贝库文件和可执行程序到目标文件夹\ncp $liblist $dst\nmv $appname $dst\ncp $appname $dst\n\n" +
 			"chmod -R 777 $dst\ncd $dst\n\n#写dockerfile文件\necho FROM ubuntu:16.04.3 > Dockerfile\necho MAINTAINER Docker CETC15 >> Dockerfile\n" +
 			"echo ADD ./app/* /lib/ >> Dockerfile\necho ADD ./app/$appname /a.out >> Dockerfile\necho WORKDIR / >> Dockerfile\n" +
 			"#echo CMD [ \"mv\",\"/lib/\"$appname,\"/\" ] >> Dockerfile\necho CMD [ '\"./a.out\"' ] >> Dockerfile\n\n" +
 			"chmod -R 777 Dockerfile\n#mv Dockerfile $dst"
-		dstFile.WriteString(content + "\n")
+		_,writeerr := dstFile.WriteString(content + "\n")
+		dstFile.Close()
+		if(writeerr != nil){
+			return  writeerr
+		}
 	}
-	log.Println("111111111111111111111111111")
+
 	_, execerr := header.ExecCmd("chmod", "777", execfile)
 	if execerr != nil {
 		return execerr
 	}
-	log.Println("222222222222222222222222222")
 
 	Cli.SetCustomHTTPHeaders(map[string]string{"Content-type": "application/x-tar"})
 	tarName := "app"
