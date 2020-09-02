@@ -5,7 +5,6 @@ import (
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
 	"ctnServer/ctnS"
-	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 )
@@ -39,7 +38,7 @@ func (pController *CONTROLLER) Daq(){
 				pWebServices := ToWebService(pController, ctnInfoMap, ctnStatMap)
 				select {
 				case pool.GetPrivateChanStr(UPLOAD) <- pWebServices:
-					fmt.Println("666666666666666666666666666666", pWebServices)
+					//fmt.Println("666666666666666666666666666666", pWebServices)
 				default:
 				}
 			case ctn.FLAG_STATS://更新资源使用情况

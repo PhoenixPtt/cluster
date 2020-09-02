@@ -102,7 +102,7 @@ func (pCtn *CTNA) Create() (string, error) {
 		auth, _ := registryAuth(true, "docker", "27MTjlJyZWD0XxLf7C_SxOLlYpaprdzURn-Ec10Ew-U")
 		var options types.ImagePullOptions
 		options.RegistryAuth = auth
-		_, err := Cli.ImagePull(ctx, pCtn.Image, options)
+		_, err := cli.ImagePull(ctx, pCtn.Image, options)
 		if err != nil {
 			return ERR_TYPE_IMAGE_PULL, err
 		}

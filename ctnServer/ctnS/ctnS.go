@@ -1,12 +1,11 @@
 package ctnS
 
 import (
+	"context"
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
 	"errors"
-	"fmt"
 	"time"
-	"unsafe"
 )
 
 const (
@@ -70,13 +69,16 @@ func (pCtnS *CTNS) GetLog() (log string, err error) {
 	pSaTruck.Req_Ans = make([]ctn.REQ_ANS, 1)
 	pSaTruck.Req_Ans[0].CtnOper = ctn.GETLOG
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
-	pObj := (*interface{})(unsafe.Pointer(pSaTruck))
 
 	pool.RegPrivateChanInt(pSaTruck.Index,1)
 	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
 	GetSendChan() <- pSaTruck
+	ctx, cancel:=context.WithTimeout(context.Background(), time.Second * time.Duration(5))
 	select {
-	case GetSendChan() <- pObj:
+	case <-ctx.Done():
+		close(pPrivateChan)
+		cancel()
+		return "", errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
 		pSaAnsTruck := obj.(*ctn.SA_TRUCK)
 		if len(pSaAnsTruck.Req_Ans) < 1 {
@@ -88,9 +90,6 @@ func (pCtnS *CTNS) GetLog() (log string, err error) {
 			log, err = pCtnS.GetLog()
 			return
 		}
-	case _ = <-time.After(time.Duration(20)):
-		return "", errors.New(ERR_CTN_TIMEOUT)
-	default:
 	}
 
 	return
@@ -110,7 +109,12 @@ func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
 	pool.RegPrivateChanInt(pSaTruck.Index, 1)
 	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
 	GetSendChan() <- pSaTruck
+	ctx, cancel:=context.WithTimeout(context.Background(), time.Second * time.Duration(5))
 	select {
+	case <-ctx.Done():
+		close(pPrivateChan)
+		cancel()
+		return ctnInspect, errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
 		pSaAnsTruck := obj.(*ctn.SA_TRUCK)
 		if len(pSaAnsTruck.Req_Ans) < 1 {
@@ -122,9 +126,6 @@ func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
 			ctnInspect, err = pCtnS.Inspect()
 		}
 		return
-	case _ = <-time.After(time.Duration(20)):
-		return ctnInspect, errors.New(ERR_CTN_TIMEOUT)
-	default:
 	}
 
 	return
@@ -145,14 +146,18 @@ func (pCtnS *CTNS) Oper(operFlag string) (errType string, err error) {
 	pool.RegPrivateChanInt(pSaTruck.Index, 1)
 	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
 	GetSendChan() <- pSaTruck
+	ctx, cancel:=context.WithTimeout(context.Background(), time.Second * time.Duration(5))
 	select {
+	case <-ctx.Done():
+		close(pPrivateChan)
+		cancel()
+		return ERR_CTN_TIMEOUT, errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
 		pSaAnsTruck := obj.(*ctn.SA_TRUCK)
 		if len(pSaAnsTruck.Req_Ans) < 1 {
 			return ERR_CTN_NILANS, errors.New(ERR_CTN_NILANS)
 		}
 		reqAns := pSaAnsTruck.Req_Ans[0]
-		fmt.Println("UUUUUUUUUUUUUUUUUUUUUUUUUUUUU", pSaAnsTruck.Index, reqAns.CtnState)
 		switch reqAns.CtnOper {
 		case ctn.CREATE, ctn.RUN:
 			UpdateCtnID(pCtnS, reqAns.CtnID[0])
@@ -176,9 +181,6 @@ func (pCtnS *CTNS) Oper(operFlag string) (errType string, err error) {
 			}
 		}
 		return
-	case <-time.After(time.Second * time.Duration(20)):
-		close(pPrivateChan)
-		return ERR_CTN_TIMEOUT, errors.New(ERR_CTN_TIMEOUT)
 	}
 
 	return

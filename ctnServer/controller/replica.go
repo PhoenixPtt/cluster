@@ -66,6 +66,7 @@ func (rpl *REPLICA) WatchCtn() {
 		select {
 		case obj := <-pool.GetPrivateChanStr(rpl.CtnName):
 			ctnStatus := obj.(string)
+			fmt.Println("KKKKKKKKKKKKKKKKKKKKKKKKK",ctnStatus)
 			switch ctnStatus {
 			case ctnS.CTN_STATUS_RUNNING:
 				switch rpl.RplTargetStat {
@@ -143,9 +144,10 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 
 Error:
 	if !rpl.Dirty {
-		//rpl.Dirty = true
 		pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-		pChan <- RPL_STATUS_GODIRTY
+		statusMap := make(map[string]int, 1)
+		statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
+		pChan <- statusMap
 	}
 	log = fmt.Sprintf("%s执行Run操作执行失败。错误类型：%s；错误详情：%s\n", rpl.RplName, errType, errors.New(err.Error()))
 	Mylog.Info(log)

@@ -27,7 +27,6 @@ var (
 
 func init() {
 	g_controller = controller.NewController(mySendCtn)
-	g_controller.Start()
 	//go cluster.MsgEvent()
 }
 
@@ -38,6 +37,8 @@ func main() {
 		fmt.Println("请选择操作类型：")
 		fmt.Println("1.服务操作")
 		fmt.Println("2.容器操作")
+		fmt.Println("3.启动集群")
+		fmt.Println("4.停止集群")
 		fmt.Printf("请输入操作序号：")
 		var sOc int //标识是服务操作还是容易操作
 		fmt.Scanln(&sOc)
@@ -226,6 +227,10 @@ func main() {
 					}
 				}
 			}
+		case 3: //启动集群
+			g_controller.Start()
+		case 4: //停止集群
+			g_controller.Stop()
 		default:
 			continue
 		}
