@@ -1,6 +1,9 @@
 package controller
 
-import "sync"
+import (
+	"context"
+	"sync"
+)
 
 const (
 	CTN_SIZE = 1000
@@ -26,7 +29,7 @@ type SERVICE struct {
 
 	Replicas         []*REPLICA      //服务的副本
 	NodeStatusMap    map[string]bool //节点状态映射表
-	exitWatchRplChan chan int
+	CancelWatchRpl context.CancelFunc
 	//SchedulePOLICY				//服务的调度策略
 
 	mutex sync.Mutex
@@ -41,13 +44,12 @@ func NewService(pSvcCfg *SVC_CFG) (pSvc *SERVICE) {
 	pSvc.Replicas = make([]*REPLICA, 0, CTN_SIZE)
 	pSvc.NodeStatusMap = make(map[string]bool, CTN_SIZE)
 	pSvc.SvcStats = SVC_DEFAULT
-	pSvc.exitWatchRplChan = make(chan int, 1)
 	go pSvc.WatchRpl()
 	return
 }
 
 func DelService(pSvc *SERVICE) {
-	pSvc.exitWatchRplChan <- 1
+	pSvc.CancelWatchRpl()
 }
 
 //以文件作为配置参数创建服务对象

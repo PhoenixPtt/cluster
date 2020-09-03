@@ -1,5 +1,9 @@
 package controller
 
+import (
+	"context"
+)
+
 //副本结构体
 type REPLICA struct {
 	RplName       string //副本名称
@@ -12,5 +16,5 @@ type REPLICA struct {
 	Dirty         bool   //标记副本为脏
 	RplStatus     string //副本状态
 	CtnName       string //在容器池中的索引号
-	exitWatchCtnChan chan int
+	CancelWatchCtn context.CancelFunc
 }

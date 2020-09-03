@@ -6,11 +6,6 @@ import (
 	"fmt"
 )
 
-var (
-	cancelWatchNodes context.CancelFunc
-	cancelWatchSvcStatus context.CancelFunc
-)
-
 //启动集群
 func (pController *CONTROLLER) Start() {
 	go pController.Daq()
@@ -21,27 +16,42 @@ func (pController *CONTROLLER) Start() {
 //停止集群
 func (pController *CONTROLLER) Stop() {
 	pController.CancelDaq()
-	pController.CancelWatchNode()
-	pController.CancelWatchServiceStatus()
+	pController.CancelWatchNodes()
+	pController.CancelWatchSvcStatus()
 }
 
 func (pController *CONTROLLER) PutService(pSvcOperTruck *SERVICE_OPER_TRUCK) {
 	svcWatch := GetServiceWatchKey(pSvcOperTruck.SvcName)
-	if pSvcOperTruck.OperType == SCREATE {
+	switch pSvcOperTruck.OperType {
+	case SCREATE:
 		pool.RegPrivateChanStr(svcWatch, CHAN_BUFFER)
-		svcExitChan := make(chan int, 1)
-		pController.svcExitChanMap[svcWatch] = svcExitChan
-		go pController.WatchService(svcWatch, pController.svcExitChanMap[svcWatch])
+		go pController.WatchService(svcWatch)
+		pChan := pool.GetPrivateChanStr(svcWatch)
+		pChan <- pSvcOperTruck
+	case SREMOVE:
+		pController.CancelWatchSvcs[svcWatch]()
+	default:
+		pChan := pool.GetPrivateChanStr(svcWatch)
+		pChan <- pSvcOperTruck
 	}
-	pChan := pool.GetPrivateChanStr(svcWatch)
-	pChan <- pSvcOperTruck
 }
 
 //集群工作协程
-func (pController *CONTROLLER) WatchService(svcWatch string, exitChan chan int) {
+func (pController *CONTROLLER) WatchService(svcWatch string) {
+	ctx,cancel:=context.WithCancel(context.Background())
+	_,ok:=pController.CancelWatchSvcs[svcWatch]
+	if !ok{
+		pController.CancelWatchSvcs[svcWatch] = cancel
+	}else{
+		return
+	}
 	var err error
 	for {
 		select {
+		case <-ctx.Done():
+			pool.UnregPrivateChanStr(svcWatch)
+			delete(pController.CancelWatchSvcs, svcWatch)
+			return
 		case obj := <-pool.GetPrivateChanStr(svcWatch):
 			pClstOper := obj.(*SERVICE_OPER_TRUCK)
 			switch pClstOper.OperType {
@@ -67,28 +77,22 @@ func (pController *CONTROLLER) WatchService(svcWatch string, exitChan chan int) 
 			fmt.Printf("服务名称：%s\n", pClstOper.SvcName)
 			fmt.Printf("服务操作：%s\n", pClstOper)
 			fmt.Printf("应答错误：%s\n", err.Error())
-		case <-pController.svcExitChanMap[svcWatch]:
-			pool.UnregPrivateChanStr(svcWatch)
-			close(pController.svcExitChanMap[svcWatch])
-			delete(pController.svcExitChanMap, svcWatch)
-			return
 		}
 	}
 }
 
 func (pController *CONTROLLER) CancelWatchService(svcWatch string) {
-	_, ok := pController.svcExitChanMap[svcWatch]
-	if ok {
-		svcExitChan := pController.svcExitChanMap[svcWatch]
-		svcExitChan <- 1
+	_,ok:=pController.CancelWatchSvcs[svcWatch]
+	if ok{
+		fmt.Println("GGGGGGGGGGGGGGGGGGGGGGGGGGGGG","停止监控",svcWatch)
+		pController.CancelWatchSvcs[svcWatch]()
 	}
 }
 
 func (pController *CONTROLLER) WatchServiceStatus() {
-	//pController.exitWatchSvcStatusChan = make(chan int, 1)
 	pool.RegPrivateChanStr(SERVICE_STATUS_WATCH, CHAN_BUFFER)
 	var ctx context.Context
-	ctx,cancelWatchSvcStatus=context.WithCancel(context.Background())
+	ctx,pController.CancelWatchSvcStatus=context.WithCancel(context.Background())
 	for {
 		select {
 		case <-ctx.Done():
@@ -107,20 +111,9 @@ func (pController *CONTROLLER) WatchServiceStatus() {
 					fmt.Println(svcName, "已被删除", "哈哈哈哈")
 				}
 			}
-		//case <-pController.exitWatchSvcStatusChan:
-		//	pool.UnregPrivateChanStr(SERVICE_STATUS_WATCH)
-		//	close(pController.exitWatchSvcStatusChan)
-		//	return
 		}
 	}
 }
-
-
-func (pController *CONTROLLER) CancelWatchServiceStatus() {
-	//pController.exitWatchNodesChan <- 1
-	cancelWatchSvcStatus()
-}
-
 
 func (pController *CONTROLLER) PutNode(nodeName string, status bool) {
 	nodeStatusMap := make(map[string]bool, 1)
@@ -132,7 +125,7 @@ func (pController *CONTROLLER) PutNode(nodeName string, status bool) {
 func (pController *CONTROLLER) WatchNodes() {
 	pool.RegPrivateChanStr(NODE_WATCH, CHAN_BUFFER)
 	var ctx context.Context
-	ctx,cancelWatchNodes=context.WithCancel(context.Background())
+	ctx,pController.CancelWatchNodes=context.WithCancel(context.Background())
 	for {
 		select {
 		case <-ctx.Done():
@@ -144,17 +137,8 @@ func (pController *CONTROLLER) WatchNodes() {
 			for key, value := range pNodeStatus {
 				pController.SetNodeStatus(key, value)
 			}
-		//case <-pController.exitWatchNodesChan:
-		//	pool.UnregPrivateChanStr(NODE_WATCH)
-		//	close(pController.exitWatchNodesChan)
-		//	return
 		}
 	}
-}
-
-func (pController *CONTROLLER) CancelWatchNode() {
-	//pController.exitWatchNodesChan <- 1
-	cancelWatchNodes()
 }
 
 func (pController *CONTROLLER) SetNodeStatus(nodeName string, status bool) {

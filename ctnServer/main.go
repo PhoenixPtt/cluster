@@ -27,6 +27,7 @@ var (
 
 func init() {
 	g_controller = controller.NewController(mySendCtn)
+	g_controller.Start()
 	//go cluster.MsgEvent()
 }
 

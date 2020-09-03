@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
 	"ctnServer/ctnS"
@@ -62,11 +63,16 @@ func (rpl *REPLICA) WatchCtn() {
 	var statusMap map[string]int
 	statusMap = make(map[string]int, 1)
 	pool.RegPrivateChanStr(rpl.CtnName, 1)
+	var ctx context.Context
+	ctx,rpl.CancelWatchCtn=context.WithCancel(context.Background())
 	for {
 		select {
+		case <-ctx.Done():
+			fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", rpl.RplName, "退出")
+			pool.UnregPrivateChanStr(rpl.CtnName)
+			return
 		case obj := <-pool.GetPrivateChanStr(rpl.CtnName):
 			ctnStatus := obj.(string)
-			fmt.Println("KKKKKKKKKKKKKKKKKKKKKKKKK",ctnStatus)
 			switch ctnStatus {
 			case ctnS.CTN_STATUS_RUNNING:
 				switch rpl.RplTargetStat {
@@ -94,11 +100,6 @@ func (rpl *REPLICA) WatchCtn() {
 				case RPL_TARGET_REMOVED: //副本状态与容器状态一致
 				}
 			}
-		case <-rpl.exitWatchCtnChan:
-			fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", rpl.RplName, "退出")
-			pool.UnregPrivateChanStr(rpl.CtnName)
-			close(rpl.exitWatchCtnChan)
-			return
 		}
 	}
 }
@@ -193,7 +194,6 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 	return
 Error:
 	if !rpl.Dirty {
-		//rpl.Dirty = true
 		pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
 		pChan <- RPL_STATUS_GODIRTY
 	}

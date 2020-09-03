@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"ctnCommon/headers"
 	"ctnCommon/pool"
 	"ctnServer/ctnS"
@@ -51,8 +52,14 @@ func (service *SERVICE) SetNodeStatus(nodeName string, status bool) {
 
 func (service *SERVICE) WatchRpl() {
 	pool.RegPrivateChanStr(service.SvcName, CHAN_BUFFER)
+	var ctx context.Context
+	ctx,service.CancelWatchRpl=context.WithCancel(context.Background())
 	for {
 		select {
+		case <-ctx.Done():
+			fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", service.SvcName, "退出")
+			pool.UnregPrivateChanStr(service.SvcName)
+			return
 		case obj := <-pool.GetPrivateChanStr(service.SvcName):
 			rplStatusMap := obj.(map[string]int)
 			for rplName, status := range rplStatusMap {
@@ -74,11 +81,6 @@ func (service *SERVICE) WatchRpl() {
 					}
 				}
 			}
-		case <-service.exitWatchRplChan:
-			fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", service.SvcName, "退出")
-			pool.UnregPrivateChanStr(service.SvcName)
-			close(service.exitWatchRplChan)
-			return
 		}
 	}
 }
@@ -91,7 +93,6 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 	rpl.AgentAddr = agentAddr
 	rpl.AgentStatus = true
 	rpl.RplTargetStat = RPL_TARGET_REMOVED
-	rpl.exitWatchCtnChan = make(chan int, 1)
 	rpl.CreateTime = headers.ToString(time.Now(),headers.TIME_LAYOUT_NANO)//启动时间
 
 	pSvc.Replicas = append(pSvc.Replicas, rpl)
@@ -101,7 +102,7 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 
 func (pSvc *SERVICE) DelRpl(rplName string) {
 	pRpl := pSvc.GetRpl(rplName)
-	pRpl.exitWatchCtnChan <- 1
+	pRpl.CancelWatchCtn()
 
 	rIndex := pSvc.GetRplIndex(rplName)
 	if rIndex == -1 {

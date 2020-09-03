@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"context"
 	"ctnCommon/pool"
 	"ctnServer/ctnS"
 	"sync"
@@ -34,10 +35,11 @@ type CONTROLLER struct {
 	ServiceCfgMap map[string]*SVC_CFG//服务名称与服务配置的映射
 	NodeStatusMap map[string]bool//节点状态列表
 
-	svcExitChanMap map[string]chan int
-	exitWatchSvcStatusChan chan int
-	exitWatchNodesChan chan int
-	exitChan chan int
+	CancelWatchSvcs map[string]context.CancelFunc
+	//svcExitChanMap map[string]chan int
+	CancelWatchNodes context.CancelFunc
+	CancelWatchSvcStatus context.CancelFunc
+	CancelDaq context.CancelFunc
 
 	Mutex sync.Mutex
 }
@@ -89,9 +91,8 @@ func NewController(sendObjFunc pool.SendObjFunc) (controller *CONTROLLER) {
 	controller.ServiceMap = make(map[string]*SERVICE, SVC_NUM) //为集群中的服务变量分配内存空间
 	controller.ServiceCfgMap = make(map[string]*SVC_CFG, SVC_NUM)
 	controller.NodeStatusMap = make(map[string]bool, NODE_NUM)//节点状态列表
-	controller.svcExitChanMap = make(map[string]chan int,SVC_NUM)
-	controller.exitWatchNodesChan = make(chan int, 100)
-	controller.exitChan = make(chan int, 1)
+	//controller.svcExitChanMap = make(map[string]chan int,SVC_NUM)
+	controller.CancelWatchSvcs = make(map[string]context.CancelFunc, SVC_NUM)
 	ctnS.Config(sendObjFunc)
 	return
 }
