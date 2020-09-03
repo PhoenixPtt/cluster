@@ -26,14 +26,9 @@ func (pController *CONTROLLER) PutService(pSvcOperTruck *SERVICE_OPER_TRUCK) {
 	case SCREATE:
 		pool.RegPrivateChanStr(svcWatch, CHAN_BUFFER)
 		go pController.WatchService(svcWatch)
-		pChan := pool.GetPrivateChanStr(svcWatch)
-		pChan <- pSvcOperTruck
-	case SREMOVE:
-		pController.CancelWatchSvcs[svcWatch]()
-	default:
-		pChan := pool.GetPrivateChanStr(svcWatch)
-		pChan <- pSvcOperTruck
 	}
+	pChan := pool.GetPrivateChanStr(svcWatch)
+	pChan <- pSvcOperTruck
 }
 
 //集群工作协程
@@ -69,6 +64,8 @@ func (pController *CONTROLLER) WatchService(svcWatch string) {
 				err = pController.StartSvc(pClstOper.SvcName)
 			case SREMOVE:
 				err = pController.RemoveSvc(pClstOper.SvcName)
+				//关闭服务协程
+				pController.CancelWatchSvcs[svcWatch]()
 			case SSCALE:
 				err = pController.ScaleSvc(pClstOper.SvcName, pClstOper.ScaleNum)
 			}
