@@ -1,10 +1,13 @@
 package main
 
 import (
+	"context"
 	"ctnCommon/headers"
+	"ctnCommon/protocol"
 	"ctnServer/controller"
 	"ctnServer/ctnS"
 	"fmt"
+	"time"
 
 	"ctnCommon/ctn"
 	"tcpSocket"
@@ -193,7 +196,11 @@ func main() {
 							fmt.Printf("%s\n", imageName)
 							var config map[string]string
 							pCtn = ctnS.NewCtnS(imageName, agentNames[addrIndex], config)
-							pCtn.Oper(ctn.CREATE)
+							var ctx context.Context
+							var cancel context.CancelFunc
+							ctx,cancel=context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
+							defer cancel()
+							pCtn.Oper(ctx, ctn.CREATE)
 						}
 					case 2, 3, 4, 5, 6, 7: //启动容器
 						{
@@ -214,7 +221,11 @@ func main() {
 							pCtn = ctnS.GetCtn(ctnName)
 							pCtn.OperNum = 1
 							//fmt.Printf("%s：%s  %#v\n",flagMap[index],ctnName, pCtn)
-							pCtn.Oper(flagMap[index])
+							var ctx context.Context
+							var cancel context.CancelFunc
+							ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(5))
+							defer cancel()
+							pCtn.Oper(ctx, flagMap[index])
 						}
 					default: //退出
 						{
@@ -261,8 +272,11 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 }
 
 func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byte) {
-	//fmt.Println("\n从agent端收取数据", h, pkgId,i)
-	pSaTruck := &ctn.SA_TRUCK{}
+	if i=="CTRL"{
+		fmt.Println("\n从agent端收取数据", h, pkgId,i)
+	}
+
+	pSaTruck := &protocol.SA_TRUCK{}
 	pSaTruck.SrcAddr = h
 	err := headers.Decode(s, pSaTruck)
 	if err != nil {

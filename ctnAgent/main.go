@@ -2,8 +2,8 @@ package main
 
 import (
 	"ctnAgent/ctnA"
-	"ctnCommon/ctn"
 	"ctnCommon/headers"
+	"ctnCommon/protocol"
 	"fmt"
 	"tcpSocket"
 	"time"
@@ -61,12 +61,13 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 func ReceiveDataFromServer(h string, level uint8, pkgId uint16, i string, s []byte) {
 	fmt.Println("从客户端收取数据")
 
-	pSaTruck := new(ctn.SA_TRUCK)
+	pSaTruck := new(protocol.SA_TRUCK)
 	err := headers.Decode(s, pSaTruck)
 	if err != nil {
 		fmt.Errorf(err.Error())
 		return
 	}
+	pSaTruck.SrcAddr=h
 
 	pRecvChan := ctnA.GetRecvChan()
 	fmt.Println(pSaTruck)

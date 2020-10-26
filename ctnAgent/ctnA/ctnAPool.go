@@ -73,7 +73,6 @@ func UpdateCtnInfo(container types.Container)  {
 	}
 }
 
-
 func GetCtnFromID(id string) *CTNA {
 	for _,ctnName:=range pCtnPool.GetObjNames(){
 		pCtnA := GetCtn(ctnName)

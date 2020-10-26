@@ -3,6 +3,7 @@ package ctnS
 import (
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
+	"ctnCommon/protocol"
 	"unsafe"
 
 	//"ctnCommon/headers"
@@ -19,7 +20,7 @@ const DAQ = "DAQ"
 //发送网络消息
 func (workPool *CTNS_WORK_POOL) Send()  {
 	for obj := range workPool.GetSendChan(){
-		pSaTruck, ok:= obj.(*ctn.SA_TRUCK)
+		pSaTruck, ok:= obj.(*protocol.SA_TRUCK)
 		if ok{
 			byteStream, err := headers.Encode(pSaTruck)//打包
 			if err != nil {
@@ -37,14 +38,28 @@ func (workPool *CTNS_WORK_POOL) Recv(){
 	for{
 		select {
 		case obj := <-workPool.GetRecvChan():
-			pSaTruck:=obj.(*ctn.SA_TRUCK)
+			pSaTruck:=obj.(*protocol.SA_TRUCK)
 			switch pSaTruck.Flag {
 			case ctn.FLAG_CTRL:
-				privateChan := pool.GetPrivateChanInt(pSaTruck.Index)
-				if privateChan==nil{
-					continue
-				}
-				privateChan <- pSaTruck
+				pool.AppendInt(pSaTruck.Index, pSaTruck)
+				//fmt.Println("KKKKKKKKKKKKKKKKKKKKK", pSaTruck)
+				//privateChan := pool.GetPrivateChanInt(pSaTruck.Index)
+				//if privateChan==nil{
+				//	continue
+				//}
+				//fmt.Println("GGGGGGGGGGGGGGGGGGGGGGG", privateChan)
+				////fmt.Println("1111111111111111111", pSaTruck)
+				////_,ok:=<-privateChan
+				////if !ok{
+				////	break
+				////}
+				////fmt.Println("22222222222222222222222222", pSaTruck)
+				//
+				//select {
+				//case privateChan <- pSaTruck:
+				//default:
+				//}
+				//fmt.Println("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ", privateChan)
 			case ctn.FLAG_CTN://更新容器信息
 				UpdateCtnInfo(pSaTruck.CtnList)
 			case ctn.FLAG_STATS://更新资源使用情况

@@ -7,6 +7,7 @@ import (
 	"ctnServer/ctnS"
 	"errors"
 	"fmt"
+	"time"
 )
 
 const (
@@ -50,7 +51,7 @@ func (rpl *REPLICA) SetNodeStatus(nodeName string, status bool) {
 					//rpl.Dirty = true
 					pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
 					var statusMap map[string]int
-					statusMap = make(map[string]int, 1)
+					statusMap = make(map[string]int)
 					statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
 					pChan <- statusMap
 				}
@@ -61,7 +62,7 @@ func (rpl *REPLICA) SetNodeStatus(nodeName string, status bool) {
 
 func (rpl *REPLICA) WatchCtn() {
 	var statusMap map[string]int
-	statusMap = make(map[string]int, 1)
+	statusMap = make(map[string]int)
 	pool.RegPrivateChanStr(rpl.CtnName, 1)
 	var ctx context.Context
 	ctx,rpl.CancelWatchCtn=context.WithCancel(context.Background())
@@ -109,6 +110,8 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 	var pCtnS *ctnS.CTNS
 	var configMap map[string]string
 	var log string
+	var ctx context.Context
+	var cancel context.CancelFunc
 
 	errType, err = check(rpl, RPL_TARGET_RUNNING)
 	if err != nil {
@@ -134,7 +137,9 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 		goto Error
 	}
 
-	errType, err = pCtnS.Run()
+	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(1))
+	defer cancel()
+	errType, err = pCtnS.Run(ctx)
 	if err != nil {
 		goto Error
 	}
@@ -146,7 +151,7 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 Error:
 	if !rpl.Dirty {
 		pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-		statusMap := make(map[string]int, 1)
+		statusMap := make(map[string]int)
 		statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
 		pChan <- statusMap
 	}
@@ -160,9 +165,13 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 	var (
 		pCtnS     *ctnS.CTNS
 		log       string
+		rplStatus map[string]int
 		pChan     chan interface{}
-		rplStatus = make(map[string]int, 1)
+		ctx		context.Context
+		cancel	context.CancelFunc
 	)
+	rplStatus = make(map[string]int)
+
 	errType, err = check(rpl, RPL_TARGET_REMOVED)
 	if err != nil {
 		goto Error
@@ -180,12 +189,13 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 		goto Error
 	}
 
-	errType, err = pCtnS.Remove()
+	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(5))
+	defer cancel()
+	errType, err = pCtnS.Remove(ctx)
 	if err != nil {
 		goto Error
 	}
 
-	rplStatus = make(map[string]int, 1)
 	pChan = pool.GetPrivateChanStr(rpl.SvcName) //通知服务删除该副本
 	rplStatus[rpl.RplName] = RPL_STATUS_REMOVED
 	pChan <- rplStatus
@@ -195,7 +205,8 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 Error:
 	if !rpl.Dirty {
 		pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-		pChan <- RPL_STATUS_GODIRTY
+		rplStatus[rpl.RplName] = RPL_STATUS_GODIRTY
+		pChan <- rplStatus
 	}
 	log = fmt.Sprintf("%s执行Remove操作执行失败。错误类型：%s；错误详情：%s\n", rpl.RplName, errType, errors.New(err.Error()))
 	Mylog.Info(log)

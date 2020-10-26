@@ -41,16 +41,25 @@ func GetCtnInfo(ctnId string) (types.Container,error)  {
 	var(
 		container types.Container
 		containers []types.Container
+		ctnListOption types.ContainerListOptions
 		err error
 	)
 
-	//获取所有容器信息
-	containers, err = cli.ContainerList(ctx, types.ContainerListOptions{
+	ctnListOption = types.ContainerListOptions{
 		All: true,
-	})
-	if err!=nil{
-		return container, err
 	}
+	if containers,err = cli.ContainerList(ctx, ctnListOption); err!=nil{
+		return container,err
+	}
+
+	//获取所有容器信息
+	//containers, err = cli.ContainerList(ctx, types.ContainerListOptions{
+	//	All: true,
+	//})
+	//if err!=nil{
+	//	return container, err
+	//}
+
 
 	//遍历所有容器找到目标容器
 	for _,val:=range containers{

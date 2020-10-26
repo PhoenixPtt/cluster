@@ -24,8 +24,15 @@ func YmlFile2Struct(ymlFileName string) (svcCfg *SVC_CFG) {
 }
 
 func JsonFile2Struct(ymlFileName string)  (svcCfg *SVC_CFG)  {
-	err := yaml.Unmarshal([]byte(ymlFileName), svcCfg)
-	if err!=nil{
+	//err := yaml.Unmarshal([]byte(ymlFileName), svcCfg)
+	//if err!=nil{
+	//	return nil
+	//}
+	var(
+		err error
+	)
+
+	if err = yaml.Unmarshal([]byte(ymlFileName), svcCfg); err!=nil{
 		return nil
 	}
 	return svcCfg

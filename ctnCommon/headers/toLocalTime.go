@@ -13,6 +13,7 @@ var(
 )
 
 func init()  {
+	//loc, err = time.LoadLocation("Local")
 	loc, err = time.LoadLocation("Local")
 }
 

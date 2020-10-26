@@ -1,6 +1,8 @@
 package pool
 
-import "sync"
+import (
+	"sync"
+)
 
 const (
 	MAX_CHAN_NUM = 1000
@@ -57,6 +59,19 @@ func (pChanPool *CHAN_POOL) UnregPrivateChanInt(keyInt int)  {
 	}
 }
 
+//向通道追加元素
+func (pChanPool *CHAN_POOL) AppendInt(keyInt int, data interface{}) {
+	pChanPool.intMutex.Lock()
+	defer pChanPool.intMutex.Unlock()
+	_,ok:= pChanPool.private_chan_int_map[keyInt]
+	if ok{
+		select {
+		case pChanPool.private_chan_int_map[keyInt]<-data:
+		default:
+		}
+	}
+}
+
 //注册以整型变量为关键字的私有通道
 func (pChanPool *CHAN_POOL) RegPrivateChanStr(keyStr string, bufferSize int){
 	pChanPool.strMutex.Lock()
@@ -89,6 +104,19 @@ func (pChanPool *CHAN_POOL) UnregPrivateChanStr(keyStr string)  {
 	}
 }
 
+//向通道追加元素
+func (pChanPool *CHAN_POOL) AppendStr(keyStr string, data interface{}) {
+	pChanPool.intMutex.Lock()
+	defer pChanPool.intMutex.Unlock()
+	_,ok:= pChanPool.private_chan_string_map[keyStr]
+	if ok{
+		select {
+		case pChanPool.private_chan_string_map[keyStr]<-data:
+		default:
+		}
+	}
+}
+
 var(
 	pChanPool *CHAN_POOL
 )
@@ -118,6 +146,10 @@ func UnregPrivateChanInt(keyInt int)  {
 	pChanPool.UnregPrivateChanInt(keyInt)
 }
 
+func AppendInt(keyInt int, data interface{}) {
+	pChanPool.AppendInt(keyInt, data)
+}
+
 //注册以整型变量为关键字的私有通道
 func RegPrivateChanStr(keyStr string, bufferSize int){
 	pChanPool.RegPrivateChanStr(keyStr, bufferSize)
@@ -131,6 +163,6 @@ func UnregPrivateChanStr(keyStr string)  {
 	pChanPool.UnregPrivateChanStr(keyStr)
 }
 
-
-
-
+func AppendStr(keyStr string, data interface{}) {
+	pChanPool.AppendStr(keyStr, data)
+}

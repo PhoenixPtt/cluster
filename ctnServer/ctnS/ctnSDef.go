@@ -11,7 +11,7 @@ func NewCtnS(image string, agentAddr string, configMap map[string]string) (pCtnS
 	pCtnS.CtnName = fmt.Sprintf("CTN_%s",headers.UniqueId())
 	pCtnS.AgentAddr = agentAddr
 	pCtnS.Image = image
-	configMap = make(map[string]string, 100)
+	configMap = make(map[string]string)
 	return
 }
 

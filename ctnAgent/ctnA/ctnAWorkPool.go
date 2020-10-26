@@ -4,6 +4,7 @@ import (
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"ctnCommon/pool"
+	"ctnCommon/protocol"
 	"fmt"
 	"unsafe"
 )
@@ -15,7 +16,7 @@ type CTNA_WORKPOOL struct {
 //发送网络消息
 func (workPool *CTNA_WORKPOOL) Send() {
 	for obj := range workPool.GetSendChan() {
-		pSaTruck := obj.(*ctn.SA_TRUCK)
+		pSaTruck := obj.(*protocol.SA_TRUCK)
 		byteStream, err := headers.Encode(pSaTruck) //打包
 		if err != nil {
 			errCode := "CTN：网络数据打包失败！"
@@ -32,7 +33,7 @@ func (workPool *CTNA_WORKPOOL) Recv() {
 	for {
 		select {
 		case obj := <-workPool.GetRecvChan():
-			pSaTruck := obj.(*ctn.SA_TRUCK)
+			pSaTruck := obj.(*protocol.SA_TRUCK)
 			if pSaTruck.Flag != ctn.FLAG_CTRL { //仅接收控制指令
 				continue
 			}

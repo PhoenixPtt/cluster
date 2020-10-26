@@ -33,6 +33,7 @@ type SERVICE struct {
 	//SchedulePOLICY				//服务的调度策略
 
 	mutex sync.Mutex
+	mutex_rpl sync.Mutex
 }
 
 //以结构体作为配置参数创建服务对象

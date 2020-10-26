@@ -69,12 +69,12 @@ func (service *SERVICE) WatchRpl() {
 					go service.schedule(rplName) //重新调度
 				case RPL_STATUS_REMOVED:
 					service.DelRpl(rplName)
-					fmt.Println("收到副本已被删除，嘻嘻", rplStatusMap, service.SvcName, service.SvcStats)
+					fmt.Println("收到副本已被删除，嘻嘻", rplStatusMap, service.SvcName, service.SvcStats, len(service.Replicas))
 					if service.SvcStats == SVC_REMOVED {
 						rplLen := len(service.Replicas)
 						if rplLen == 0 {
 							pChan := pool.GetPrivateChanStr(SERVICE_STATUS_WATCH)
-							svcStatusMap := make(map[string]int, 1)
+							svcStatusMap := make(map[string]int)
 							svcStatusMap[service.SvcName] = SVC_STATUS_REMOVED
 							pChan <- svcStatusMap
 						}
@@ -95,20 +95,28 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 	rpl.RplTargetStat = RPL_TARGET_REMOVED
 	rpl.CreateTime = headers.ToString(time.Now(),headers.TIME_LAYOUT_NANO)//启动时间
 
+	pSvc.mutex_rpl.Lock()
 	pSvc.Replicas = append(pSvc.Replicas, rpl)
+	pSvc.mutex_rpl.Unlock()
 
 	return
 }
 
 func (pSvc *SERVICE) DelRpl(rplName string) {
 	pRpl := pSvc.GetRpl(rplName)
+	fmt.Println("1111111111111111111111111111111111111111111", pRpl)
 	pRpl.CancelWatchCtn()
 
 	rIndex := pSvc.GetRplIndex(rplName)
 	if rIndex == -1 {
 		return
 	}
+
+	pSvc.mutex_rpl.Lock()
 	pSvc.Replicas = append(pSvc.Replicas[:rIndex], pSvc.Replicas[rIndex+1:]...)
+	pSvc.mutex_rpl.Unlock()
+
+	fmt.Println("3333333333333333333333333333333333333333", pSvc.Replicas)
 }
 
 //对应用户创建操作
@@ -235,7 +243,7 @@ func (pSvc *SERVICE) Remove() (err error) {
 	rplLen := len(pSvc.Replicas)
 	if rplLen == 0 {
 		pChan := pool.GetPrivateChanStr(SERVICE_STATUS_WATCH)
-		svcStatusMap := make(map[string]int, 1)
+		svcStatusMap := make(map[string]int)
 		svcStatusMap[pSvc.SvcName] = SVC_STATUS_REMOVED
 		pChan <- svcStatusMap
 	}
@@ -340,5 +348,7 @@ func (service *SERVICE) GetRplIndex(rplName string) int {
 
 //获取所有副本
 func (service *SERVICE) getReplicas() []*REPLICA {
+	service.mutex_rpl.Lock()
+	defer service.mutex_rpl.Unlock()
 	return service.Replicas
 }

@@ -3,25 +3,26 @@ package ctnA
 import (
 	"context"
 	"ctnCommon/ctn"
+	"ctnCommon/headers"
 	"ctnCommon/pool"
+	"ctnCommon/protocol"
 	"encoding/json"
+	"io"
+
 	"fmt"
 	"github.com/docker/docker/client"
-	"io"
 	"runtime"
 	"time"
 )
 
-//阻塞方式获取容器的资源使用状态
-
 var (
-	exit            bool
-	exitFlagChanMap map[string](chan int) //结束监听操作通道
 	cli *client.Client
+	cancelStatsMap map[string]context.CancelFunc
+	cancelStatsAll context.CancelFunc
 )
 
 func init() {
-	exitFlagChanMap = make(map[string](chan int), 100)
+	cancelStatsMap = make(map[string]context.CancelFunc)
 
 	var err error
 	cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation())
@@ -32,61 +33,63 @@ func init() {
 
 //获取所有容器的资源使用状态，并发送
 func CtnStatsAll(distAddr string) {
-	exit = true
-	for exit {
-		//获取所有运行中的容器
-		ctns, err := CtnList(RUN_CTN)
-		if err != nil {
-			fmt.Errorf(err.Error())
-		}
+	var ctx context.Context
+	ctx,cancelStatsAll=context.WithCancel(context.Background())
 
-		//遍历容器列表，启动容器资源监控
-		for _, ctn := range ctns {
-			//初始化结束监听标志通道
-			exitFlagChan, ok := exitFlagChanMap[ctn.ID]
-			if !ok {
-				exitFlagChanMap[ctn.ID] = exitFlagChan
-				//为其分配存储空间
-				exitFlagChanMap[ctn.ID] = make(chan int)
-				fmt.Println("启动容器监控", ctn.ID)
-				go CtnStats(ctn.ID,distAddr)
+	for{
+		timer:=time.NewTimer(time.Second)
+		select {
+		case <-ctx.Done():
+			return
+		case <-timer.C:
+			ctns, err := CtnList(RUN_CTN)
+			if err != nil {
+				fmt.Errorf(err.Error())
+			}
+
+			//遍历容器列表，启动容器资源监控
+			for _, ctn := range ctns {
+				_,ok:=cancelStatsMap[ctn.ID]
+				if !ok{
+					go CtnStats(ctn.ID,distAddr)
+				}
+			}
+
+			for ctnId,_:=range cancelStatsMap{
+				if CtnIndex(ctnId, RUN_CTN) == -1 {
+					CancelCtnStats(ctnId)
+				}
 			}
 		}
-
-		for ctnId, _ := range exitFlagChanMap {
-			if CtnIndex(ctnId, RUN_CTN) == -1 {
-				CancelCtnStats(ctnId)
-			}
-		}
-		time.Sleep(time.Second)
 	}
 }
 
 func CancelCtnStatsAll() {
-	exit = false
-	for ctnId, _ := range exitFlagChanMap {
+	cancelStatsAll()
+	for ctnId, _:= range cancelStatsMap{
 		CancelCtnStats(ctnId)
 	}
 }
 
 //放入数据
 func CtnStats(ctnId string, distAddr string) {
-	//ctx_Stats context.Context
-	//cancel_Stats context.CancelFunc
+	ctx_Stats, cancel_Stats := context.WithCancel(context.Background())
+	_,ok:=cancelStatsMap[ctnId]
+	if !ok{
+		cancelStatsMap[ctnId]=cancel_Stats
+	}else{
+		return
+	}
+
+	stats, err := cli.ContainerStats(ctx_Stats, ctnId, true)
+	if err != nil {
+		fmt.Errorf("%s", err.Error())
+	}
+
+	var count uint64 //采集频率计数
+	count = 0
 	for {
-		ctx_Stats, cancel_Stats := context.WithCancel(context.Background())
-		//cancel_Stats = cancel_Stats
-		stats, err := cli.ContainerStats(ctx_Stats, ctnId, true)
-		if err != nil {
-			fmt.Errorf("%s", err.Error())
-		}
-
-		var count int //采集频率计数
-		count = 0
-		//count = count
-
 		decoder := json.NewDecoder(stats.Body)
-		//decoder = decoder
 		var ctnStats ctn.CTN_STATS
 		cpuNum := runtime.NumCPU()
 		ctnStats.PercpuUsageCalc = make([]float64, cpuNum)
@@ -97,22 +100,18 @@ func CtnStats(ctnId string, distAddr string) {
 		select {
 		case <-ctx_Stats.Done():
 			stats.Body.Close()
-			close(exitFlagChanMap[ctnId])
-			delete(exitFlagChanMap, ctnId)
 			fmt.Println("Stop CTN Stats",ctnId)
 			return
-		case <-exitFlagChanMap[ctnId]:
-			cancel_Stats()
 		default:
 			count++
-			err := decoder.Decode(&ctnStats)
+			err = decoder.Decode(&ctnStats)
 			if err == io.EOF {
 				return
 			} else if err != nil {
 				cancel_Stats()
 			}
 
-			if count%freq != 0 {
+			if count%uint64(freq) != 0 {
 				break
 			} else {
 				base := 1024.00
@@ -124,8 +123,12 @@ func CtnStats(ctnId string, distAddr string) {
 					ctnStats.PercpuUsageCalc[i] = (ctnStats.CpuStats.CPUUsage.PercpuUsage[i] - ctnStats.PrecpuStats.CPUUsage.PercpuUsage[i]) * 100 / (ctnStats.CpuStats.SystemCPUUsage - ctnStats.PrecpuStats.SystemCPUUsage)
 				}
 
+				//转时间为当地时间
+				ctnStats.Read = headers.ToLocalTime(ctnStats.Read)
+				ctnStats.Preread = headers.ToLocalTime(ctnStats.Preread)
+
 				////直接发给server端
-				//fmt.Println(ctnStats.ID, ctnStats.Read, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
+				//fmt.Println(ctnStats.ID[:10], ctnStats.Read, ctnStats.Preread, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
 				//fmt.Printf("内存限值：%.2f\n", ctnStats.MemoryStats.Limit)
 				//fmt.Printf("内存占有量：%.2f\n", ctnStats.MemoryStats.Stats.ActiveAnon)
 				//sum := 0.0
@@ -135,7 +138,7 @@ func CtnStats(ctnId string, distAddr string) {
 				//}
 				//fmt.Printf("单核累加：%.2f，总的CPU占有率：%.2f\n", sum, ctnStats.CPUUsageCalc)
 
-				pSaTruck := &ctn.SA_TRUCK{}
+				pSaTruck := &protocol.SA_TRUCK{}
 				pSaTruck.Flag = ctn.FLAG_STATS
 				pool.AddIndex()
 				pSaTruck.Index = pool.GetIndex()
@@ -150,9 +153,10 @@ func CtnStats(ctnId string, distAddr string) {
 }
 
 func CancelCtnStats(ctnId string) {
-	_, ok := exitFlagChanMap[ctnId]
-	if ok {
+	_,ok:=cancelStatsMap[ctnId]
+	if ok{
 		fmt.Println("stop ctn stats all", ctnId)
-		exitFlagChanMap[ctnId] <- 1
+		cancelStatsMap[ctnId]()
+		delete(cancelStatsMap, ctnId)
 	}
 }

@@ -5,6 +5,7 @@ import (
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"ctnCommon/pool"
+	"ctnCommon/protocol"
 	"fmt"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
@@ -38,7 +39,7 @@ func CtnEvents(distAddr string) {
 			return
 		case val:=<-evtMsgChan:
 			//向Server端发送事件
-			var pSaTruck ctn.SA_TRUCK
+			var pSaTruck protocol.SA_TRUCK
 			pool.AddIndex()
 			pSaTruck.Flag = ctn.FLAG_EVENT
 			pSaTruck.Index = pool.GetIndex()
@@ -59,7 +60,7 @@ func CtnEvents(distAddr string) {
 			GetSendChan() <- &pSaTruck
 		case errMsg:=<- errMsgChan:
 			//向Server端发送事件
-			var pSaTruck ctn.SA_TRUCK
+			var pSaTruck protocol.SA_TRUCK
 			pool.AddIndex()
 			pSaTruck.Flag = ctn.FLAG_EVENT
 			pSaTruck.Index = pool.GetIndex()

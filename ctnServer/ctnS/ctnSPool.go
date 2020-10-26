@@ -15,7 +15,7 @@ var (
 
 func init() {
 	pCtnPool = pool.NewObjPool()
-	ctnIDMap = make(map[string]*CTNS,1000)
+	ctnIDMap = make(map[string]*CTNS,)
 }
 
 //添加容器

@@ -113,7 +113,7 @@ func (pController *CONTROLLER) WatchServiceStatus() {
 }
 
 func (pController *CONTROLLER) PutNode(nodeName string, status bool) {
-	nodeStatusMap := make(map[string]bool, 1)
+	nodeStatusMap := make(map[string]bool)
 	nodeStatusMap[nodeName] = status
 	pChan := pool.GetPrivateChanStr(NODE_WATCH)
 	pChan <- nodeStatusMap
