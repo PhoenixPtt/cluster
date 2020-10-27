@@ -1,5 +1,10 @@
 package header
 
+import (
+	"ctnCommon/ctn"
+	"github.com/docker/docker/api/types"
+)
+
 // 应用服务相关
 const (
 	FLAG_SERV       = "SVCS"
@@ -31,13 +36,12 @@ type Service struct {
 	ServiceInfo
 	Cfg     ServiceCfg     // 服务配置信息
 	//Res     ResourceStatus // 服务的CPU使用率、内存使用量和内存使用率
-	NodeIds []string       // 所在的节点
 	Replica []Replica      // 服务的所有副本
 }
 
 type ServiceInfo struct {
 	Id           string // 服务Id
-	State        uint32 // 服务状态
+	State        string // 服务状态
 	Scale        uint32 // 设定的副本数量
 	ReplicaCount uint32 // 应用服务的当前副本数量
 	CreateTime   string // 服务创建时间
@@ -51,8 +55,8 @@ type Replica struct {
 	CreateTime string    // 副本创建时间
 	NodeId     string    // 所在节点
 	State      uint32    // 副本的状态
-	//Ctn        CTN       // 容器的副本信息
-	//CtnStats   CTN_STATS // 服务的CPU使用率、内存使用量和内存使用率
+	Ctn        types.Container       // 容器的副本信息
+	CtnStats   ctn.CTN_STATS // 服务的CPU使用率、内存使用量和内存使用率
 }
 
 //// 服务静态配置结构体

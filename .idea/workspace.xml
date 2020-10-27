@@ -2,12 +2,11 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="dee31262-2c25-4ab6-adab-e962473677aa" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/cluster.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/cluster.iml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/clusterAgent/.idea/clusterAgent.iml" beforeDir="false" afterPath="$PROJECT_DIR$/clusterAgent/.idea/clusterAgent.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/clusterAgent/go.sum" beforeDir="false" afterPath="$PROJECT_DIR$/clusterAgent/go.sum" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/clusterAgent/go_build_clusterAgent" beforeDir="false" afterPath="$PROJECT_DIR$/clusterAgent/go_build_clusterAgent" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/webserver/router/jwt/jwt.go" beforeDir="false" afterPath="$PROJECT_DIR$/webserver/router/jwt/jwt.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clusterAgent/go_build_clusterAgent_" beforeDir="false" afterPath="$PROJECT_DIR$/clusterAgent/go_build_clusterAgent_" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clusterHeader/header.go" beforeDir="false" afterPath="$PROJECT_DIR$/clusterHeader/header.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/clusterHeader/serv.go" beforeDir="false" afterPath="$PROJECT_DIR$/clusterHeader/serv.go" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ctnServer/build/go_build_ctnServer" beforeDir="false" afterPath="$PROJECT_DIR$/ctnServer/build/go_build_ctnServer" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -33,9 +32,9 @@
     <property name="go.import.settings.migrated" value="true" />
     <property name="go.sdk.automatically.set" value="true" />
     <property name="go.tried.to.enable.integration.vgo.integrator" value="true" />
-    <property name="last_opened_file_path" value="$PROJECT_DIR$/clusterServer" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/ctnServer" />
   </component>
-  <component name="RunManager" selected="Go Build.go build webservermain/">
+  <component name="RunManager" selected="Go Build.go build clusterAgent/">
     <configuration name="go build clusterAgent/" type="GoApplicationRunConfiguration" factoryName="Go Application" nameIsGenerated="true">
       <module name="cluster" />
       <working_directory value="$PROJECT_DIR$/clusterAgent" />
@@ -65,14 +64,16 @@
     <option name="version" value="2" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="418" y="181" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1598344013622">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state x="418" y="154" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1598515263543">
+      <screen x="0" y="0" width="1918" height="887" />
     </state>
+    <state x="418" y="154" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1918.887@0.0.1918.887" timestamp="1598515263543" />
     <state x="418" y="181" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.0.1920.1040@0.0.1920.1040" timestamp="1598344013622" />
-    <state x="720" y="337" width="438" height="492" key="FileChooserDialogImpl" timestamp="1598344247586">
-      <screen x="0" y="0" width="1920" height="1040" />
+    <state x="719" y="287" width="438" height="492" key="FileChooserDialogImpl" timestamp="1599015114871">
+      <screen x="0" y="0" width="1918" height="887" />
     </state>
     <state x="623" y="266" width="438" height="492" key="FileChooserDialogImpl/0.0.1680.1010@0.0.1680.1010" timestamp="1596102412055" />
+    <state x="719" y="287" key="FileChooserDialogImpl/0.0.1918.887@0.0.1918.887" timestamp="1599015114871" />
     <state x="720" y="337" width="438" height="492" key="FileChooserDialogImpl/0.0.1920.1040@0.0.1920.1040" timestamp="1598344247586" />
     <state width="1870" height="272" key="GridCell.Tab.0.bottom" timestamp="1598344249605">
       <screen x="0" y="0" width="1920" height="1040" />

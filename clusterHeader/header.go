@@ -27,7 +27,6 @@ const (
 	CTNEXIT = "EXIT"
 )
 
-
 type Oper struct {
 	Type  		string 		// 操作类型
 	Par			[]OperPar	// 操作参数
