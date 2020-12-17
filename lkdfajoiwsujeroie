@@ -1,0 +1,572 @@
+[33mcommit e1b6b3dcfd4fa5a157e4f751025e91d1c65edf1f[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m, [m[1;31morigin/HEAD[m[33m)[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Tue Oct 27 10:16:00 2020 +0800
+
+    更改了服务相关的几个头文件
+
+[33mcommit f1451163f2253743ec283d093afa8339d2864cc4[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Mon Oct 26 17:05:12 2020 +0800
+
+    可执行但有bug
+
+[33mcommit 8786ee81c1fe4b849653fea1a19890d427c29a39[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Thu Sep 3 10:47:10 2020 +0800
+
+    修复bug
+
+[33mcommit 191d3ae144e90cff879ae504937b8a8f46600a1e[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Thu Sep 3 10:40:29 2020 +0800
+
+    增加内容：服务被删除后，关闭服务操作协程
+
+[33mcommit e863d9b3d0c7bc86a0bba8ac3c2fc6b5927b276b[m
+Merge: a8924b1 5c279c0
+Author: cetc15 <h.fung@qq.com>
+Date:   Wed Sep 2 17:19:56 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit a8924b1c451b8b15bd6da97dd3bcba46e1a23909[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Wed Sep 2 12:11:12 2020 +0800
+
+    采用上下文方式取消协程或者实现超时机制
+
+[33mcommit 5c279c09400dd07f66cf4bb74e2c2475e402969e[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Sep 1 17:21:44 2020 +0800
+
+    更改创建镜像和导入镜像部分代码“
+    git pull
+    git push
+    
+    git log
+    git commit -m 更改创建镜像和导入镜像部分代码“
+
+[33mcommit 527f2e0e9f3b0c56e7eeb6b92e36cbdbdd585c48[m
+Merge: 366d639 fa54d5b
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Sep 1 15:41:32 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 366d6399b269594942ff9d57495b1097fee4c4b8[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Sep 1 15:41:26 2020 +0800
+
+    文件500错误
+
+[33mcommit fa54d5bc7cc8483c56c9f6dd0cd6f5f71b21b472[m
+Author: johnson <johnson_magic@126.com>
+Date:   Tue Sep 1 15:38:46 2020 +0800
+
+    0901处理一个接收文件的小bug
+
+[33mcommit c225d7e13c46119e6c01b744ab1454ba3859224a[m
+Merge: 5bc7b8f e7a41a4
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Sep 1 14:19:11 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 5bc7b8f47db37866dc482a1fcbfd6865391555b8[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Sep 1 14:14:24 2020 +0800
+
+    修改agentimage大文件处理部分
+
+[33mcommit e7a41a41372cd5344ca50b6605e492bdbab7ba7f[m
+Merge: b56f5e7 3197ab4
+Author: johnson <johnson_magic@126.com>
+Date:   Mon Aug 31 17:23:46 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit b56f5e72c0f1207c7d67fdef6a50823e1ae7e6f9[m
+Author: johnson <johnson_magic@126.com>
+Date:   Mon Aug 31 17:23:23 2020 +0800
+
+    0831更新小文件的接收保存工作，保存在当前用户根目录的test文件夹中
+
+[33mcommit 3197ab41d178095d8b495871b5619c767227649a[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Thu Aug 27 10:24:44 2020 +0800
+
+    屏蔽了调试信息
+
+[33mcommit 5e5befbdcb518d7f78b41b7e9e9a00f71b9a6c81[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Thu Aug 27 10:22:56 2020 +0800
+
+    解决CPU占有率过高的问题
+
+[33mcommit bc6c80d8d338bd23b05f65ad42864a27f2f13454[m
+Merge: 17d7d04 c52199c
+Author: cetc15 <h.fung@qq.com>
+Date:   Thu Aug 27 09:47:11 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 17d7d04adb19561a435a81937459e70d01303731[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Thu Aug 27 09:43:27 2020 +0800
+
+    解决CPU占有率过高的问题
+
+[33mcommit c52199cff546b3dc3b06eeddb606a59cb4891566[m
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Aug 26 14:11:28 2020 +0800
+
+    0827提高了webserver中对接收文件的处理速度
+
+[33mcommit eb16136561c73dc247fad1bfa8ca7b79ababab7c[m
+Author: johnson <johnson_magic@126.com>
+Date:   Tue Aug 25 16:45:30 2020 +0800
+
+    更新webserver的gomod文件
+
+[33mcommit fa2a43f49cedf929bb01b939744fb50f812157ae[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 25 16:40:33 2020 +0800
+
+    更新编译错误
+
+[33mcommit de4d614a51a0de1c055d7b36edbeefe62005e194[m
+Merge: 29fd81a b4ff221
+Author: johnson <johnson_magic@126.com>
+Date:   Tue Aug 25 16:22:29 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 29fd81a7d4d820435478c24704da2cf82e5b2cf2[m
+Author: johnson <johnson_magic@126.com>
+Date:   Tue Aug 25 16:22:07 2020 +0800
+
+    0826更新webserver，还存在收文件的问题
+
+[33mcommit b4ff2218150b282c63f3b379545b5e9dc4cba8e5[m
+Merge: 15786f0 5b1356e
+Author: cetc15 <h.fung@qq.com>
+Date:   Tue Aug 25 09:56:59 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 15786f0bf355567261a4ad69d374b2c4704e62f3[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Tue Aug 25 09:56:38 2020 +0800
+
+    服务模块更新
+
+[33mcommit 5b1356e5fc9d739364f7770ee4d09c540ff44802[m
+Author: Lijh <ljh@cetc15>
+Date:   Fri Aug 21 11:47:03 2020 +0800
+
+    ljh
+
+[33mcommit 3d8a11543a1755990a560db85138a5b582f5fbdd[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Fri Aug 21 10:06:34 2020 +0800
+
+    接口优化
+
+[33mcommit 6987fa93e5d7cc69a83d81a90acf5a72914435b6[m
+Author: cetc15 <h.fung@qq.com>
+Date:   Thu Aug 20 16:43:44 2020 +0800
+
+    更改文件名
+
+[33mcommit dd08e09ff0b711bdfe00d148b1bc397b289fa5a4[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Aug 20 14:15:52 2020 +0800
+
+    合并了冯欢的服务类
+
+[33mcommit d728fe92a36447144d63f606b57f887548dd92a1[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Aug 20 13:46:54 2020 +0800
+
+    serv.go
+
+[33mcommit 7438f863a55927fdf7dbeecde0563199e5caaa15[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Aug 20 13:43:49 2020 +0800
+
+    clusterAgent
+
+[33mcommit 8cae2d72bd675d8f60fb3cc36f9677a058165e14[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Aug 20 10:35:47 2020 +0800
+
+    clusterAgent
+
+[33mcommit 071856e980294f209b9d9a04c7101313e3582b35[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Aug 20 09:44:29 2020 +0800
+
+    修改应用服务部分
+
+[33mcommit 22d6dda437ee314025acc337a8fab5e0141ebcfa[m
+Author: johnson <johnson_magic@126.com>
+Date:   Mon Aug 17 11:36:06 2020 +0800
+
+    0817在webserver.go中适配优雅关闭的功能
+
+[33mcommit e05a0c6df3c3992f2496fbc3596fb70e80c52d84[m
+Author: johnson <johnson_magic@126.com>
+Date:   Mon Aug 17 10:58:26 2020 +0800
+
+    0817在webservermain中修改集群服务启动和停止的方法
+
+[33mcommit 59908bfc6228cab5d907261fdf515fbea1910a0d[m
+Merge: 9cf3980 c6155ec
+Author: johnson <johnson_magic@126.com>
+Date:   Mon Aug 17 10:50:22 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 9cf398011a7a15601f008ee6682bbffa49666ec2[m
+Author: johnson <johnson_magic@126.com>
+Date:   Mon Aug 17 10:50:10 2020 +0800
+
+    0817添加或修改webserver适配优雅关闭功能的代码
+
+[33mcommit c6155ecde1ccf15b0b8f2a839abdf84b0c1cb951[m
+Author: Lijh <ljh@cetc15>
+Date:   Mon Aug 17 10:00:19 2020 +0800
+
+    修改退出为优雅的退出
+
+[33mcommit 7ee51ccc845b035da398549978e161204d09c805[m
+Merge: 6e9d158 436f999
+Author: Lijh <ljh@cetc15>
+Date:   Mon Aug 17 09:57:36 2020 +0800
+
+    修改warning.go产生的冲突
+
+[33mcommit 6e9d158c0d0b1e08323dc4201e7e24caeb4b07ec[m
+Author: Lijh <ljh@cetc15>
+Date:   Mon Aug 17 09:54:46 2020 +0800
+
+    修改退出方法，增加统一调用接口
+
+[33mcommit 436f9997d009e269bc1494a174a82baabe1dd577[m
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Aug 14 17:05:11 2020 +0800
+
+    0814修正manager.go中无用户信息的bug
+
+[33mcommit 75ca8b3538db782481e5c6ef1f1bae98003ca671[m
+Merge: b908864 74013d4
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Aug 14 14:53:51 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit b9088648bf7a0cc16e44c71c33850b6c35faab72[m
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Aug 14 14:50:19 2020 +0800
+
+    0814更新部分错误信息的标号，将token过期时间设置为30s，方便调试
+
+[33mcommit 74013d44175380746efa7f578bc1c1370430f1e9[m
+Author: wt <wt@cluster.vue.com>
+Date:   Thu Aug 13 11:49:30 2020 +0800
+
+    ok
+
+[33mcommit f697202e96784e93269bf6041a82071fe0cfec6f[m
+Merge: a3d9b0e edf8a03
+Author: wt <wt@cluster.vue.com>
+Date:   Thu Aug 13 11:43:29 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit edf8a037ac3921f9797a9ea6e173ea7a87637fe0[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Aug 13 11:40:49 2020 +0800
+
+    ljh
+
+[33mcommit a3d9b0ea59be7e27cac79cec7785aa94e888c4fd[m
+Merge: 64a8dd6 a99c51f
+Author: wt <wt@cluster.vue.com>
+Date:   Thu Aug 13 11:07:23 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit a99c51fd1f1dffa0358221bd8ef1c865f7d09288[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Aug 13 11:02:15 2020 +0800
+
+    1
+
+[33mcommit 233362bfd4ede135b3a54fcb48deab9642d68f9e[m
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Aug 13 09:55:23 2020 +0800
+
+    update .gitignore
+
+[33mcommit 317776febd42787bd34d2dc84a100e581a160b26[m
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Aug 13 09:47:17 2020 +0800
+
+    修改版本库忽略修改的文件
+
+[33mcommit bd25e5b9fa209a595d0f6768d1a7d112a6de42b6[m
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Aug 13 09:32:18 2020 +0800
+
+    0812更新webserver并在clusterHeader的header.go中添加UserInformation结构体
+
+[33mcommit 64a8dd640b22c5e72ed37095a356fc65e5c1d729[m
+Merge: a584f67 44396bc
+Author: wt <wt@cluster.vue.com>
+Date:   Wed Aug 12 15:55:42 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 44396bcb4012ffce94f1b17d04a2dbc05c24b915[m
+Merge: 879e39c 55f6453
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Aug 12 14:49:29 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 879e39cae3aabc8011d4ccc3b84c2a1a8ef60c84[m
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Aug 12 14:46:01 2020 +0800
+
+    0812 webserver 更新
+
+[33mcommit a584f6710137ccec644a57efeb8f962ea96771b6[m
+Author: wt <wt@cluster.vue.com>
+Date:   Fri Aug 7 11:13:08 2020 +0800
+
+    更改 clusterHeader/serv.go增加命名空间
+
+[33mcommit 5544b47c3686d0baa1cd8fa2af8c7518b7e8444d[m
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Aug 6 17:26:03 2020 +0800
+
+    0806在webserver中添加token生成的功能
+
+[33mcommit 55f64533a89128180e0bdca8bc4f422a6e81a864[m
+Merge: 812fe2c 81b720e
+Author: wt <wt@cluster.vue.com>
+Date:   Thu Aug 6 13:46:57 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 812fe2c7930824bff6e9241c2f057d158af9d69d[m
+Author: wt <wt@cluster.vue.com>
+Date:   Thu Aug 6 13:46:39 2020 +0800
+
+    更改 clusterHeader/serv.go结构体
+
+[33mcommit 81b720ee7972c1bfdf013e0df571552ca4a8dc76[m
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Aug 5 16:55:11 2020 +0800
+
+    添加忽略版本的文件.gitignore
+
+[33mcommit 380f15d04d97cf2ab2a5b730b8d5c710ad4a4155[m
+Merge: ea21a68 c5441e1
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Aug 5 16:43:35 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit ea21a68af98a662925615d45f999a7bf0960fa1f[m
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Aug 5 16:37:50 2020 +0800
+
+    0805 更新webserver
+
+[33mcommit c5441e1a1dfcc5d454e5f7a7803583d3a80f3f69[m
+Merge: 100453b 4d2ff30
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 16:09:15 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 100453bf153af6002b670d787b8db4486760b16d[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 15:50:17 2020 +0800
+
+    更改clusterAgent/agentImage 导入功能解码
+
+[33mcommit 85d185d66bd6205fb66649599b4b43441e1698b3[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 15:30:19 2020 +0800
+
+    更改clusterAgent/agentImage strings.join
+
+[33mcommit a5b69d94f4e316edcb8711d5f249be5bb670e32b[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 15:04:39 2020 +0800
+
+    更改clusterServer/clusterServer/serverImage.go
+
+[33mcommit 3295808ef0aad43782a5ed109a49eb4a182cf6ed[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 15:04:03 2020 +0800
+
+    更改clusterServer/clusterServer/registryImage.go
+
+[33mcommit 3acbd9f7333542443a13cc029b87314b63500c65[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 15:03:07 2020 +0800
+
+    更改clusterServer/clusterServer/procFlagIMAG.go
+
+[33mcommit 43eb445cb842a4ca7c3bb064f99ff24410eae142[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 14:38:14 2020 +0800
+
+    提交clusterHeader/image.go
+
+[33mcommit 9cfb7c34a5f313e331b1cb760aacbff4dbeba088[m
+Author: wt <wt@cluster.vue.com>
+Date:   Tue Aug 4 14:37:08 2020 +0800
+
+    更改clusterAgent/agentImage
+
+[33mcommit 4d2ff3061baa45f381c75e190668f3111c153f7f[m
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Jul 31 16:21:15 2020 +0800
+
+    修正registry.go中import request
+
+[33mcommit 122ee6eb59c1ce53ca7fbe67268329fe08830889[m
+Merge: 64a1e36 c6c5e94
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Jul 31 16:17:06 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 64a1e36d044d77fa3b734226ab49a5e0920b8863[m
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Jul 31 16:16:42 2020 +0800
+
+    0731更新webserver registry.go webservermain
+
+[33mcommit c6c5e948d83753ee3bf3c8846b05c43a518ffac7[m
+Author: wt <wt@cluster.vue.com>
+Date:   Fri Jul 31 15:51:08 2020 +0800
+
+    1
+
+[33mcommit 3c103810528df24a46e8ff82d740a6699bed63d6[m
+Author: wt <wt@cluster.vue.com>
+Date:   Fri Jul 31 15:49:56 2020 +0800
+
+    修改镜像
+
+[33mcommit dfd5258c1a281496a96066ad21cff22905494b61[m
+Author: wt <wt@cluster.vue.com>
+Date:   Fri Jul 31 15:28:23 2020 +0800
+
+    修改镜像library
+
+[33mcommit f223a5d3e0130d9cb5c119f3ec66d247767062bb[m
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Jul 31 14:42:29 2020 +0800
+
+    0731webserver更新 第2次
+
+[33mcommit 30226c726dc9bc90e488764d8f2a7b87d68bea61[m
+Author: johnson <johnson_magic@126.com>
+Date:   Fri Jul 31 11:00:30 2020 +0800
+
+    0731更新webserver 1
+
+[33mcommit 4ea03de84cca90d70f1d7d903712c1c27c748d01[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Jul 30 17:56:01 2020 +0800
+
+    屏蔽注释
+
+[33mcommit c844ffe3a92899530a527f9b787c2a83d74c1aaa[m
+Merge: 43badb7 a456f98
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Jul 30 17:37:50 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 43badb72e77200631ce812a9e4fb7a7d2129a696[m
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Jul 30 17:37:02 2020 +0800
+
+    0730调试更新
+
+[33mcommit a456f98fac01fba0b9a3d76367c8f2e1797b389f[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Jul 30 17:36:24 2020 +0800
+
+    添加调试信息
+
+[33mcommit faab94c0ba1fec1aea6af5cb1b8557ac556430f0[m
+Merge: f3c96dd 23e05a5
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Jul 30 16:35:05 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit f3c96dd694fdda4a6e31ce8dd90394631d7ead6f[m
+Author: johnson <johnson_magic@126.com>
+Date:   Thu Jul 30 16:34:52 2020 +0800
+
+    0730更新webserver，添加部分option操作
+
+[33mcommit 23e05a5fd1658a46c355c503af9b122f0309dad5[m
+Author: Lijh <ljh@cetc15>
+Date:   Thu Jul 30 11:27:44 2020 +0800
+
+    新增注释和调试请求的互斥保护
+
+[33mcommit e78a007f33a4aa73eaf5e3f1783b9a7265e547d7[m
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Jul 29 17:03:10 2020 +0800
+
+    0729再次更新webserver
+
+[33mcommit 6152e8e78e77234288e4560177f226aa7de3a1a3[m
+Merge: 61bfbf2 98fec1c
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Jul 29 16:56:27 2020 +0800
+
+    Merge branch 'master' of 192.168.43.105:git/cluster
+
+[33mcommit 61bfbf27bba46b59da643395437e25330fc62d42[m
+Author: johnson <johnson_magic@126.com>
+Date:   Wed Jul 29 16:55:51 2020 +0800
+
+    0729更新webserver包
+
+[33mcommit 98fec1c5dac39e22fc57d6a5a4f2df4408643bbe[m
+Author: Lijh <ljh@cetc15>
+Date:   Wed Jul 29 16:54:42 2020 +0800
+
+    解决通道close报错的问题
+
+[33mcommit 95f88151a162b8d9c5d5000e7a1ff2a29f2249bb[m
+Author: Lijh <ljh@cetc15>
+Date:   Wed Jul 29 15:56:51 2020 +0800
+
+    调整returnResultToServer相关函数的接口调用
+
+[33mcommit 180d86ca9e4dbb3f22bba5ae8c2e80c67064eded[m
+Merge: b601d1a 1c83fd8
+Author: Lijh <ljh@cetc15>
+Date:   Wed Jul 29 15:43:27 2020 +0800
+
+    Merge branch 'master' of myregistry:git/cluster
+
+[33mcommit b601d1af81667b40da9edf8237304c8541ac5eff[m
+Author: Lijh <ljh@cetc15>
+Date:   Wed Jul 29 15:42:06 2020 +0800
+
+    增加了和web后端的镜像操作相关接口的实现，优化了镜像操作相关文件的函数接口
