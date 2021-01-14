@@ -17,22 +17,6 @@ import (
 	"github.com/docker/docker/client"
 )
 
-const (
-	ERR_TYPE_IMAGE_GETLIST  = "镜像：获取镜像列表失败"
-	ERR_TYPE_IMAGE_PULL     = "镜像：拉去镜像失败"
-	ERR_TYPE_CTN_EXIST      = "容器：容器已存在"
-	ERR_TYPE_CTN_NOTEXIST   = "容器：容器不存在"
-	ERR_TYPE_CTN_RUNNING    = "容器：容器正在运行"
-	ERR_TYPE_CTN_NOTRUNNING = "容器：容器未运行"
-	ERR_TYPE_CTN_CREATE     = "容器：创建容器失败"
-	ERR_TYPE_CTN_INFO       = "容器：获取容器信息失败"
-	ERR_TYPE_CTN_START      = "容器：启动容器失败"
-	ERR_TYPE_CTN_STOP       = "容器：停止容器失败"
-	ERR_TYPE_CTN_KILL       = "容器：强杀容器失败"
-	ERR_TYPE_CTN_REMOVE     = "容器：删除容器失败"
-	ERR_TYPE_CTN_GETLOG     = "容器：获取容器日志失败"
-)
-
 //Agent端容器结构体声明
 type CTNA struct {
 	ctn.CTN
@@ -44,7 +28,6 @@ var (
 	Cli *client.Client
 
 	clis []*client.Client
-	err  error
 )
 
 func init() {
@@ -71,11 +54,11 @@ func (pCtn *CTNA) Create() (errType string, err error) {
 	}
 
 	if pCtn.isCreated() { //如果已经被创建过，则不允许重复创建
-		return ERR_TYPE_CTN_EXIST, nil
+		return ctn.ERR_TYPE_CTN_EXIST, nil
 	}
 
 	if imageSummery, err = cli.ImageList(ctx, types.ImageListOptions{}); err!=nil{
-		return ERR_TYPE_IMAGE_GETLIST, err
+		return ctn.ERR_TYPE_IMAGE_GETLIST, err
 	}
 
 	index_repo = -1
@@ -103,7 +86,7 @@ func (pCtn *CTNA) Create() (errType string, err error) {
 		var options types.ImagePullOptions
 		options.RegistryAuth = auth
 		if _, err := cli.ImagePull(ctx, pCtn.Image, options);err!=nil{
-			return ERR_TYPE_IMAGE_PULL, err
+			return ctn.ERR_TYPE_IMAGE_PULL, err
 		}
 		fmt.Println("从私有仓库中Pull镜像成功")
 	} else {
@@ -115,19 +98,18 @@ func (pCtn *CTNA) Create() (errType string, err error) {
 		&container.Config{
 			Image: pCtn.Image,
 		},
+		&container.HostConfig{
+			NetworkMode: "host",
+		},
 		nil,
-		//&container.HostConfig{
-		//	NetworkMode: "host",
-		//},
-		nil,
-		pCtn.CtnName)
+		"")
 	if err != nil {
-		return ERR_TYPE_CTN_CREATE, err
+		return ctn.ERR_TYPE_CTN_CREATE, err
 	}
 	pCtn.ID = resp.ID
 
 	if ctnInspect, err = pCtn.Inspect(); err!=nil{
-		return ERR_TYPE_CTN_INFO, err
+		return ctn.ERR_TYPE_CTN_INFO, err
 	}
 
 	pCtn.State = ctnInspect.State.Status
@@ -147,19 +129,19 @@ func (pCtn *CTNA) Start() (errType string, err error) {
 
 	if !pCtn.isCreated() {
 		errString := "容器尚未创建，请先创建容器！"
-		return ERR_TYPE_CTN_NOTEXIST, errors.New(errString)
+		return ctn.ERR_TYPE_CTN_NOTEXIST, errors.New(errString)
 	}
 
 	if pCtn.isRunning() { //如果已经在运行，则不允许启动
-		return ERR_TYPE_CTN_RUNNING, nil
+		return ctn.ERR_TYPE_CTN_RUNNING, nil
 	}
 
 	if err = cli.ContainerStart(ctx, pCtn.ID, types.ContainerStartOptions{}); err != nil {
-		return ERR_TYPE_CTN_START, err
+		return ctn.ERR_TYPE_CTN_START, err
 	}
 
 	if ctnInspect, err = pCtn.Inspect();err!=nil{
-		return ERR_TYPE_CTN_INFO, err
+		return ctn.ERR_TYPE_CTN_INFO, err
 	}
 	pCtn.State = ctnInspect.State.Status
 
@@ -189,7 +171,7 @@ func (pCtn *CTNA) Run() (errType string, err error) {
 
 	ctnInspect, err = pCtn.Inspect()
 	if err != nil {
-		return ERR_TYPE_CTN_INFO, err
+		return ctn.ERR_TYPE_CTN_INFO, err
 	}
 	pCtn.State = ctnInspect.State.Status
 	fmt.Printf("container: %s\t\t%s\n", pCtn.ID[:10], "run")
@@ -218,18 +200,18 @@ func (pCtn *CTNA) Stop() (errType string, err error) {
 
 	//判断ctn是否已经正在运行，如果不是正在运行，则不需要停止，直接返回
 	if !pCtn.isRunning() {
-		return ERR_TYPE_CTN_NOTRUNNING, nil
+		return ctn.ERR_TYPE_CTN_NOTRUNNING, nil
 	}
 
 	//正常停止容器
 	var timeout *time.Duration
 	err = cli.ContainerStop(ctx, pCtn.ID, timeout)
 	if err != nil {
-		return ERR_TYPE_CTN_STOP, err
+		return ctn.ERR_TYPE_CTN_STOP, err
 	}
 
 	if ctnInspect, err = pCtn.Inspect();err!=nil{
-		return ERR_TYPE_CTN_INFO, err
+		return ctn.ERR_TYPE_CTN_INFO, err
 	}
 	pCtn.State = ctnInspect.State.Status
 
@@ -249,17 +231,17 @@ func (pCtn *CTNA) Kill() (errType string, err error) {
 
 	//判断ctn是否已经正在运行，如果不是正在运行，则不需要停止，直接返回
 	if !pCtn.isRunning() { //如果已经在运行，则不允许启动
-		return ERR_TYPE_CTN_NOTRUNNING, nil
+		return ctn.ERR_TYPE_CTN_NOTRUNNING, nil
 	}
 
 	//正常停止容器
 	err = cli.ContainerKill(ctx, pCtn.ID, "")
 	if err != nil {
-		return ERR_TYPE_CTN_KILL, err
+		return ctn.ERR_TYPE_CTN_KILL, err
 	}
 
 	if ctnInspect, err = pCtn.Inspect();err!=nil{
-		return ERR_TYPE_CTN_INFO, err
+		return ctn.ERR_TYPE_CTN_INFO, err
 	}
 	pCtn.State = ctnInspect.State.Status
 	fmt.Printf("container:%s\t\t%s\n", pCtn.ID[:10], "force stopped\n")
@@ -280,7 +262,7 @@ func (pCtn *CTNA) Remove() (errType string, err error) {
 	//删除该容器
 	err = cli.ContainerRemove(ctx, pCtn.ID, types.ContainerRemoveOptions{})
 	if err != nil {
-		return ERR_TYPE_CTN_REMOVE, err
+		return ctn.ERR_TYPE_CTN_REMOVE, err
 	}
 
 	pCtn.State = "not existed"
@@ -301,7 +283,7 @@ func (pCtn *CTNA) GetLog() (errType string, err error) {
 
 	logs, err = cli.ContainerLogs(ctx, pCtn.ID, types.ContainerLogsOptions{ShowStdout: true})
 	if err != nil {
-		return ERR_TYPE_CTN_GETLOG, err
+		return ctn.ERR_TYPE_CTN_GETLOG, err
 	}
 
 	buf := new(bytes.Buffer)
@@ -410,7 +392,7 @@ func check(pCtn *CTNA, oper string) (string, error) {
 		case ctn.INSPECT:
 			err = errors.New("容器指针为空，无法获取该容器详细信息")
 		}
-		return ERR_TYPE_CTN_NOTEXIST, err
+		return ctn.ERR_TYPE_CTN_NOTEXIST, err
 	}
 	return "", nil
 }

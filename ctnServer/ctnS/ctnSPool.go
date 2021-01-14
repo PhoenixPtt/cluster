@@ -81,7 +81,7 @@ func UpdateCtnInfo(ctnList []types.Container) {
 
 			pCtnS.State = container.State
 
-			if oldRplState != newRplState || pCtnS.Dirty {
+			if oldRplState != newRplState {
 				pCtnS.Updated = time.Now().UnixNano()
 				pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
 				pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
@@ -98,7 +98,6 @@ func UpdateCtnInfo(ctnList []types.Container) {
 					bExisted = true
 				}
 			}
-
 			if !bExisted {
 				pCtnPool.Lock()
 				defer pCtnPool.Unlock()

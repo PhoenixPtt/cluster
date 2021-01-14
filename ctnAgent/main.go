@@ -2,8 +2,8 @@ package main
 
 import (
 	"ctnAgent/ctnA"
-	"ctnCommon/ctn"
 	"ctnCommon/headers"
+	"ctnCommon/protocol"
 	"fmt"
 	"tcpSocket"
 	"time"
@@ -19,34 +19,34 @@ func init() {
 
 func main() {
 	//tcpSocket.ConnectToHost("192.168.43.100", 10000, "192.168.43.100", 0, myReceiveData, myStateChange)
-	tcpSocket.ConnectToHost("192.168.1.155", 10000, "192.168.1.155", 0, myReceiveData, myStateChange)
+	tcpSocket.ConnectToHost("192.168.43.166", 10000, "192.168.43.166", 0, myReceiveData, myStateChange)
 	//tcpSocket.ConnectToHost("192.168.92.141", 10000, "192.168.92.141", 0, myReceiveData, myStateChange)
 
 	//启动容器事件监测
 	go ctnA.CtnEvents(G_id)
 	go ctnA.CtnInfoAll(G_id)
-	//go ctnA.CtnStatsAll(G_id)
+	go ctnA.CtnStatsAll(G_id)
 	for {
-		//fmt.Println("\n请选择下列操作：")
-		//fmt.Println("1.实时上传所有容器资源使用状态")
-		//fmt.Println("2.取消实时上传所有容器资源使用状态")
-		//fmt.Println("3.实时上传所有容器信息")
-		//fmt.Println("4.取消实时上传所有容器信息")
+		fmt.Println("请选择下列操作：")
+		fmt.Println("1.实时上传所有容器资源使用状态")
+		fmt.Println("2.取消实时上传所有容器资源使用状态")
+		fmt.Println("3.实时上传所有容器信息")
+		fmt.Println("4.取消实时上传所有容器信息")
 
 		//设置采样率
-		//ctnA.SetFreq(1)
-		//var val int
-		//fmt.Scanln(&val)
-		//switch val {
-		//case 1:
-		//	go ctnA.CtnStatsAll(G_id)
-		//case 2:
-		//	ctnA.CancelCtnStatsAll()
-		//case 3:
-		//	go ctnA.CtnInfoAll(G_id)
-		//case 4:
-		//	ctnA.CancelCtnInfoAll()
-		//}
+		ctnA.SetFreq(1)
+		var val int
+		fmt.Scanln(&val)
+		switch val {
+		case 1:
+			go ctnA.CtnStatsAll(G_id)
+		case 2:
+			ctnA.CancelCtnStatsAll()
+		case 3:
+			go ctnA.CtnInfoAll(G_id)
+		case 4:
+			ctnA.CancelCtnInfoAll()
+		}
 
 		time.Sleep(time.Second)
 	}
@@ -61,7 +61,7 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 func ReceiveDataFromServer(h string, level uint8, pkgId uint16, i string, s []byte) {
 	fmt.Println("从客户端收取数据")
 
-	pSaTruck := new(ctn.SA_TRUCK)
+	pSaTruck := new(protocol.SA_TRUCK)
 	err := headers.Decode(s, pSaTruck)
 	if err != nil {
 		fmt.Errorf(err.Error())

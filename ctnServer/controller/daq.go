@@ -5,6 +5,7 @@ import (
 	"context"
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
+	"ctnCommon/protocol"
 	"ctnServer/ctnS"
 	"fmt"
 	"github.com/docker/docker/api/types"
@@ -35,7 +36,7 @@ func (pController *CONTROLLER) Daq(){
 			pool.UnregPrivateChanStr(ctnS.DAQ)
 			return
 		case obj := <-pool.GetPrivateChanStr(ctnS.DAQ):
-			pSaTruck := obj.(*ctn.SA_TRUCK)
+			pSaTruck := obj.(*protocol.SA_TRUCK)
 			switch pSaTruck.Flag {
 			case ctn.FLAG_CTRL:
 				//不处理

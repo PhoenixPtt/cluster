@@ -69,44 +69,36 @@ func (rpl *REPLICA) WatchCtn() {
 	for {
 		select {
 		case <-ctx.Done():
-			log := fmt.Sprintf("停止监控副本%s。\n", rpl.RplName)
-			Mylog.Info(log)
+			fmt.Println("&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&", rpl.RplName, "退出")
 			pool.UnregPrivateChanStr(rpl.CtnName)
 			return
 		case obj := <-pool.GetPrivateChanStr(rpl.CtnName):
-			if rpl.Dirty {
-				if rpl.AgentStatus { //如果节点在线，则删除副本
-					fmt.Println("删除有污点的副本", rpl.RplName, rpl.RplImage)
-					go rpl.Remove()
+			ctnStatus := obj.(string)
+			switch ctnStatus {
+			case ctnS.CTN_STATUS_RUNNING:
+				switch rpl.RplTargetStat {
+				case RPL_TARGET_RUNNING: //副本状态与容器状态一致
+				case RPL_TARGET_REMOVED: //副本状态与容器状态不一致
+					if !rpl.Dirty {
+						fmt.Println("通知服务进行调度1", rpl.SvcName, rpl.RplName)
+						pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
+						statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
+						pChan <- statusMap
+					}
 				}
-			} else{
-				ctnStatus := obj.(string)
-				switch ctnStatus {
-				case ctnS.CTN_STATUS_RUNNING:
-					switch rpl.RplTargetStat {
-					case RPL_TARGET_RUNNING: //副本状态与容器状态一致
-					case RPL_TARGET_REMOVED: //副本状态与容器状态不一致
-						if !rpl.Dirty {
-							fmt.Println("通知服务进行调度1", rpl.SvcName, rpl.RplName)
-							pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-							statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
-							pChan <- statusMap
+			case ctnS.CTN_STATUS_NOTRUNNING:
+				switch rpl.RplTargetStat {
+				case RPL_TARGET_RUNNING: //副本状态与容器状态不一致
+					if !rpl.Dirty {
+						if rpl.AgentStatus { //如果节点在线，则删除副本
+							go rpl.Remove()
 						}
+						fmt.Println("通知服务进行调度2", rpl.SvcName, rpl.RplName)
+						pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
+						statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
+						pChan <- statusMap
 					}
-				case ctnS.CTN_STATUS_NOTRUNNING:
-					switch rpl.RplTargetStat {
-					case RPL_TARGET_RUNNING: //副本状态与容器状态不一致
-						if !rpl.Dirty {
-							fmt.Println("通知服务进行调度2", rpl.SvcName, rpl.RplName)
-							if rpl.AgentStatus { //如果节点在线，则删除副本
-								go rpl.Remove()
-							}
-							pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-							statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
-							pChan <- statusMap
-						}
-					case RPL_TARGET_REMOVED: //副本状态与容器状态一致
-					}
+				case RPL_TARGET_REMOVED: //副本状态与容器状态一致
 				}
 			}
 		}
@@ -145,7 +137,7 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 		goto Error
 	}
 
-	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(rpl.Timeout))
+	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(1))
 	defer cancel()
 	errType, err = pCtnS.Run(ctx)
 	if err != nil {
@@ -197,7 +189,7 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 		goto Error
 	}
 
-	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(rpl.Timeout))
+	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(5))
 	defer cancel()
 	errType, err = pCtnS.Remove(ctx)
 	if err != nil {
@@ -212,10 +204,9 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 	return
 Error:
 	if !rpl.Dirty {
-		//pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-		//pChan <- RPL_STATUS_GODIRTY
-
-		rpl.RplTargetStat = RPL_TARGET_REMOVED
+		pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
+		rplStatus[rpl.RplName] = RPL_STATUS_GODIRTY
+		pChan <- rplStatus
 	}
 	log = fmt.Sprintf("%s执行Remove操作执行失败。错误类型：%s；错误详情：%s\n", rpl.RplName, errType, errors.New(err.Error()))
 	Mylog.Info(log)

@@ -11,9 +11,9 @@ const(
 )
 
 type CtnPoolOper interface {
-	AddObj(objName string, pObj *interface{})
+	AddObj(objName string, pObj interface{})
 	RemoveObj(objName string) string
-	GetObj(objName string) *interface{}
+	GetObj(objName string) interface{}
 	GetObjNames() []string
 }
 

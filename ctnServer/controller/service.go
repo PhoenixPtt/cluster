@@ -90,7 +90,6 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 	rpl.RplName = name
 	rpl.SvcName = pSvc.SvcName
 	rpl.RplImage = image
-	rpl.Timeout = pSvc.Timeout
 	rpl.AgentAddr = agentAddr
 	rpl.AgentStatus = true
 	rpl.RplTargetStat = RPL_TARGET_REMOVED

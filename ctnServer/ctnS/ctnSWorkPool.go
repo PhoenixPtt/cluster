@@ -3,6 +3,7 @@ package ctnS
 import (
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
+	"ctnCommon/protocol"
 	"unsafe"
 
 	//"ctnCommon/headers"
@@ -19,7 +20,7 @@ const DAQ = "DAQ"
 //发送网络消息
 func (workPool *CTNS_WORK_POOL) Send()  {
 	for obj := range workPool.GetSendChan(){
-		pSaTruck, ok:= obj.(*ctn.SA_TRUCK)
+		pSaTruck, ok:= obj.(*protocol.SA_TRUCK)
 		if ok{
 			byteStream, err := headers.Encode(pSaTruck)//打包
 			if err != nil {
@@ -37,7 +38,7 @@ func (workPool *CTNS_WORK_POOL) Recv(){
 	for{
 		select {
 		case obj := <-workPool.GetRecvChan():
-			pSaTruck:=obj.(*ctn.SA_TRUCK)
+			pSaTruck:=obj.(*protocol.SA_TRUCK)
 			switch pSaTruck.Flag {
 			case ctn.FLAG_CTRL:
 				pool.AppendInt(pSaTruck.Index, pSaTruck)
@@ -63,16 +64,16 @@ func (workPool *CTNS_WORK_POOL) Recv(){
 				UpdateCtnInfo(pSaTruck.CtnList)
 			case ctn.FLAG_STATS://更新资源使用情况
 			case ctn.FLAG_EVENT://更新事件
-				////这些信息都要返回给上层
-				//if len(pSaTruck.EvtMsg)>0{
-				//	eventMsg := pSaTruck.EvtMsg[0]
-				//	//fmt.Printf("%#v", eventMsg)
-				//	UpdateCtnEvent(eventMsg)
-				//}
-				//
-				//if len(pSaTruck.ErrMsg)>0{
-				//	//更新错误信息
-				//}
+				//这些信息都要返回给上层
+				if len(pSaTruck.EvtMsg)>0{
+					eventMsg := pSaTruck.EvtMsg[0]
+					//fmt.Printf("%#v", eventMsg)
+					UpdateCtnEvent(eventMsg)
+				}
+
+				if len(pSaTruck.ErrMsg)>0{
+					//更新错误信息
+				}
 			}
 
 			uploadChan := pool.GetPrivateChanStr(DAQ)
