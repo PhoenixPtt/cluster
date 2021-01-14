@@ -8,17 +8,30 @@ import (
 // 应用服务相关
 const (
 	FLAG_SERV       = "SVCS"
-	FLAG_SERV_CTRL  = "SVCS_CTRL"
-	FLAG_SERV_STATS = "SVCS_STATS"
+	FLAG_SERV_CTRL  = "SVCS_CTRL" // 启动服务 停止服务 删除服务 扩缩容 重启服务
+ 	FLAG_SERV_LIST  = "SVCS_LIST"   // 获取服务列表
+	//FLAG_SERV_CREATE  = "SVCS_CRET" // 创建服务
+	//FLAG_SERV_START   = "SVCS_STAT" // 启动服务
+	//FLAG_SERV_STOP    = "SVCS_STOP" // 停止服务
+	//FLAG_SERV_REMOVE  = "SVCS_REMV" // 删除服务
+	//FLAG_SERV_SCALE   = "SVCS_SCAL" // 扩缩容
+	//FLAG_SERV_RESTART = "SVCS_REST" // 重启服务
+	FLAG_SERV_STATS = "SVCS_STAT"
 	FLAG_SERV_INFO  = "SVCS_INFO"
 )
 
 // 容器操作
 const (
 	FLAG_CTNS   	 = "CTNS"
-	FLAG_CTNS_CTRL   = "CTNS_CTRL"
-	FLAG_CTNS_STATS  = "CTNS_STATS"
-	FLAG_CTNS_INFO   = "CTNS_INFO"
+	FLAG_CTNS_CTRL   = "CTNS_CTRL"  // 启动容器 停止容器 强制停止容器 删除容器 获取容器日志 获取容器详细信息
+	FLAG_CTNS_CRET   = "CTNS_CRET"  // 创建容器
+	//FLAG_CTNS_START   = "CTNS_STAT" // 启动容器
+	//FLAG_CTNS_STOP   = "CTNS_STOP"  // 停止容器
+	//FLAG_CTNS_FCST   = "CTNS_FCST"  // 强制停止容器
+	//FLAG_CTNS_REMV   = "CTNS_REMV"  // 删除容器
+	//FLAG_CTNS_LOG    = "CTNS_LOG"   // 获取容器日志
+	FLAG_CTNS_STATS  = "CTNS_STAT" // 获取容器状态
+	//FLAG_CTNS_INFO   = "CTNS_INFO"  // 获取容器详细信息
 )
 
 // 服务结构体
