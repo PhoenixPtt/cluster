@@ -24,8 +24,10 @@ func (pSvc *SERVICE) schedule(rplName string) (err error) {
 		Mylog.Info("-----------------------调度-----------------------")
 		pSvc.SvcStats = SVC_RUNNING
 		//原来副本置为脏
-		pRpl:=pSvc.GetRpl(rplName)
-		pRpl.Dirty = true
+		pOldRpl:=pSvc.GetRpl(rplName)
+		pOldRpl.Dirty = true
+		pOldRpl.SetTargetStat(RPL_TARGET_REMOVED)
+
 		//迁移到新的副本
 		var agentAddrNumMap map[string]int
 		agentAddrNumMap, err = pSvc.EScale(1)
@@ -35,8 +37,8 @@ func (pSvc *SERVICE) schedule(rplName string) (err error) {
 		}
 		for addr, rplNum := range agentAddrNumMap {
 			for i := 0; i < rplNum; i++ {
-				pRpl := pSvc.NewRpl(pSvc.SvcName+"_"+headers.UniqueId(), pSvc.Image, addr)
-				pRpl.SetTargetStat(RPL_TARGET_RUNNING) //设置副本的目标状态
+				pNewRpl := pSvc.NewRpl(pSvc.SvcName+"_"+headers.UniqueId(), pSvc.Image, addr)
+				pNewRpl.SetTargetStat(RPL_TARGET_RUNNING) //设置副本的目标状态
 			}
 		}
 		pSvc.mutex.Unlock()
@@ -106,7 +108,7 @@ func (pSvc *SERVICE) getScaleNum() (dir int,scaleNum int){
 			fmt.Printf("副本%s对应的容器不存在！容器名称：%s\n", rpl.RplName, rpl.CtnName)
 			continue
 		}
-		if rpl.Dirty==false{
+		if !rpl.Dirty{
 			if pCtn.State=="running"{
 				activeCtnNum++
 			}

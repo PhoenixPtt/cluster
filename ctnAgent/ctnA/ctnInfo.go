@@ -4,8 +4,6 @@ import (
 	"context"
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
-	"ctnCommon/protocol"
-
 	// "fmt"
 	"time"
 
@@ -46,7 +44,7 @@ func CtnInfoAll(distAddr string) {
 			}
 
 			//向Server端发送容器信息
-			var pSaTruck protocol.SA_TRUCK
+			var pSaTruck ctn.SA_TRUCK
 			pool.AddIndex()
 			pSaTruck.Flag = ctn.FLAG_CTN
 			pSaTruck.Index = pool.GetIndex()
@@ -70,8 +68,6 @@ func CtnInfoAll(distAddr string) {
 					pSaTruck.CtnList = append(pSaTruck.CtnList, container)
 				}
 			}
-
-			//fmt.Printf("%#v\n", pSaTruck.CtnList)
 
 			GetSendChan() <- &pSaTruck
 		}
