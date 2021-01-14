@@ -4,7 +4,6 @@ import (
 	"context"
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
-	"ctnCommon/protocol"
 	"errors"
 	"time"
 )
@@ -63,11 +62,11 @@ func (pCtnS *CTNS) Remove(ctx context.Context) (errType string, err error) {
 //注意：容器被删除之后无法获取容器日志
 func (pCtnS *CTNS) GetLog() (log string, err error) {
 	pool.AddIndex()
-	pSaTruck := &protocol.SA_TRUCK{}
+	pSaTruck := &ctn.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
 	pSaTruck.Index = pool.GetIndex()
 	pSaTruck.Addr = pCtnS.AgentAddr
-	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
+	pSaTruck.Req_Ans = make([]ctn.REQ_ANS, 1)
 	pSaTruck.Req_Ans[0].CtnOper = ctn.GETLOG
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
 
@@ -81,7 +80,7 @@ func (pCtnS *CTNS) GetLog() (log string, err error) {
 		cancel()
 		return "", errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
-		pSaAnsTruck := obj.(*protocol.SA_TRUCK)
+		pSaAnsTruck := obj.(*ctn.SA_TRUCK)
 		if len(pSaAnsTruck.Req_Ans) < 1 {
 			return ERR_CTN_NILANS, errors.New(ERR_CTN_NILANS)
 		}
@@ -99,11 +98,11 @@ func (pCtnS *CTNS) GetLog() (log string, err error) {
 //查看容器详细信息
 func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
 	pool.AddIndex()
-	pSaTruck := &protocol.SA_TRUCK{}
+	pSaTruck := &ctn.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
 	pSaTruck.Index = pool.GetIndex()
 	pSaTruck.Addr = pCtnS.AgentAddr
-	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
+	pSaTruck.Req_Ans = make([]ctn.REQ_ANS, 1)
 	pSaTruck.Req_Ans[0].CtnOper = ctn.GETLOG
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
 
@@ -117,7 +116,7 @@ func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
 		cancel()
 		return ctnInspect, errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
-		pSaAnsTruck := obj.(*protocol.SA_TRUCK)
+		pSaAnsTruck := obj.(*ctn.SA_TRUCK)
 		if len(pSaAnsTruck.Req_Ans) < 1 {
 			return ctnInspect, errors.New(ERR_CTN_NILANS)
 		}
@@ -135,11 +134,11 @@ func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
 //容器操作回路
 func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (errType string, err error) {
 	pool.AddIndex()
-	pSaTruck := &protocol.SA_TRUCK{}
+	pSaTruck := &ctn.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
 	pSaTruck.Index = pool.GetIndex()
 	pSaTruck.Addr = pCtnS.AgentAddr
-	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
+	pSaTruck.Req_Ans = make([]ctn.REQ_ANS, 1)
 	pSaTruck.Req_Ans[0].CtnOper = operFlag
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
 	pSaTruck.Req_Ans[0].CtnImage = pCtnS.Image
@@ -152,7 +151,7 @@ func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (errType string, e
 		pool.UnregPrivateChanInt(pSaTruck.Index)
 		return ERR_CTN_TIMEOUT, errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
-		pSaAnsTruck := obj.(*protocol.SA_TRUCK)
+		pSaAnsTruck := obj.(*ctn.SA_TRUCK)
 		if len(pSaAnsTruck.Req_Ans) < 1 {
 			return ERR_CTN_NILANS, errors.New(ERR_CTN_NILANS)
 		}

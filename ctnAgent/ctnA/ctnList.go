@@ -60,7 +60,6 @@ func GetCtnInfo(ctnId string) (types.Container,error)  {
 	//	return container, err
 	//}
 
-
 	//遍历所有容器找到目标容器
 	for _,val:=range containers{
 		if val.ID==ctnId{

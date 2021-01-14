@@ -28,12 +28,12 @@ type SERVICE struct {
 	NameSpace    string //服务的命名空间
 
 	Replicas         []*REPLICA      //服务的副本
+	Timeout int //超时时间
 	NodeStatusMap    map[string]bool //节点状态映射表
 	CancelWatchRpl context.CancelFunc
 	//SchedulePOLICY				//服务的调度策略
 
 	mutex sync.Mutex
-	mutex_rpl sync.Mutex
 }
 
 //以结构体作为配置参数创建服务对象
@@ -43,6 +43,7 @@ func NewService(pSvcCfg *SVC_CFG) (pSvc *SERVICE) {
 	pSvc.Image = pSvcCfg.Description.Image
 	pSvc.SvcScale = pSvcCfg.Description.Deploy.Replicas
 	pSvc.Replicas = make([]*REPLICA, 0, CTN_SIZE)
+	pSvc.Timeout = pSvcCfg.Description.Deploy.Timeout
 	pSvc.NodeStatusMap = make(map[string]bool, CTN_SIZE)
 	pSvc.SvcStats = SVC_DEFAULT
 	go pSvc.WatchRpl()

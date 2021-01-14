@@ -5,7 +5,6 @@ import (
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"ctnCommon/pool"
-	"ctnCommon/protocol"
 	"encoding/json"
 	"io"
 
@@ -138,7 +137,7 @@ func CtnStats(ctnId string, distAddr string) {
 				//}
 				//fmt.Printf("单核累加：%.2f，总的CPU占有率：%.2f\n", sum, ctnStats.CPUUsageCalc)
 
-				pSaTruck := &protocol.SA_TRUCK{}
+				pSaTruck := &ctn.SA_TRUCK{}
 				pSaTruck.Flag = ctn.FLAG_STATS
 				pool.AddIndex()
 				pSaTruck.Index = pool.GetIndex()

@@ -4,7 +4,6 @@ import (
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"ctnCommon/pool"
-	"ctnCommon/protocol"
 	"fmt"
 	"unsafe"
 )
@@ -16,13 +15,15 @@ type CTNA_WORKPOOL struct {
 //发送网络消息
 func (workPool *CTNA_WORKPOOL) Send() {
 	for obj := range workPool.GetSendChan() {
-		pSaTruck := obj.(*protocol.SA_TRUCK)
+		pSaTruck := obj.(*ctn.SA_TRUCK)
 		byteStream, err := headers.Encode(pSaTruck) //打包
 		if err != nil {
 			errCode := "CTN：网络数据打包失败！"
 			fmt.Println(errCode)
 			continue
 		}
+
+		fmt.Printf("%#v\n", pSaTruck)
 
 		pool.CallbackSendCtn(pSaTruck.SrcAddr, 1, 0, pSaTruck.Flag, byteStream, workPool.GetSendFunc()) //通知主线程发送数据
 	}
@@ -33,7 +34,7 @@ func (workPool *CTNA_WORKPOOL) Recv() {
 	for {
 		select {
 		case obj := <-workPool.GetRecvChan():
-			pSaTruck := obj.(*protocol.SA_TRUCK)
+			pSaTruck := obj.(*ctn.SA_TRUCK)
 			if pSaTruck.Flag != ctn.FLAG_CTRL { //仅接收控制指令
 				continue
 			}
@@ -77,6 +78,19 @@ func (workPool *CTNA_WORKPOOL) Recv() {
 						reqAns.CtnState = pCtnA.State
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
+
+						if reqAns.CtnOper==ctn.START{
+							fmt.Println("启动容器kkkkkkkkkkkkkkkkkkkkk")
+						}else if reqAns.CtnOper==ctn.STOP{
+							fmt.Println("停止容器kkkkkkkkkkkkkkkkkkkkk")
+						}else if reqAns.CtnOper==ctn.KILL{
+							fmt.Println("强杀容器kkkkkkkkkkkkkkkkkkkkkkk")
+						}
+
+						if err != nil {
+							fmt.Println("ttttttttttttttttttttt启动、停止、强杀容器失败！")
+						}
+
 					case ctn.REMOVE:
 						errType, err := OperateWithStratgy(pCtnA, reqAns.CtnOper)
 						reqAns.CtnState = pCtnA.State

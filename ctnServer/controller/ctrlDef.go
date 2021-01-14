@@ -63,6 +63,7 @@ type Resources struct {
 type Deploy struct {
 	Mode string `yaml:"mode"`
 	Replicas int `yaml:"replicas"`
+	Timeout int `yaml:"timeout"`
 	Placement Placement `yaml:"placement"`
 	Resources []Resources `yaml:"resources"`
 }

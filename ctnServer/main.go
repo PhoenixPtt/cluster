@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"ctnCommon/headers"
-	"ctnCommon/protocol"
 	"ctnServer/controller"
 	"ctnServer/ctnS"
 	"fmt"
@@ -196,6 +195,7 @@ func main() {
 							fmt.Printf("%s\n", imageName)
 							var config map[string]string
 							pCtn = ctnS.NewCtnS(imageName, agentNames[addrIndex], config)
+							ctnS.AddCtn(pCtn)
 							var ctx context.Context
 							var cancel context.CancelFunc
 							ctx,cancel=context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
@@ -276,7 +276,7 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 		fmt.Println("\n从agent端收取数据", h, pkgId,i)
 	}
 
-	pSaTruck := &protocol.SA_TRUCK{}
+	pSaTruck := &ctn.SA_TRUCK{}
 	pSaTruck.SrcAddr = h
 	err := headers.Decode(s, pSaTruck)
 	if err != nil {

@@ -69,7 +69,7 @@ func (service *SERVICE) WatchRpl() {
 					go service.schedule(rplName) //重新调度
 				case RPL_STATUS_REMOVED:
 					service.DelRpl(rplName)
-					fmt.Println("收到副本已被删除，嘻嘻", rplStatusMap, service.SvcName, service.SvcStats, len(service.Replicas))
+					fmt.Println("收到副本已被删除，嘻嘻", rplStatusMap, service.SvcName, service.SvcStats)
 					if service.SvcStats == SVC_REMOVED {
 						rplLen := len(service.Replicas)
 						if rplLen == 0 {
@@ -90,33 +90,26 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 	rpl.RplName = name
 	rpl.SvcName = pSvc.SvcName
 	rpl.RplImage = image
+	rpl.Timeout = pSvc.Timeout
 	rpl.AgentAddr = agentAddr
 	rpl.AgentStatus = true
 	rpl.RplTargetStat = RPL_TARGET_REMOVED
 	rpl.CreateTime = headers.ToString(time.Now(),headers.TIME_LAYOUT_NANO)//启动时间
 
-	pSvc.mutex_rpl.Lock()
 	pSvc.Replicas = append(pSvc.Replicas, rpl)
-	pSvc.mutex_rpl.Unlock()
 
 	return
 }
 
 func (pSvc *SERVICE) DelRpl(rplName string) {
 	pRpl := pSvc.GetRpl(rplName)
-	fmt.Println("1111111111111111111111111111111111111111111", pRpl)
 	pRpl.CancelWatchCtn()
 
 	rIndex := pSvc.GetRplIndex(rplName)
 	if rIndex == -1 {
 		return
 	}
-
-	pSvc.mutex_rpl.Lock()
 	pSvc.Replicas = append(pSvc.Replicas[:rIndex], pSvc.Replicas[rIndex+1:]...)
-	pSvc.mutex_rpl.Unlock()
-
-	fmt.Println("3333333333333333333333333333333333333333", pSvc.Replicas)
 }
 
 //对应用户创建操作
@@ -348,7 +341,5 @@ func (service *SERVICE) GetRplIndex(rplName string) int {
 
 //获取所有副本
 func (service *SERVICE) getReplicas() []*REPLICA {
-	service.mutex_rpl.Lock()
-	defer service.mutex_rpl.Unlock()
 	return service.Replicas
 }
