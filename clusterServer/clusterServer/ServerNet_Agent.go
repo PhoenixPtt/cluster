@@ -2,8 +2,8 @@ package clusterServer
 
 import (
 	header "clusterHeader"
+	"ctnCommon/ctn"
 	"ctnCommon/headers"
-	"ctnCommon/protocol"
 	"ctnServer/ctnS"
 	"encoding/json"
 	"fmt"
@@ -80,9 +80,9 @@ func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
 	case header.FLAG_IMAG: // 镜像和仓库相关
 		ReceiveDataFromAgent(ip, pkgId, data)
 	case header.FLAG_CTNS: // 容器相关
-		pSaTruck := &protocol.SA_TRUCK{}
-		pSaTruck.SrcAddr = h
-		err := headers.Decode(s, pSaTruck)
+		pSaTruck := &ctn.SA_TRUCK{}
+		pSaTruck.SrcAddr = ip
+		err := headers.Decode(data, pSaTruck)
 		if err != nil {
 			fmt.Errorf(err.Error())
 		}

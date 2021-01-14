@@ -2,6 +2,7 @@ package clusterServer
 
 import (
 	header "clusterHeader"
+	"context"
 	"ctnCommon/ctn"
 	"ctnServer/controller"
 	"ctnServer/ctnS"
@@ -27,128 +28,90 @@ func procFlagSERV(token interface{}, data interface{}, respChan chan<- interface
 
 	case header.FLAG_SERV_LIST :   // 获取服务列表
 		sNames := g_controller.GetSvcNames()
-		r.Count = sNames;
-
+		r.Count = uint32(len(sNames))
+		r.Service = make([]header.Service, r.Count)
+		for  i:=uint32(0); i<r.Count; i++ {
+			r.Service[i].Id = sNames[i];
+		}
 	case header.FLAG_SERV_CREATE: // 创建服务
-		g_controller.CreateSvcFromFile("config/service1.yaml", controller.YML_FILE)
-	case header.FLAG_SERV_CTRL:// 启动服务
-		{
-			var svcOpers map[int]string
-			svcOpers = make(map[int]string)
-			svcOpers[2] = controller.SSTART
-			svcOpers[3] = controller.SSTOP
-			svcOpers[4] = controller.SREMOVE
-			svcOpers[5] = controller.SSCALE
-			svcOpers[6] = controller.SRESTART
-			fmt.Println("请选择服务：")
-			sNames := g_controller.GetSvcNames()
-			for index, val := range sNames {
-				fmt.Printf("%d.%s\n", index, val)
-			}
-			var sIndex int
-			fmt.Scanln(&sIndex)
-			if sIndex >= len(sNames) {
-				break
-			}
-			rlt := g_controller.Contains(sNames[sIndex])
-			if rlt {
-				service := g_controller.GetSvc(sNames[sIndex])
+		if len(r.Oper.Par)>0  {
+			g_controller.CreateSvcFromFile(r.Oper.Par[0].Value, controller.YML_FILE)
+		} else {
+			r.Oper.Success = false		// 默认操作成功
+			r.Oper.Err = "服务配置文件错误！无法正确创建服务。"
+		}
+	case header.FLAG_SERV_CTRL:// 启动服务 停止服务 删除服务 扩缩容 重启服务
+		if len(r.Oper.Par)>0  {
+			svrName := r.Oper.Par[0].Value;
+			if g_controller.Contains(svrName)  {
+				service := g_controller.GetSvc(svrName)
 				//fmt.Printf("您选择的服务：%#v\n", service)
-				switch index {
-				case 2:
+				switch r.Oper.Par[0].Name {
+				case header.FLAG_SERV_START:
 					g_controller.StartSvc(service.SvcName)
-				case 3:
+				case header.FLAG_SERV_STOP:
 					g_controller.StopSvc(service.SvcName)
-				case 4:
+				case header.FLAG_SERV_REMOVE:
 					g_controller.RemoveSvc(service.SvcName)
-				case 5:
+				case header.FLAG_SERV_SCALE:
 					g_controller.ScaleSvc(service.SvcName, 8)
-				case 6:
+				case header.FLAG_SERV_RESTART:
 					g_controller.StopSvc(service.SvcName)
 					g_controller.StartSvc(service.SvcName)
 				}
-				//g_cluster.cr
-				//if index==2||index==5||index==6{//启动或扩容缩容或重启
-				//	//如果是扩容缩容服务
-				//	fmt.Println("请输入副本规模：")
-				//	var sScale int
-				//	fmt.Scanln(&sScale)
-				//	service.SvcOperChan <- cluster.SVC_OPER{
-				//		SOperName: svcOpers[index],//将服务操作放入操作通道
-				//		Scale: sScale,
-				//	}
-				//}else{
-				//	service.SvcOperChan <- cluster.SVC_OPER{
-				//		SOperName: svcOpers[index],//将服务操作放入操作通道
-				//	}
-				//}
 			} else {
-				fmt.Println("服务%s不存在！", sNames[sIndex])
+				r.Oper.Success = false		// 默认操作成功
+				r.Oper.Err = "服务[" + svrName + "]不存在"
 			}
+		} else {
+			r.Oper.Success = false		// 默认操作成功
+			r.Oper.Err = "请指定服务名称。"
 		}
 	case header.FLAG_SERV_STATS:
 
 	case header.FLAG_SERV_INFO :
 
 	case header.FLAG_CTNS_CRET:  // 创建容器
-		{
-			var agentNames []string
-			var addrIndex int
-			for {
-				for {
-					agentNames = g_controller.GetNodeList(controller.ACTIVE_NODES)
-					for index, agentName := range agentNames {
-						fmt.Printf("%d:%s\n", index, agentName)
+			if len(r.Oper.Par) == 0 {
+				r.Oper.Success = false // 默认操作成功
+				r.Oper.Err = "请指定镜像名称。"
+			} else {
+				imageName := r.Oper.Par[0].Value
+				if len(r.Oper.Par) == 1 {
+					hs := g_controller.GetNodeList(controller.ALL_NODES)
+					for _,h := range(hs) {
+						go createContainer(imageName, h)
 					}
-					fmt.Println("请输入agent端IP地址序号：\n")
-
-					fmt.Scanln(&addrIndex)
-					if addrIndex >= 0 && addrIndex < len(agentNames) {
-						goto TT
+				} else {
+					for i := 1; i < len(r.Oper.Par); i++ {
+						go createContainer(imageName, r.Oper.Par[i].Value)
 					}
 				}
 			}
-		TT:
-			fmt.Println("创建容器:")
-			fmt.Println("请输入镜像名称：")
-			var imageName string
-			fmt.Scanln(&imageName)
-			fmt.Printf("%s\n", imageName)
-			var config map[string]string
-			pCtn = ctnS.NewCtnS(imageName, agentNames[addrIndex], config)
-			var ctx context.Context
-			var cancel context.CancelFunc
-			ctx,cancel=context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
-			defer cancel()
-			pCtn.Oper(ctx, ctn.CREATE)
-		}
+
 	case header.FLAG_CTNS_CTRL: // 启动容器
-		{
-			var flagMap map[int]string
-			flagMap = make(map[int]string)
-			flagMap[2] = ctn.START
-			flagMap[3] = ctn.STOP
-			flagMap[4] = ctn.KILL
-			flagMap[5] = ctn.REMOVE
-			flagMap[6] = ctn.INSPECT
-			flagMap[7] = ctn.GETLOG
-
-			ctnName := chooseCtnName()
-			if ctnName == "" {
-				break
+		if len(r.Oper.Par) >= 1 {
+			switch r.Oper.Par[0].Name {
+			case header.FLAG_CTNS_START:
+				go ctrlContainer(r.Oper.Par[0].Value, ctn.START)
+			case header.FLAG_CTNS_STOP:
+				go ctrlContainer(r.Oper.Par[0].Value, ctn.STOP)
+			case header.FLAG_CTNS_FCST:  // 强制停止容器
+				go ctrlContainer(r.Oper.Par[0].Value, ctn.KILL)
+			case header.FLAG_CTNS_REMV:  // 删除容器
+				go ctrlContainer(r.Oper.Par[0].Value, ctn.REMOVE)
+			case header.FLAG_CTNS_LOG :   // 获取容器日志
+				go ctrlContainer(r.Oper.Par[0].Value, ctn.GETLOG)
+			case header.FLAG_CTNS_STATS : // 获取容器状态
+				go ctrlContainer(r.Oper.Par[0].Value, ctn.INSPECT)
+			default:
+				r.Oper.Success = false					// 操作失败
+				r.Oper.Err = "控制容器参数错误！"				// 操作失败信息
 			}
-
-			pCtn = ctnS.GetCtn(ctnName)
-			pCtn.OperNum = 1
-			//fmt.Printf("%s：%s  %#v\n",flagMap[index],ctnName, pCtn)
-			var ctx context.Context
-			var cancel context.CancelFunc
-			ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(5))
-			defer cancel()
-			pCtn.Oper(ctx, flagMap[index])
+		} else {
+			r.Oper.Success = false					// 操作失败
+			r.Oper.Err = "控制容器至少需要容器ID和控制类型！"				// 操作失败信息
 		}
-	case header.FLAG_CTNS_STATS: // 获取容器状态
-
 
 	default:						// 其它操作处理
 		r.Oper.Success = false					// 操作失败
@@ -161,4 +124,26 @@ func procFlagSERV(token interface{}, data interface{}, respChan chan<- interface
 
 	// 返回错误信息
 	return errors.New(r.Oper.Err)
+}
+
+func createContainer(imageName string, h string ) {
+	fmt.Printf("创建容器 %s\n", imageName)
+	var config map[string]string
+	pCtn := ctnS.NewCtnS(imageName, h, config)
+	var ctx context.Context
+	var cancel context.CancelFunc
+	ctx,cancel=context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
+	defer cancel()
+	pCtn.Oper(ctx, ctn.CREATE)
+}
+
+func ctrlContainer(ctnName string, opera string) {
+	pCtn := ctnS.GetCtn(ctnName)
+	pCtn.OperNum = 1
+	//fmt.Printf("%s：%s  %#v\n",flagMap[index],ctnName, pCtn)
+	var ctx context.Context
+	var cancel context.CancelFunc
+	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(5))
+	defer cancel()
+	pCtn.Oper(ctx, opera)
 }
