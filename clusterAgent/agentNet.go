@@ -5,8 +5,8 @@ import (
 	"clusterAgent/servers"
 	header "clusterHeader"
 	"ctnAgent/ctnA"
+	"ctnCommon/ctn"
 	"ctnCommon/headers"
-	"ctnCommon/protocol"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -107,7 +107,7 @@ func onNetReadData(ip string, pkgId uint16, flag string, data []byte) {
 
 	case header.FLAG_CTNS: // 容器相关
 		// 处理接收到的任务相关的数据，然后返回结果
-		pSaTruck := new(protocol.SA_TRUCK)
+		pSaTruck := new(ctn.SA_TRUCK)
 		err := headers.Decode(data, pSaTruck)
 		if err != nil {
 			fmt.Errorf(err.Error())

@@ -5,6 +5,7 @@
     <content url="file://$MODULE_DIR$" />
     <content url="file://$MODULE_DIR$/../clusterServer" />
     <content url="file://$MODULE_DIR$/../ctnAgent" />
+    <content url="file://$MODULE_DIR$/../ctnCommon" />
     <content url="file://$MODULE_DIR$/../ctnServer" />
     <content url="file://$MODULE_DIR$/../webservermain" />
     <orderEntry type="inheritedJdk" />
