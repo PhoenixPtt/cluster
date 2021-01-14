@@ -5,6 +5,7 @@ import (
 	"ctnServer/controller"
 	"github.com/shirou/gopsutil/host"
 	"math/rand"
+	"sync"
 	"time"
 )
 
@@ -50,9 +51,16 @@ const (
 	SERVICE_WATCH = "集群管理平台"+"_"+"服务监视"
 )
 
+var (
+	exit         bool
+	mMutex       sync.Mutex
+	g_controller *controller.CONTROLLER
+)
+
 func init() {
-	asm := controller.NewController(writeAgentData)
-	asm.Start()
+	g_controller = controller.NewController(writeAgentData)
+	g_controller.Start()
+	//go cluster.MsgEvent()
 }
 
 

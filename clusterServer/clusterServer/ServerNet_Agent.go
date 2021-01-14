@@ -2,8 +2,8 @@ package clusterServer
 
 import (
 	header "clusterHeader"
-	"ctnCommon/ctn"
 	"ctnCommon/headers"
+	"ctnCommon/protocol"
 	"ctnServer/ctnS"
 	"encoding/json"
 	"fmt"
@@ -22,10 +22,12 @@ func onAgentStateChanged(ip string, state uint8) {
 			},
 		}
 		writeAgentData(ip, tcpSocket.TCP_TPYE_CONTROLLER, 0, header.FLAG_CLST, header.JsonByteArray(v))
+		g_controller.PutNode(ip, true)
 		log.Println("Agent:", ip, "Connected success!")
 	} else {
 		// 网络连接端口后，仅仅从网络列表中标记为连接失败，并不从列表中移除
 		nodes.SetNodeState(ip, false)
+		g_controller.PutNode(ip, false)
 		log.Println("Agent:", ip, "DisConnected!")
 	}
 }
@@ -78,9 +80,9 @@ func onAgentReadData(ip string, pkgId uint16, flag string, data []byte) {
 	case header.FLAG_IMAG: // 镜像和仓库相关
 		ReceiveDataFromAgent(ip, pkgId, data)
 	case header.FLAG_CTNS: // 容器相关
-		//fmt.Println("\n从agent端收取数据", h, pkgId,i)
-		pSaTruck := &ctn.SA_TRUCK{}
-		err := headers.Decode(data, pSaTruck)
+		pSaTruck := &protocol.SA_TRUCK{}
+		pSaTruck.SrcAddr = h
+		err := headers.Decode(s, pSaTruck)
 		if err != nil {
 			fmt.Errorf(err.Error())
 		}

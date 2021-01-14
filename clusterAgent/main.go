@@ -1,6 +1,7 @@
 package main
 
 import (
+	"ctnAgent/ctnA"
 	"fmt"
 	"os"
 	"os/signal"
@@ -8,7 +9,6 @@ import (
 	"tcpSocket"
 
 	"clusterAgent/agentImage"
-	"ctnAgent/ctnA"
 )
 
 func main() {
@@ -18,6 +18,9 @@ func main() {
 	//启动容器事件监测
 	ctnA.Config(writeData)
 	go ctnA.CtnEvents("")   // 启动容器事件监测
+	go ctnA.CtnInfoAll("")
+	go ctnA.CtnStatsAll("")
+	ctnA.SetFreq(1)
 
 	agentImage.ImageInit()
 

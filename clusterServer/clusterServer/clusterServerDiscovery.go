@@ -9,7 +9,9 @@ import (
 
 func clusterServerDiscovery() {
 	laddr, err := net.ResolveUDPAddr("udp", ":"+strconv.FormatUint(uint64(d.ServerUdpPort), 10))
-	raddr, err := net.ResolveUDPAddr("udp", "255.255.255.255:"+strconv.FormatUint(uint64(d.AgentUdpPort), 10))
+	raddr, err := net.ResolveUDPAddr("udp", "192.168.1.255:"+strconv.FormatUint(uint64(d.AgentUdpPort), 10))
+
+	fmt.Println("clusterServerDiscovery()" , raddr.IP.String())
 
 	conn, err := net.ListenUDP("udp", laddr)
 	if err != nil {
