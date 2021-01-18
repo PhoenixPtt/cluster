@@ -13,6 +13,11 @@ import (
 	"time"
 )
 
+const (
+	RUN_CTN = iota
+	ALL_CTN
+)
+
 type CtnMgr struct {
 	ctnWorkPool *pool.WORK_POOL//容器工作池
 	ctnObjPool *pool.OBJ_POOL//容器对象池
@@ -61,22 +66,18 @@ func InitCtnMgr(sendObjFunc pool.SendObjFunc, serverAddrs []string) {
 	ctx, G_ctnMgr.cancel_monitor = context.WithCancel(context.TODO())
 	MonitorCtns(ctx)
 
-	//配置发送数据接口
-	G_ctnMgr.ctnWorkPool.Config(sendObjFunc)
+	////配置发送数据接口
+	//G_ctnMgr.ctnWorkPool.Config(sendObjFunc)
 
-	//监听容器操作状态变化
-	go WatchCtns()
+	////监听容器操作状态变化
+	//go WatchCtns()
 
-	//反馈容器操作结果或者更新容器状态
-	go ResponseCtns()
+	////反馈容器操作结果或者更新容器状态
+	//go ResponseCtns()
 
 }
 
-func Operate(pCtn *ctn.CTN, operType string) (err error) {
-	var (
-		ctx context.Context
-	)
-
+func Operate(ctx context.Context, pCtn *ctn.CTN, operType string) (err error) {
 	switch operType {
 	case ctn.CREATE:
 		err=Create(ctx, pCtn.CtnName, pCtn.ImageName)
@@ -94,38 +95,44 @@ func Operate(pCtn *ctn.CTN, operType string) (err error) {
 	return
 }
 
-func OperateWithStratgy(pCtn *ctn.CTN, operType string) (err error) {
-	if pCtn.OperStrategy{
-		//第一阶段：操作一次
-		err=Operate(pCtn,operType)
-		if err==nil{
-			return
-		}else{
-			//向Server端发送状态消息
-		}
+//func OperateWithStratgy(pCtn *ctn.CTN, operType string) (err error) {
+//	if pCtn.OperStrategy{
+//		//第一阶段：操作一次
+//		err=Operate(pCtn,operType)
+//		if err==nil{
+//			return
+//		}else{
+//			//向Server端发送状态消息
+//		}
+//
+//		//第二阶段：操作若干次
+//		for i:=0; i<pCtn.OperNum; i++{
+//			err=Operate(pCtn,operType)
+//			if err==nil{
+//				return
+//			}else{
+//				//向Server端发送状态消息
+//			}
+//		}
+//
+//		//第三阶段：删除
+//		for{//操作不成功，删除容器
+//			err=Operate(pCtn,ctn.REMOVE)
+//			if err==nil{
+//				return
+//			}
+//			time.Sleep(time.Second)
+//		}
+//	}else{
+//		err=Operate(pCtn,operType)
+//		return
+//	}
+//}
 
-		//第二阶段：操作若干次
-		for i:=0; i<pCtn.OperNum; i++{
-			err=Operate(pCtn,operType)
-			if err==nil{
-				return
-			}else{
-				//向Server端发送状态消息
-			}
-		}
-
-		//第三阶段：删除
-		for{//操作不成功，删除容器
-			err=Operate(pCtn,ctn.REMOVE)
-			if err==nil{
-				return
-			}
-			time.Sleep(time.Second)
-		}
-	}else{
-		err=Operate(pCtn,operType)
-		return
-	}
+//接收server端的数据
+func Unload(pSaTruck *protocol.SA_TRUCK)  {
+	pRecvChan := G_ctnMgr.ctnWorkPool.GetRecvChan()
+	pRecvChan <- pSaTruck
 }
 
 //监听容器操作状态变化
@@ -172,7 +179,7 @@ func WatchCtns() {
 					pCtnA.CtnName = reqAns.CtnName
 					pCtnA.Image = reqAns.CtnImage
 				}
-				err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+				err = Operate(context.TODO(), pCtnA, reqAns.CtnOper)
 				reqAns.CtnState = pCtnA.State
 				reqAns.CtnID = make([]string, 1)
 				reqAns.CtnID[0] = pCtnA.ID
@@ -194,7 +201,7 @@ func WatchCtns() {
 				} else {
 					switch reqAns.CtnOper {
 					case ctn.START:
-						err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+						err = Operate(context.TODO(), pCtnA, reqAns.CtnOper)
 						reqAns.CtnState = pCtnA.State
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
@@ -207,9 +214,8 @@ func WatchCtns() {
 								G_ctnMgr.cancel_stats_map[pCtnA.ID] = m_cancel
 							}
 						}
-
 					case ctn.STOP, ctn.KILL:
-						err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+						err = Operate(context.TODO(), pCtnA, reqAns.CtnOper)
 						reqAns.CtnState = pCtnA.State
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
@@ -222,7 +228,7 @@ func WatchCtns() {
 							}
 						}
 					case ctn.REMOVE:
-						err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+						err = Operate(context.TODO(), pCtnA, reqAns.CtnOper)
 						reqAns.CtnState = pCtnA.State
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
@@ -238,16 +244,14 @@ func WatchCtns() {
 							G_ctnMgr.ctnObjPool.RemoveObj(pCtnA.CtnName)
 						}
 					case ctn.GETLOG:
-						var ctx context.Context
-						log, err = GetLog(ctx, pCtnA.CtnName)
+						log, err = GetLog(context.TODO(), pCtnA.CtnName)
 						if err == nil{
 							reqAns.CtnLog = make([]string, 1)
 							reqAns.CtnLog[0] = log
 							reqAns.CtnErr = err
 						}
 					case ctn.INSPECT:
-						var ctx context.Context
-						ctnInspect, err = Inspect(ctx, pCtnA.CtnName)
+						ctnInspect, err = Inspect(context.TODO(), pCtnA.CtnName)
 						if err == nil{
 							reqAns.CtnInspect = make([]ctn.CTN_INSPECT, 1)
 							reqAns.CtnInspect[0] = ctnInspect
@@ -285,6 +289,25 @@ func ResponseCtns() {
 	}
 }
 
+//获取容器列表
+func CtnList(cli *client.Client, ctx context.Context, flag int) (containers []types.Container, err error) {
+	mutex_ls.Lock()
+	defer mutex_ls.Unlock()
+
+	switch flag {
+	case RUN_CTN:
+		//获取运行中的容器列表
+		containers, err = cli.ContainerList(ctx, types.ContainerListOptions{})
+	case ALL_CTN:
+		//获取运行和停止的所有容器列表
+		containers, err = cli.ContainerList(ctx, types.ContainerListOptions{
+			All: true,
+		})
+	}
+
+	return
+}
+
 //容器状态监控
 func MonitorCtns(ctx context.Context)  {
 	var(
@@ -297,18 +320,22 @@ func MonitorCtns(ctx context.Context)  {
 		ok bool
 		ctnStat ctn.CTN_STATS
 		addr string
+		//定时器时间间隔
+		interval time.Duration = time.Second * time.Duration(G_samplingRate)
 	)
-	timer=time.NewTimer(time.Second * time.Duration(G_samplingRate))
+
+	timer=time.NewTimer(interval)
 	for{
 		select {
 		case <-ctx.Done():
 			return
-		case <-timer.C:
-			//清空
+		case temp := <-timer.C:
+			fmt.Println("时间到",temp)
+			////清空
 			ctnInfoMap = make(map[string]types.Container)
 
 			//获取容器信息
-			containers, _ = CtnList(ALL_CTN)
+			containers, _ = CtnList(cli, context.TODO(), ALL_CTN)
 
 			//建立从容器ID到容器的映射
 			for _, container = range containers{
@@ -345,10 +372,13 @@ func MonitorCtns(ctx context.Context)  {
 				pSaTruck.CtnStat = append(pSaTruck.CtnStat, ctnStat)
 			}
 
+			fmt.Println("111111111111111111", pSaTruck)
+
 			for _, addr = range G_ctnMgr.serverAddrs{
 				pSaTruck.Addr = addr
 				G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 			}
+			timer.Reset(interval)
 		}
 	}
 
