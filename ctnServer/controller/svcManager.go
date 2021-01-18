@@ -22,20 +22,11 @@ func (controller *CONTROLLER) CreateSvc(svcCfg *SVC_CFG) (err error) {
 		pSvc.SetNodeStatus(nodeName, status)
 	}
 
-	//err = controller.check(pSvc.SvcName, SCREATE)//检查服务名的合法性
-	//if err!=nil{
-	//	return err
-	//}
 	if err = controller.check(pSvc.SvcName,SCREATE); err!=nil{
 		return err
 	}
 
 	controller.ServiceMap[pSvc.SvcName] = pSvc//添加服务至集群
-
-	//err = pSvc.Create()
-	//if err!=nil{
-	//	return err
-	//}
 
 	if err = pSvc.Create(); err != nil{
 		return err
@@ -55,20 +46,12 @@ func (controller *CONTROLLER) CreateSvcFromFile(fileName string, fileType string
 		pSvc.SetNodeStatus(nodeName, status)
 	}
 
-	//err = controller.check(pSvc.SvcName, SCREATE)//检查服务名的合法性
-	//if err!=nil{
-	//	return err
-	//}
 	if err=controller.check(pSvc.SvcName, SCREATE); err!=nil{
 		return err
 	}
 
 	controller.ServiceMap[pSvc.SvcName] = pSvc//添加服务至集群
 
-	//err = pSvc.Create()
-	//if err!=nil{
-	//	return err
-	//}
 	if err=pSvc.Create(); err!=nil{
 		return err
 	}
@@ -78,21 +61,12 @@ func (controller *CONTROLLER) CreateSvcFromFile(fileName string, fileType string
 
 //启动服务
 func (controller *CONTROLLER) StartSvc(svcName string) (err error)  {
-	//err = controller.check(svcName, SSTART)//检查服务名的合法性
-	//if err!=nil{
-	//	return err
-	//}
-
 	if err=controller.check(svcName,SSTART); err!=nil{
 		return err
 	}
 
 	pSvc:=controller.GetSvc(svcName)
 
-	//err = pSvc.Start()
-	//if err!=nil{
-	//	return err
-	//}
 	if err=pSvc.Start(); err!=nil{
 		return err
 	}
@@ -102,19 +76,12 @@ func (controller *CONTROLLER) StartSvc(svcName string) (err error)  {
 
 //调整服务规模
 func (controller *CONTROLLER) ScaleSvc(svcName string, scalNum int) (err error)  {
-	//err = controller.check(svcName, SSCALE)//检查服务名的合法性
-	//if err!=nil{
-	//	return err
-	//}
 	if err=controller.check(svcName,SSCALE); err!=nil{
 		return err
 	}
 
 	pSvc:=controller.GetSvc(svcName)
-	//err = pSvc.Scale(scalNum)
-	//if err!=nil{
-	//	return err
-	//}
+
 	if err=pSvc.Scale(scalNum); err!=nil{
 		return err
 	}
@@ -123,19 +90,12 @@ func (controller *CONTROLLER) ScaleSvc(svcName string, scalNum int) (err error) 
 
 //停止服务
 func (controller *CONTROLLER) StopSvc(svcName string) (err error)  {
-	//err = controller.check(svcName, SSTOP)//检查服务名的合法性
-	//if err!=nil{
-	//	return err
-	//}
 	if err=controller.check(svcName,SSTOP); err!=nil{
 		return err
 	}
 
 	pSvc:=controller.GetSvc(svcName)
-	//err = pSvc.Stop()
-	//if err!=nil{
-	//	return err
-	//}
+
 	if err=pSvc.Stop(); err!=nil{
 		return err
 	}
@@ -144,19 +104,12 @@ func (controller *CONTROLLER) StopSvc(svcName string) (err error)  {
 
 //删除服务
 func (controller *CONTROLLER) RemoveSvc(svcName string) (err error)  {
-	//err = controller.check(svcName, SREMOVE)//检查服务名的合法性
-	//if err!=nil{
-	//	return err
-	//}
 	if err=controller.check(svcName,SREMOVE); err!=nil{
 		return err
 	}
 
 	pSvc:=controller.GetSvc(svcName)
-	//err = pSvc.Remove()
-	//if err!=nil{
-	//	return err
-	//}
+
 	if err=pSvc.Remove(); err!=nil{
 		return err
 	}

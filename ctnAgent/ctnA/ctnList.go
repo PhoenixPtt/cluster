@@ -1,6 +1,7 @@
 package ctnA
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"github.com/docker/docker/api/types"
@@ -18,6 +19,11 @@ var (
 
 //获取容器列表
 func CtnList(flag int) ([]types.Container, error) {
+	var(
+		ctx context.Context
+		err error
+	)
+
 	mutex_ls.Lock()
 	defer mutex_ls.Unlock()
 	var containers []types.Container
@@ -43,6 +49,7 @@ func GetCtnInfo(ctnId string) (types.Container,error)  {
 		containers []types.Container
 		ctnListOption types.ContainerListOptions
 		err error
+		ctx context.Context
 	)
 
 	ctnListOption = types.ContainerListOptions{

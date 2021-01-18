@@ -36,7 +36,7 @@ var (
 )
 
 //初始化容器管理器
-func initCtnMgr(sendObjFunc pool.SendObjFunc, serverAddrs []string) {
+func InitCtnMgr(sendObjFunc pool.SendObjFunc, serverAddrs []string) {
 	var(
 		err error
 		ctx context.Context
@@ -72,11 +72,67 @@ func initCtnMgr(sendObjFunc pool.SendObjFunc, serverAddrs []string) {
 
 }
 
+func Operate(pCtn *ctn.CTN, operType string) (err error) {
+	var (
+		ctx context.Context
+	)
+
+	switch operType {
+	case ctn.CREATE:
+		err=Create(ctx, pCtn.CtnName, pCtn.ImageName)
+	case ctn.START:
+		err=Start(ctx, pCtn.CtnName)
+	case ctn.RUN:
+		err=Run(ctx, pCtn.CtnName, pCtn.ImageName)
+	case ctn.STOP:
+		err=Stop(ctx, pCtn.CtnName)
+	case ctn.KILL:
+		err=Kill(ctx, pCtn.CtnName)
+	case ctn.REMOVE:
+		err=Remove(ctx, pCtn.CtnName)
+	}
+	return
+}
+
+func OperateWithStratgy(pCtn *ctn.CTN, operType string) (err error) {
+	if pCtn.OperStrategy{
+		//第一阶段：操作一次
+		err=Operate(pCtn,operType)
+		if err==nil{
+			return
+		}else{
+			//向Server端发送状态消息
+		}
+
+		//第二阶段：操作若干次
+		for i:=0; i<pCtn.OperNum; i++{
+			err=Operate(pCtn,operType)
+			if err==nil{
+				return
+			}else{
+				//向Server端发送状态消息
+			}
+		}
+
+		//第三阶段：删除
+		for{//操作不成功，删除容器
+			err=Operate(pCtn,ctn.REMOVE)
+			if err==nil{
+				return
+			}
+			time.Sleep(time.Second)
+		}
+	}else{
+		err=Operate(pCtn,operType)
+		return
+	}
+}
+
 //监听容器操作状态变化
 func WatchCtns() {
 	var(
 		pObj interface{}
-		pCtnA *CTNA
+		pCtnA *ctn.CTN
 		errType string
 		err error
 		log string
@@ -107,16 +163,16 @@ func WatchCtns() {
 			if pObj = G_ctnMgr.ctnObjPool.GetObj(reqAns.CtnName);pObj==nil{
 				continue
 			}
-			pCtnA = pObj.(*CTNA)
+			pCtnA = pObj.(*ctn.CTN)
 
 			switch reqAns.CtnOper {
 			case ctn.CREATE, ctn.RUN:
 				if pCtnA == nil {
-					pCtnA = &CTNA{}
+					pCtnA = &ctn.CTN{}
 					pCtnA.CtnName = reqAns.CtnName
 					pCtnA.Image = reqAns.CtnImage
 				}
-				errType, err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+				err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
 				reqAns.CtnState = pCtnA.State
 				reqAns.CtnID = make([]string, 1)
 				reqAns.CtnID[0] = pCtnA.ID
@@ -138,7 +194,7 @@ func WatchCtns() {
 				} else {
 					switch reqAns.CtnOper {
 					case ctn.START:
-						errType, err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+						err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
 						reqAns.CtnState = pCtnA.State
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
@@ -153,7 +209,7 @@ func WatchCtns() {
 						}
 
 					case ctn.STOP, ctn.KILL:
-						errType, err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+						err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
 						reqAns.CtnState = pCtnA.State
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
@@ -166,7 +222,7 @@ func WatchCtns() {
 							}
 						}
 					case ctn.REMOVE:
-						errType, err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
+						err = OperateWithStratgy(pCtnA, reqAns.CtnOper)
 						reqAns.CtnState = pCtnA.State
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
@@ -182,15 +238,21 @@ func WatchCtns() {
 							G_ctnMgr.ctnObjPool.RemoveObj(pCtnA.CtnName)
 						}
 					case ctn.GETLOG:
-						log, err = pCtnA.GetLog()
-						reqAns.CtnLog = make([]string, 1)
-						reqAns.CtnLog[0] = log
-						reqAns.CtnErr = err
+						var ctx context.Context
+						log, err = GetLog(ctx, pCtnA.CtnName)
+						if err == nil{
+							reqAns.CtnLog = make([]string, 1)
+							reqAns.CtnLog[0] = log
+							reqAns.CtnErr = err
+						}
 					case ctn.INSPECT:
-						ctnInspect, err = pCtnA.Inspect()
-						reqAns.CtnInspect = make([]ctn.CTN_INSPECT, 1)
-						reqAns.CtnInspect[0] = ctnInspect
-						reqAns.CtnErr = err
+						var ctx context.Context
+						ctnInspect, err = Inspect(ctx, pCtnA.CtnName)
+						if err == nil{
+							reqAns.CtnInspect = make([]ctn.CTN_INSPECT, 1)
+							reqAns.CtnInspect[0] = ctnInspect
+							reqAns.CtnErr = err
+						}
 					}
 				}
 			}
@@ -231,9 +293,10 @@ func MonitorCtns(ctx context.Context)  {
 		container types.Container
 		ctnName string
 		obj interface{}
-		pCtnA *CTNA
+		pCtnA *ctn.CTN
 		ok bool
 		ctnStat ctn.CTN_STATS
+		addr string
 	)
 	timer=time.NewTimer(time.Second * time.Duration(G_samplingRate))
 	for{
@@ -257,11 +320,10 @@ func MonitorCtns(ctx context.Context)  {
 			pool.AddIndex()
 			pSaTruck.Flag = ctn.FLAG_CTN
 			pSaTruck.Index = pool.GetIndex()
-			pSaTruck.Addr = G_ctnMgr.serverAddrs
 
 			for _, ctnName=range G_ctnMgr.ctnObjPool.GetObjNames(){
 				obj = G_ctnMgr.ctnObjPool.GetObj(ctnName)
-				pCtnA = obj.(*CTNA)
+				pCtnA = obj.(*ctn.CTN)
 				if pCtnA.ID==""{
 					container = types.Container{}
 					ctnStat = ctn.CTN_STATS{}
@@ -283,7 +345,10 @@ func MonitorCtns(ctx context.Context)  {
 				pSaTruck.CtnStat = append(pSaTruck.CtnStat, ctnStat)
 			}
 
-			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+			for _, addr = range G_ctnMgr.serverAddrs{
+				pSaTruck.Addr = addr
+				G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+			}
 		}
 	}
 
@@ -294,6 +359,7 @@ func handleEventMessage(evtMsg events.Message){
 	var(
 		ok bool
 		ctnName string
+		addr string
 	)
 	if evtMsg.Type == "container"{
 		if ctnName,ok=ctnIdMap[evtMsg.ID];!ok{
@@ -309,26 +375,34 @@ func handleEventMessage(evtMsg events.Message){
 	pool.AddIndex()
 	pSaTruck.Flag = ctn.FLAG_EVENT
 	pSaTruck.Index = pool.GetIndex()
-	pSaTruck.Addr = G_ctnMgr.serverAddrs
 
 	pSaTruck.EvtMsg = make([]events.Message,0,1)
 	pSaTruck.EvtMsg = append(pSaTruck.EvtMsg, evtMsg)
-	G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 
+	for _, addr = range G_ctnMgr.serverAddrs{
+		pSaTruck.Addr = addr
+		G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+	}
 }
 
 //更新错误事件信息
 func handleErrorMessage(errMsg error)  {
 	//向服务端发送错误事件信息
-	var pSaTruck protocol.SA_TRUCK
+	var(
+		pSaTruck protocol.SA_TRUCK
+		addr string
+	)
 	pool.AddIndex()
 	pSaTruck.Flag = ctn.FLAG_EVENT
 	pSaTruck.Index = pool.GetIndex()
-	pSaTruck.Addr = G_ctnMgr.serverAddrs
 
 	pSaTruck.ErrMsg = make([]error,0,1)
 	pSaTruck.ErrMsg = append(pSaTruck.ErrMsg, errMsg)
-	G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+
+	for _, addr = range G_ctnMgr.serverAddrs{
+		pSaTruck.Addr = addr
+		G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+	}
 }
 
 

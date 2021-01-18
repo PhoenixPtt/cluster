@@ -28,6 +28,8 @@ const (
 //容器结构体声明
 type CTN struct {
 	CtnName   string `json:"ctn_name"`
+	ImageName string `json:"image_name"`
+	CtnID string `json:"ctn_id"`
 	AgentAddr string `json:"agentaddr"`
 
 	//容器状态，容器创建事件，容器状态更新时间

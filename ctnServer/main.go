@@ -277,11 +277,12 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 	}
 
 	pSaTruck := &protocol.SA_TRUCK{}
-	pSaTruck.SrcAddr = h
 	err := headers.Decode(s, pSaTruck)
 	if err != nil {
 		fmt.Errorf(err.Error())
+		return
 	}
+	pSaTruck.SrcAddr = []string{h}
 
 	ctnS.GetRecvChan() <- pSaTruck
 }

@@ -19,39 +19,40 @@ func init() {
 
 func main() {
 	//tcpSocket.ConnectToHost("192.168.43.100", 10000, "192.168.43.100", 0, myReceiveData, myStateChange)
-	tcpSocket.ConnectToHost("192.168.43.166", 10000, "192.168.43.166", 0, myReceiveData, myStateChange)
+	tcpSocket.ConnectToHost("192.168.1.166", 10000, "192.168.1.166", 0, myReceiveData, myStateChange)
 	//tcpSocket.ConnectToHost("192.168.92.141", 10000, "192.168.92.141", 0, myReceiveData, myStateChange)
 
-	//启动容器事件监测
-	go ctnA.CtnEvents(G_id)
-	go ctnA.CtnInfoAll(G_id)
-	go ctnA.CtnStatsAll(G_id)
-	for {
-		fmt.Println("请选择下列操作：")
-		fmt.Println("1.实时上传所有容器资源使用状态")
-		fmt.Println("2.取消实时上传所有容器资源使用状态")
-		fmt.Println("3.实时上传所有容器信息")
-		fmt.Println("4.取消实时上传所有容器信息")
-
-		//设置采样率
-		ctnA.SetFreq(1)
-		var val int
-		fmt.Scanln(&val)
-		switch val {
-		case 1:
-			go ctnA.CtnStatsAll(G_id)
-		case 2:
-			ctnA.CancelCtnStatsAll()
-		case 3:
-			go ctnA.CtnInfoAll(G_id)
-		case 4:
-			ctnA.CancelCtnInfoAll()
-		}
-
-		time.Sleep(time.Second)
-	}
-	//END:
-	fmt.Printf("主线程退出-------------------------------------------------------\n\n")
+	//ctnA.InitCtnMgr()
+	////启动容器事件监测
+	//go ctnA.CtnEvents(G_id)
+	//go ctnA.CtnInfoAll(G_id)
+	//go ctnA.CtnStatsAll(G_id)
+	//for {
+	//	fmt.Println("请选择下列操作：")
+	//	fmt.Println("1.实时上传所有容器资源使用状态")
+	//	fmt.Println("2.取消实时上传所有容器资源使用状态")
+	//	fmt.Println("3.实时上传所有容器信息")
+	//	fmt.Println("4.取消实时上传所有容器信息")
+	//
+	//	//设置采样率
+	//	ctnA.SetFreq(1)
+	//	var val int
+	//	fmt.Scanln(&val)
+	//	switch val {
+	//	case 1:
+	//		go ctnA.CtnStatsAll(G_id)
+	//	case 2:
+	//		ctnA.CancelCtnStatsAll()
+	//	case 3:
+	//		go ctnA.CtnInfoAll(G_id)
+	//	case 4:
+	//		ctnA.CancelCtnInfoAll()
+	//	}
+	//
+	//	time.Sleep(time.Second)
+	//}
+	////END:
+	//fmt.Printf("主线程退出-------------------------------------------------------\n\n")
 }
 
 func myReceiveData(h string, pkgId uint16, i string, s []byte) {
