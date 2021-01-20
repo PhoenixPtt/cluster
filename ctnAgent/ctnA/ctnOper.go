@@ -18,21 +18,21 @@ import (
 
 //创建容器
 func Create(ctx context.Context, ctnName string, imgName string) (err error) {
-	var(
-		obj interface{}
+	var (
+		obj  interface{}
 		resp container.ContainerCreateCreatedBody
 		pCtn *ctn.CTN
 	)
 
 	//判断容器名称是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj != nil{
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj != nil {
 		//容器名称已存在，禁止重复创建
 	}
 
 	//判断镜像是否存在
-	if !IsImageExisted(ctx, imgName){
+	if !IsImageExisted(ctx, imgName) {
 		//如果镜像不存在，则从私有仓库中拉取
-		if err = ImagePull(ctx, imgName); err!=nil{
+		if err = ImagePull(ctx, imgName); err != nil {
 			//如果拉取失败，则返回
 			return
 		}
@@ -47,6 +47,7 @@ func Create(ctx context.Context, ctnName string, imgName string) (err error) {
 			NetworkMode: "host",
 		},
 		nil,
+		nil,
 		"")
 	if err != nil {
 		return
@@ -54,9 +55,9 @@ func Create(ctx context.Context, ctnName string, imgName string) (err error) {
 
 	//新建容器对象
 	pCtn = &ctn.CTN{
-		CtnName: ctnName,
+		CtnName:   ctnName,
 		ImageName: imgName,
-		CtnID: resp.ID,
+		CtnID:     resp.ID,
 	}
 
 	//将容器对象添加到容器池中
@@ -66,20 +67,20 @@ func Create(ctx context.Context, ctnName string, imgName string) (err error) {
 
 //启动容器
 func Start(ctx context.Context, ctnName string) (err error) {
-	var(
-		obj interface{}
+	var (
+		obj  interface{}
 		pCtn *ctn.CTN
 	)
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
-		err = errors.New(fmt.Sprintf("容器：%s不存在",ctnName))
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
 		return
 	}
-	pCtn = obj.(*ctn.CTN)//接口强制类型转换为容器对象类型
+	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//判断容器当前运行状态,如果容器正在运行，则直接返回
-	if pCtn.State == "running"{
+	if pCtn.State == "running" {
 		return
 	}
 
@@ -93,20 +94,20 @@ func Start(ctx context.Context, ctnName string) (err error) {
 
 //运行容器
 func Run(ctx context.Context, ctnName string, imgName string) (err error) {
-	var(
+	var (
 		obj interface{}
 	)
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
 		//容器不存在，则创建容器
-		if err = Create(ctx, ctnName, imgName); err != nil{
+		if err = Create(ctx, ctnName, imgName); err != nil {
 			return
 		}
 	}
 
 	//启动容器
-	if err = Start(ctx, ctnName);err!=nil{
+	if err = Start(ctx, ctnName); err != nil {
 		goto ERROR
 	}
 
@@ -120,20 +121,20 @@ ERROR:
 
 //停止容器
 func Stop(ctx context.Context, ctnName string) (err error) {
-	var(
-		obj interface{}
+	var (
+		obj  interface{}
 		pCtn *ctn.CTN
 	)
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
-		err = errors.New(fmt.Sprintf("容器：%s不存在",ctnName))
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
 		return
 	}
-	pCtn = obj.(*ctn.CTN)//接口强制类型转换为容器对象类型
+	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//判断容器当前运行状态,如果容器不在运行，则直接返回
-	if pCtn.State != "running"{
+	if pCtn.State != "running" {
 		return
 	}
 
@@ -146,20 +147,20 @@ func Stop(ctx context.Context, ctnName string) (err error) {
 
 //强制停止容器
 func Kill(ctx context.Context, ctnName string) (err error) {
-	var(
-		obj interface{}
+	var (
+		obj  interface{}
 		pCtn *ctn.CTN
 	)
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
-		err = errors.New(fmt.Sprintf("容器：%s不存在",ctnName))
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
 		return
 	}
-	pCtn = obj.(*ctn.CTN)//接口强制类型转换为容器对象类型
+	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//判断容器当前运行状态,如果容器不在运行，则直接返回
-	if pCtn.State != "running"{
+	if pCtn.State != "running" {
 		return
 	}
 
@@ -171,26 +172,26 @@ func Kill(ctx context.Context, ctnName string) (err error) {
 
 //删除容器
 func Remove(ctx context.Context, ctnName string) (err error) {
-	var(
-		obj interface{}
+	var (
+		obj  interface{}
 		pCtn *ctn.CTN
 	)
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
-		err = errors.New(fmt.Sprintf("容器：%s不存在",ctnName))
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
 		return
 	}
-	pCtn = obj.(*ctn.CTN)//接口强制类型转换为容器对象类型
+	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//判断容器当前运行状态,如果容器正在运行，则kill容器
-	if pCtn.State == "running"{
-		if err = Kill(ctx, ctnName); err!=nil{
+	if pCtn.State == "running" {
+		if err = Kill(ctx, ctnName); err != nil {
 			return
 		}
 	}
 
-	if err = cli.ContainerRemove(ctx, pCtn.ID, types.ContainerRemoveOptions{}); err==nil{
+	if err = cli.ContainerRemove(ctx, pCtn.ID, types.ContainerRemoveOptions{}); err == nil {
 		//容器删除成功，则删除容器池中对应的容器对象
 		G_ctnMgr.ctnObjPool.RemoveObj(ctnName)
 	}
@@ -201,22 +202,22 @@ func Remove(ctx context.Context, ctnName string) (err error) {
 //获取容器日志
 //注意：容器停止运行后无法获取容器日志
 func GetLog(ctx context.Context, ctnName string) (logStr string, err error) {
-	var(
-		obj interface{}
+	var (
+		obj  interface{}
 		pCtn *ctn.CTN
 		logs io.ReadCloser
 	)
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
-		err = errors.New(fmt.Sprintf("容器：%s不存在",ctnName))
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
 		return
 	}
-	pCtn = obj.(*ctn.CTN)//接口强制类型转换为容器对象类型
+	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//判断容器当前运行状态,只有运行的容器才能获取到日志
-	if pCtn.State == "running"{
-		if logs, err = cli.ContainerLogs(ctx, pCtn.ID, types.ContainerLogsOptions{ShowStdout: true}); err != nil{
+	if pCtn.State == "running" {
+		if logs, err = cli.ContainerLogs(ctx, pCtn.ID, types.ContainerLogsOptions{ShowStdout: true}); err != nil {
 			return
 		}
 		buf := new(bytes.Buffer)
@@ -229,27 +230,27 @@ func GetLog(ctx context.Context, ctnName string) (logStr string, err error) {
 
 //查看容器详细信息
 func Inspect(ctx context.Context, ctnName string) (ctnInspect ctn.CTN_INSPECT, err error) {
-	var(
-		obj interface{}
-		pCtn *ctn.CTN
-		ctnJson types.ContainerJSON
+	var (
+		obj           interface{}
+		pCtn          *ctn.CTN
+		ctnJson       types.ContainerJSON
 		inspectStream []byte
 	)
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
-		err = errors.New(fmt.Sprintf("容器：%s不存在",ctnName))
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
 		return
 	}
-	pCtn = obj.(*ctn.CTN)//接口强制类型转换为容器对象类型
+	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//获取容器详细信息
-	if ctnJson, err = cli.ContainerInspect(ctx, pCtn.ID);err!=nil{
+	if ctnJson, err = cli.ContainerInspect(ctx, pCtn.ID); err != nil {
 		return
 	}
 
 	//json序列化
-	if inspectStream, err = json.Marshal(ctnJson);err!=nil{
+	if inspectStream, err = json.Marshal(ctnJson); err != nil {
 		return
 	}
 
@@ -260,17 +261,17 @@ func Inspect(ctx context.Context, ctnName string) (ctnInspect ctn.CTN_INSPECT, e
 }
 
 func CtnStats(ctx context.Context, ctnName string) {
-	var(
-		obj interface{}
-		err error
-		pCtn *ctn.CTN
-		ctnId string
-		stats types.ContainerStats
-		count uint64 //采集频率计数
-		decoder *json.Decoder
+	var (
+		obj      interface{}
+		err      error
+		pCtn     *ctn.CTN
+		ctnId    string
+		stats    types.ContainerStats
+		count    uint64 //采集频率计数
+		decoder  *json.Decoder
 		ctnStats ctn.CTN_STATS
-		cpuNum int
-		base float64
+		cpuNum   int
+		base     float64
 	)
 
 	//初始化变量
@@ -279,11 +280,11 @@ func CtnStats(ctx context.Context, ctnName string) {
 	base = 1024.00
 
 	//判断该容器是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj==nil{
-		err = errors.New(fmt.Sprintf("容器：%s不存在",ctnName))
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
 		return
 	}
-	pCtn = obj.(*ctn.CTN)//接口强制类型转换为容器对象类型
+	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 	ctnId = pCtn.CtnID
 
 	//容器资源监控
@@ -302,7 +303,7 @@ func CtnStats(ctx context.Context, ctnName string) {
 		select {
 		case <-ctx.Done():
 			stats.Body.Close()
-			fmt.Println("Stop CTN Stats",ctnId)
+			fmt.Println("Stop CTN Stats", ctnId)
 			return
 		default:
 			count++
@@ -344,4 +345,3 @@ func CtnStats(ctx context.Context, ctnName string) {
 		}
 	}
 }
-
