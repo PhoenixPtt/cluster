@@ -20,6 +20,9 @@ const (
 
 type CtnMgr struct {
 	ctnWorkPool *pool.WORK_POOL//容器工作池
+	//对象池应该根据server端域名进行分别映射
+	//server端域名对应的ip地址可能有多个或者ip地址可以变更
+	//更新策略：如果是新增或者删除操作，一律根据同步操作来
 	ctnObjPool *pool.OBJ_POOL//容器对象池
 	serverAddrs []string//状态信息上传目的地址
 
@@ -347,6 +350,17 @@ func MonitorCtns(ctx context.Context)  {
 			pool.AddIndex()
 			pSaTruck.Flag = ctn.FLAG_CTN
 			pSaTruck.Index = pool.GetIndex()
+
+			fmt.Println("0000000000000000", G_ctnMgr.ctnObjPool.GetObjNames())
+
+			//更新对象池
+			//对象池区分属于哪个server端的对象池，这个函数的参数也分监控属于哪个服务端的容器
+			//1.如果对象池中没有，但实时猜到了，则不做处理，因为不属于该服务端
+			//2.对象池里有，并且实时也采到了，则做同步
+			//3.对象池中有，但是实时并没有采到，说明该容器故障，则从对象池中把该容器删除掉
+			//4.agent端对象池与server端对象池同步策略
+
+
 
 			for _, ctnName=range G_ctnMgr.ctnObjPool.GetObjNames(){
 				obj = G_ctnMgr.ctnObjPool.GetObj(ctnName)
