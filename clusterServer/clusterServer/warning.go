@@ -46,7 +46,11 @@ func (w *Warnings) WarningInfo() *header.WarningInfo {
 		// 每个级别的信息填充
 		w.info.CountPerLevel = make([]header.WarningCountOfType, levelCount)
 		for i:=uint8(0); i<levelCount; i++ {
-			w.info.CountPerLevel[i] = *w.countPerLevel[i]
+			if w.countPerLevel[i] == nil {
+				w.info.CountPerLevel[i] = header.WarningCountOfType{0, 0,0,0,0,0}
+			} else {
+				w.info.CountPerLevel[i] = *w.countPerLevel[i]
+			}
 		}
 
 		// 每个节点的信息填充

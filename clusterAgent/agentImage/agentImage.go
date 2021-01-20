@@ -31,10 +31,10 @@ var ImageNamemap map[string]string //key imageName
 var ImagePullAdrr string
 var UserName string
 var PassWord string
-var DockerfilePath = "/home/cetc15/dockfileimage/"
-var ImageSavePath = "/home/cetc15/桌面/"
-//var ImageLoadPath = "/home/cetc15/下载/images/"
-var ImageLoadPath = "/home/cetc15/test/"
+var DockerfilePath = "/tmp/cluster/agent/dockfileimage/"
+var ImageSavePath = "/tmp/cluster/agent/saveimage"
+//var ImageLoadPath = "/tmp/cluster/agent/images/"
+var ImageLoadPath = "/tmp/cluster/agent/loadimage/"
 
 const (
 	TagImages = iota //0

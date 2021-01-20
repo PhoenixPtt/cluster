@@ -40,7 +40,7 @@ func Start() error{
 	// 自动按周期监控资源
 	go autoUpdateClusterStats()
 
-	g_controller.Start()
+	go startController()
 
 	return nil
 }
@@ -55,7 +55,7 @@ func Stop() {
 		isRunning = false
 	}
 
-	g_controller.Stop()
+	stopController()
 
 	// 关闭所有在线节点的网络连接
 	for _,h := range nodes.GetNodeIds() {
@@ -81,3 +81,12 @@ func autoUpdateClusterStats() {
 		updateClusterStats()
 	}
 }
+
+func startController() {
+	g_controller.Start()
+}
+
+func stopController() {
+	g_controller.Stop()
+}
+

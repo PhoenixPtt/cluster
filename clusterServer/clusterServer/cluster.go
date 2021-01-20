@@ -45,6 +45,8 @@ func updateClusterStats() {
 
 	//wstr := header.JsonString(*warings.WarningInfo())
 	//fmt.Println(wstr)
+
+	g_controller.WaitWebService()
 }
 
 const (
