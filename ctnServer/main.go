@@ -198,7 +198,7 @@ func main() {
 							pCtn = ctnS.NewCtnS(imageName, agentNames[addrIndex], config)
 							var ctx context.Context
 							var cancel context.CancelFunc
-							ctx,cancel=context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
+							ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
 							defer cancel()
 							pCtn.Oper(ctx, ctn.CREATE)
 						}
@@ -223,7 +223,7 @@ func main() {
 							//fmt.Printf("%s：%s  %#v\n",flagMap[index],ctnName, pCtn)
 							var ctx context.Context
 							var cancel context.CancelFunc
-							ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(5))
+							ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
 							defer cancel()
 							pCtn.Oper(ctx, flagMap[index])
 						}
@@ -272,8 +272,8 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 }
 
 func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byte) {
-	if i=="CTRL"{
-		fmt.Println("\n从agent端收取数据", h, pkgId,i)
+	if i == "CTRL" {
+		fmt.Println("\n从agent端收取数据", h, pkgId, i)
 	}
 
 	pSaTruck := &protocol.SA_TRUCK{}
@@ -282,7 +282,7 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 		fmt.Errorf(err.Error())
 		return
 	}
-	pSaTruck.SrcAddr = []string{h}
+	pSaTruck.SrcAddr = h
 
 	ctnS.GetRecvChan() <- pSaTruck
 }

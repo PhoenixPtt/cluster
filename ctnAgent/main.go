@@ -9,21 +9,18 @@ import (
 	"time"
 )
 
-var (
-	serverAddrs []string
-)
-
 func main() {
-	serverAddrs = append(serverAddrs, "192.168.1.155")
-	for index, _:=range serverAddrs{
-		tcpSocket.ConnectToHost(serverAddrs[index], 10000, "192.168.1.155", 0, myReceiveData, myStateChange)
+	var serverAddrs []string = []string{"192.168.1.155"} //agent可能为多台server服务
+	var agentAddr string = "192.168.1.155"
+	for _, serverAddr := range serverAddrs {
+		tcpSocket.ConnectToHost(serverAddr, 10000, agentAddr, 0, myReceiveData, myStateChange)
 	}
 
-	ctnA.InitCtnMgr(mySendCtn, serverAddrs)
+	//初始化容器管理器
+	ctnA.InitCtnMgr(mySendCtn, agentAddr, serverAddrs)
 
-	fmt.Println("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
 	for {
-		time.Sleep(time.Second*time.Duration(1))
+		time.Sleep(time.Second * time.Duration(1))
 	}
 }
 
@@ -40,7 +37,7 @@ func ReceiveDataFromServer(h string, level uint8, pkgId uint16, i string, s []by
 		fmt.Errorf(err.Error())
 		return
 	}
-	pSaTruck.SrcAddr=append(pSaTruck.SrcAddr, h)
+	pSaTruck.SrcAddr = h
 
 	//卸货，将服务器端收到的数据给容器管理器
 	ctnA.Unload(pSaTruck)
@@ -48,7 +45,16 @@ func ReceiveDataFromServer(h string, level uint8, pkgId uint16, i string, s []by
 
 func myStateChange(id string, mystring uint8) {
 	fmt.Println(id, mystring)
-	serverAddrs = append(serverAddrs, id)
+
+	//判断服务器ip是否在容器管理器列表中
+	if ctnA.G_ctnMgr.IsServerExisted(id) {
+		switch mystring {
+		case 1: //在线
+			ctnA.G_ctnMgr.UpdateServerOnlineStatus(id, true)
+		case 2: //离线
+			ctnA.G_ctnMgr.UpdateServerOnlineStatus(id, false)
+		}
+	}
 }
 
 //向Server端发送容器操作命令

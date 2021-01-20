@@ -33,11 +33,11 @@ func (pController *CONTROLLER) PutService(pSvcOperTruck *SERVICE_OPER_TRUCK) {
 
 //集群工作协程
 func (pController *CONTROLLER) WatchService(svcWatch string) {
-	ctx,cancel:=context.WithCancel(context.Background())
-	_,ok:=pController.CancelWatchSvcs[svcWatch]
-	if !ok{
+	ctx, cancel := context.WithCancel(context.Background())
+	_, ok := pController.CancelWatchSvcs[svcWatch]
+	if !ok {
 		pController.CancelWatchSvcs[svcWatch] = cancel
-	}else{
+	} else {
 		return
 	}
 	var err error
@@ -51,7 +51,8 @@ func (pController *CONTROLLER) WatchService(svcWatch string) {
 			pClstOper := obj.(*SERVICE_OPER_TRUCK)
 			switch pClstOper.OperType {
 			case SCREATE:
-				err = pController.CreateSvcFromFile(pClstOper.ConfigFileName, pClstOper.ConfigFileType)
+				//err = pController.CreateSvcFromFile(pClstOper.ConfigFileName, pClstOper.ConfigFileType)
+				err = pController.CreateSvc(&pClstOper.SvcCfg)
 			case SSTART:
 				err = pController.StartSvc(pClstOper.SvcName)
 			case SSTOP:
@@ -79,9 +80,9 @@ func (pController *CONTROLLER) WatchService(svcWatch string) {
 }
 
 func (pController *CONTROLLER) CancelWatchService(svcWatch string) {
-	_,ok:=pController.CancelWatchSvcs[svcWatch]
-	if ok{
-		fmt.Println("GGGGGGGGGGGGGGGGGGGGGGGGGGGGG","停止监控",svcWatch)
+	_, ok := pController.CancelWatchSvcs[svcWatch]
+	if ok {
+		fmt.Println("GGGGGGGGGGGGGGGGGGGGGGGGGGGGG", "停止监控", svcWatch)
 		pController.CancelWatchSvcs[svcWatch]()
 	}
 }
@@ -89,7 +90,7 @@ func (pController *CONTROLLER) CancelWatchService(svcWatch string) {
 func (pController *CONTROLLER) WatchServiceStatus() {
 	pool.RegPrivateChanStr(SERVICE_STATUS_WATCH, CHAN_BUFFER)
 	var ctx context.Context
-	ctx,pController.CancelWatchSvcStatus=context.WithCancel(context.Background())
+	ctx, pController.CancelWatchSvcStatus = context.WithCancel(context.Background())
 	for {
 		select {
 		case <-ctx.Done():
@@ -122,7 +123,7 @@ func (pController *CONTROLLER) PutNode(nodeName string, status bool) {
 func (pController *CONTROLLER) WatchNodes() {
 	pool.RegPrivateChanStr(NODE_WATCH, CHAN_BUFFER)
 	var ctx context.Context
-	ctx,pController.CancelWatchNodes=context.WithCancel(context.Background())
+	ctx, pController.CancelWatchNodes = context.WithCancel(context.Background())
 	for {
 		select {
 		case <-ctx.Done():

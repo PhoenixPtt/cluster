@@ -31,10 +31,10 @@ type CTN_MSG struct {
 //Server端与Agent端通信结构体
 type SA_TRUCK struct {
 	//基本信息
-	Flag  string
-	Index int    //计数
-	Addr  string //接收方ip
-	SrcAddr []string //源地址
+	Flag    string
+	Index   int    //计数
+	DesAddr string //目标地址
+	SrcAddr string //源地址
 
 	//Server请求
 	//Agent响应
@@ -51,4 +51,3 @@ type SA_TRUCK struct {
 	MsgTimeStr string
 	MsgTime    int64
 }
-

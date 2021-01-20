@@ -19,30 +19,54 @@ const (
 )
 
 type CtnMgr struct {
-	ctnWorkPool *pool.WORK_POOL//容器工作池
-	ctnObjPool *pool.OBJ_POOL//容器对象池
-	serverAddrs []string//状态信息上传目的地址
+	ctnWorkPool  *pool.WORK_POOL //容器工作池
+	ctnObjPool   *pool.OBJ_POOL  //容器对象池
+	serverAddrs  []string        //server端ip地址
+	serverOnline []bool          //server端在线状态
+	agentAddr    string          //agent端的ip地址
 
-	cancel_monitor context.CancelFunc//取消监控容器
-	cancel_stats_map map[string]context.CancelFunc//取消监控容器资源信息
+	cancel_monitor   context.CancelFunc            //取消监控容器
+	cancel_stats_map map[string]context.CancelFunc //取消监控容器资源信息
+}
+
+func (pCtnMgr *CtnMgr) IsServerExisted(serverAddr string) (bOnline bool) {
+	for _, addr := range pCtnMgr.serverAddrs {
+		if addr == serverAddr {
+			bOnline = true
+			break
+		}
+	}
+	bOnline = false
+	return
+}
+
+func (pCtnMgr *CtnMgr) UpdateServerOnlineStatus(serverAddr string, bOnline bool) {
+	for index, addr := range pCtnMgr.serverAddrs {
+		if addr == serverAddr {
+			pCtnMgr.serverOnline[index] = bOnline
+		}
+	}
+	return
 }
 
 var (
 	//全部变量，容器管理器
-	G_ctnMgr *CtnMgr//容器管理器
-	G_samplingRate int//采样率
+	G_ctnMgr       *CtnMgr //容器管理器
+	G_samplingRate int     //采样率
 
 	cli *client.Client
 
-	ctnEvtMsgMap map[string]events.Message//与容器相关的事件集合
-	ctnInfoMap map[string]types.Container//从容器ID到容器信息的映射
-	ctnIdMap map[string]string//从容器名称到容器Id的映射
-	ctnStatMap map[string]ctn.CTN_STATS//从容器ID到容器资源使用状态的映射
+	ctnEvtMsgMap map[string]events.Message  //与容器相关的事件集合
+	ctnInfoMap   map[string]types.Container //从容器ID到容器信息的映射
+	ctnIdMap     map[string]string          //从容器名称到容器Id的映射
+	ctnStatMap   map[string]ctn.CTN_STATS   //从容器ID到容器资源使用状态的映射
+	ctnDirtyMap  map[string]bool            //从容器ID到容器过期标志的映射
+	ctnClstMap   map[string]string          //从容器到集群的映射
 )
 
 //初始化容器管理器
-func InitCtnMgr(sendObjFunc pool.SendObjFunc, serverAddrs []string) {
-	var(
+func InitCtnMgr(sendObjFunc pool.SendObjFunc, agentAddr string, serverAddrs []string) {
+	var (
 		err error
 		ctx context.Context
 	)
@@ -50,15 +74,16 @@ func InitCtnMgr(sendObjFunc pool.SendObjFunc, serverAddrs []string) {
 	//初始化容器管理器
 	G_ctnMgr = &CtnMgr{
 		ctnWorkPool: pool.NewWorkPool(),
-		ctnObjPool: pool.NewObjPool(),
+		ctnObjPool:  pool.NewObjPool(),
 		serverAddrs: serverAddrs,
+		agentAddr:   agentAddr,
 	}
 
 	//初始化采样率
 	G_samplingRate = 1
 
 	//初始化docker客户端
-	if cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation());err != nil{
+	if cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err != nil {
 		fmt.Println(err.Error())
 	}
 
@@ -80,17 +105,17 @@ func InitCtnMgr(sendObjFunc pool.SendObjFunc, serverAddrs []string) {
 func Operate(ctx context.Context, pCtn *ctn.CTN, operType string) (err error) {
 	switch operType {
 	case ctn.CREATE:
-		err=Create(ctx, pCtn.CtnName, pCtn.ImageName)
+		err = Create(ctx, pCtn.CtnName, pCtn.ImageName)
 	case ctn.START:
-		err=Start(ctx, pCtn.CtnName)
+		err = Start(ctx, pCtn.CtnName)
 	case ctn.RUN:
-		err=Run(ctx, pCtn.CtnName, pCtn.ImageName)
+		err = Run(ctx, pCtn.CtnName, pCtn.ImageName)
 	case ctn.STOP:
-		err=Stop(ctx, pCtn.CtnName)
+		err = Stop(ctx, pCtn.CtnName)
 	case ctn.KILL:
-		err=Kill(ctx, pCtn.CtnName)
+		err = Kill(ctx, pCtn.CtnName)
 	case ctn.REMOVE:
-		err=Remove(ctx, pCtn.CtnName)
+		err = Remove(ctx, pCtn.CtnName)
 	}
 	return
 }
@@ -130,22 +155,22 @@ func Operate(ctx context.Context, pCtn *ctn.CTN, operType string) (err error) {
 //}
 
 //接收server端的数据
-func Unload(pSaTruck *protocol.SA_TRUCK)  {
+func Unload(pSaTruck *protocol.SA_TRUCK) {
 	pRecvChan := G_ctnMgr.ctnWorkPool.GetRecvChan()
 	pRecvChan <- pSaTruck
 }
 
-//监听容器操作状态变化
+//监听容器操作
 func WatchCtns() {
-	var(
-		pObj interface{}
-		pCtnA *ctn.CTN
-		errType string
-		err error
-		log string
+	var (
+		pObj       interface{}
+		pCtnA      *ctn.CTN
+		errType    string
+		err        error
+		log        string
 		ctnInspect ctn.CTN_INSPECT
 
-		m_ctx context.Context
+		m_ctx    context.Context
 		m_cancel context.CancelFunc
 
 		ok bool
@@ -167,7 +192,7 @@ func WatchCtns() {
 			reqAns.CtnErrType = make([]string, 1)
 
 			//获取对应的容器
-			if pObj = G_ctnMgr.ctnObjPool.GetObj(reqAns.CtnName);pObj==nil{
+			if pObj = G_ctnMgr.ctnObjPool.GetObj(reqAns.CtnName); pObj == nil {
 				continue
 			}
 			pCtnA = pObj.(*ctn.CTN)
@@ -192,6 +217,8 @@ func WatchCtns() {
 
 					//容器ID映射到容器名称
 					ctnIdMap[pCtnA.ID] = pCtnA.CtnName
+					//记录该容器所属的集群
+					ctnClstMap[pCtnA.ID] = pSaTruck.SrcAddr
 				}
 			default:
 				if pCtnA == nil {
@@ -206,11 +233,11 @@ func WatchCtns() {
 						reqAns.CtnErrType[0] = errType
 						reqAns.CtnErr = err
 
-						if err == nil{
+						if err == nil {
 							//监听容器资源使用状态
 							m_ctx, m_cancel = context.WithCancel(context.TODO())
 							CtnStats(m_ctx, pCtnA.ID)
-							if _, ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; !ok{
+							if _, ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; !ok {
 								G_ctnMgr.cancel_stats_map[pCtnA.ID] = m_cancel
 							}
 						}
@@ -221,8 +248,8 @@ func WatchCtns() {
 						reqAns.CtnErr = err
 
 						//取消监听容器资源使用状态
-						if err == nil{
-							if _, ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; ok{
+						if err == nil {
+							if _, ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; ok {
 								G_ctnMgr.cancel_stats_map[pCtnA.ID]()
 								delete(G_ctnMgr.cancel_stats_map, pCtnA.ID)
 							}
@@ -235,24 +262,25 @@ func WatchCtns() {
 
 						if err == nil {
 							//取消监听容器资源使用状态
-							if _, ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; ok{
+							if _, ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; ok {
 								G_ctnMgr.cancel_stats_map[pCtnA.ID]()
 								delete(G_ctnMgr.cancel_stats_map, pCtnA.ID)
 							}
 
 							delete(ctnIdMap, pCtnA.ID)
+							delete(ctnClstMap, pCtnA.ID)
 							G_ctnMgr.ctnObjPool.RemoveObj(pCtnA.CtnName)
 						}
 					case ctn.GETLOG:
 						log, err = GetLog(context.TODO(), pCtnA.CtnName)
-						if err == nil{
+						if err == nil {
 							reqAns.CtnLog = make([]string, 1)
 							reqAns.CtnLog[0] = log
 							reqAns.CtnErr = err
 						}
 					case ctn.INSPECT:
 						ctnInspect, err = Inspect(context.TODO(), pCtnA.CtnName)
-						if err == nil{
+						if err == nil {
 							reqAns.CtnInspect = make([]ctn.CTN_INSPECT, 1)
 							reqAns.CtnInspect[0] = ctnInspect
 							reqAns.CtnErr = err
@@ -262,6 +290,8 @@ func WatchCtns() {
 			}
 
 			pSaTruck.Req_Ans[0] = reqAns
+			pSaTruck.DesAddr = pSaTruck.SrcAddr //通信工具的源地址变为目标地址
+			pSaTruck.SrcAddr = G_ctnMgr.agentAddr
 			pSendChan := G_ctnMgr.ctnWorkPool.GetSendChan()
 			pSendChan <- pSaTruck
 		}
@@ -270,10 +300,6 @@ func WatchCtns() {
 
 //向Server端反馈容器操作执行结果或者更新容器状态
 func ResponseCtns() {
-	var(
-		srcAddr string
-	)
-
 	for obj := range G_ctnMgr.ctnWorkPool.GetSendChan() {
 		pSaTruck := obj.(*protocol.SA_TRUCK)
 		byteStream, err := headers.Encode(pSaTruck) //打包
@@ -283,9 +309,7 @@ func ResponseCtns() {
 			continue
 		}
 
-		for _,srcAddr=range pSaTruck.SrcAddr{
-			pool.CallbackSendCtn(srcAddr, 1, 0, pSaTruck.Flag, byteStream, G_ctnMgr.ctnWorkPool.GetSendFunc()) //通知主线程发送数据
-		}
+		pool.CallbackSendCtn(pSaTruck.DesAddr, 1, 0, pSaTruck.Flag, byteStream, G_ctnMgr.ctnWorkPool.GetSendFunc()) //通知主线程发送数据
 	}
 }
 
@@ -308,76 +332,118 @@ func CtnList(cli *client.Client, ctx context.Context, flag int) (containers []ty
 	return
 }
 
-//容器状态监控
-func MonitorCtns(ctx context.Context)  {
-	var(
-		timer *time.Timer
+//获取指定集群的所有容器
+func getCtns(clstName string) (ctnIds []string) {
+	for ctnId, _ := range ctnClstMap {
+		if ctnClstMap[ctnId] == clstName {
+			ctnIds = append(ctnIds, ctnId)
+		}
+	}
+	return
+}
+
+//监控指定集群中容器状态
+func MonitorCtns(ctx context.Context, clstName string) {
+	var (
+		timer      *time.Timer
 		containers []types.Container
-		container types.Container
-		ctnName string
-		obj interface{}
-		pCtnA *ctn.CTN
-		ok bool
-		ctnStat ctn.CTN_STATS
-		addr string
+		container  types.Container
+		ctnName    string
+		obj        interface{}
+		pCtnA      *ctn.CTN
+		ok         bool
+		ctnStat    ctn.CTN_STATS
+		addr       string
 		//定时器时间间隔
 		interval time.Duration = time.Second * time.Duration(G_samplingRate)
 	)
 
-	timer=time.NewTimer(interval)
-	for{
+	timer = time.NewTimer(interval)
+	for {
 		select {
 		case <-ctx.Done():
 			return
-		case temp := <-timer.C:
-			fmt.Println("时间到",temp)
-			////清空
+		case <-timer.C:
+			//清空
 			ctnInfoMap = make(map[string]types.Container)
 
 			//获取容器信息
 			containers, _ = CtnList(cli, context.TODO(), ALL_CTN)
 
 			//建立从容器ID到容器的映射
-			for _, container = range containers{
+			for _, container = range containers {
 				ctnInfoMap[container.ID] = container
 			}
 
-			//整理监控信息
-			var pSaTruck protocol.SA_TRUCK
-			pool.AddIndex()
-			pSaTruck.Flag = ctn.FLAG_CTN
-			pSaTruck.Index = pool.GetIndex()
+			//获取属于该集群的所有容器
+			ctnIds := getCtns(clstName)
 
-			for _, ctnName=range G_ctnMgr.ctnObjPool.GetObjNames(){
+			//更新容器数据
+			for index, _ := range ctnIds {
+
+			}
+
+			//更新容器池
+			for _, ctnName = range G_ctnMgr.ctnObjPool.GetObjNames() {
 				obj = G_ctnMgr.ctnObjPool.GetObj(ctnName)
 				pCtnA = obj.(*ctn.CTN)
-				if pCtnA.ID==""{
+				if _, ok = ctnInfoMap[pCtnA.ID]; !ok {
 					container = types.Container{}
-					ctnStat = ctn.CTN_STATS{}
-				}else{
-					if _,ok = ctnInfoMap[pCtnA.ID]; !ok{
-						container = types.Container{}
-					}else{
-						container = ctnInfoMap[pCtnA.ID]
-					}
-
-					if _,ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; !ok{
-						ctnStat = ctn.CTN_STATS{}
-					}else{
-						ctnStat = ctnStatMap[pCtnA.ID]
-					}
+				} else {
+					container = ctnInfoMap[pCtnA.ID]
 				}
 
-				pSaTruck.CtnList = append(pSaTruck.CtnList, container)
-				pSaTruck.CtnStat = append(pSaTruck.CtnStat, ctnStat)
+				if _, ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; !ok {
+					ctnStat = ctn.CTN_STATS{}
+				} else {
+					ctnStat = ctnStatMap[pCtnA.ID]
+				}
 			}
 
 			fmt.Println("111111111111111111", pSaTruck)
 
-			for _, addr = range G_ctnMgr.serverAddrs{
+			for _, addr = range G_ctnMgr.serverAddrs {
 				pSaTruck.Addr = addr
 				G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 			}
+
+			////整理监控信息
+			//var pSaTruck protocol.SA_TRUCK
+			//pool.AddIndex()
+			//pSaTruck.Flag = ctn.FLAG_CTN
+			//pSaTruck.Index = pool.GetIndex()
+
+			//根据容器所属集群不同，分别将容器信息发送给对应的集群
+			//for _, ctnName=range G_ctnMgr.ctnObjPool.GetObjNames(){
+			//	obj = G_ctnMgr.ctnObjPool.GetObj(ctnName)
+			//	pCtnA = obj.(*ctn.CTN)
+			//	if pCtnA.ID==""{
+			//		container = types.Container{}
+			//		ctnStat = ctn.CTN_STATS{}
+			//	}else{
+			//		if _,ok = ctnInfoMap[pCtnA.ID]; !ok{
+			//			container = types.Container{}
+			//		}else{
+			//			container = ctnInfoMap[pCtnA.ID]
+			//		}
+			//
+			//		if _,ok = G_ctnMgr.cancel_stats_map[pCtnA.ID]; !ok{
+			//			ctnStat = ctn.CTN_STATS{}
+			//		}else{
+			//			ctnStat = ctnStatMap[pCtnA.ID]
+			//		}
+			//	}
+			//
+			//	pSaTruck.CtnList = append(pSaTruck.CtnList, container)
+			//	pSaTruck.CtnStat = append(pSaTruck.CtnStat, ctnStat)
+			//}
+			//
+			//fmt.Println("111111111111111111", pSaTruck)
+			//
+			//for _, addr = range G_ctnMgr.serverAddrs{
+			//	pSaTruck.Addr = addr
+			//	G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+			//}
 			timer.Reset(interval)
 		}
 	}
@@ -385,14 +451,14 @@ func MonitorCtns(ctx context.Context)  {
 }
 
 //更新容器事件信息
-func handleEventMessage(evtMsg events.Message){
-	var(
-		ok bool
+func handleEventMessage(evtMsg events.Message) {
+	var (
+		ok      bool
 		ctnName string
-		addr string
+		addr    string
 	)
-	if evtMsg.Type == "container"{
-		if ctnName,ok=ctnIdMap[evtMsg.ID];!ok{
+	if evtMsg.Type == "container" {
+		if ctnName, ok = ctnIdMap[evtMsg.ID]; !ok {
 			return
 		}
 		ctnEvtMsgMap[ctnName] = evtMsg
@@ -406,34 +472,41 @@ func handleEventMessage(evtMsg events.Message){
 	pSaTruck.Flag = ctn.FLAG_EVENT
 	pSaTruck.Index = pool.GetIndex()
 
-	pSaTruck.EvtMsg = make([]events.Message,0,1)
+	pSaTruck.EvtMsg = make([]events.Message, 0, 1)
 	pSaTruck.EvtMsg = append(pSaTruck.EvtMsg, evtMsg)
 
-	for _, addr = range G_ctnMgr.serverAddrs{
-		pSaTruck.Addr = addr
-		G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+	if evtMsg.Type == "container" {
+		//如果是容器相关事件，则只发给容器所属集群
+		if destAddr, ok := ctnClstMap[evtMsg.ID]; ok {
+			pSaTruck.DesAddr = destAddr
+			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+		}
+	} else {
+		//其它事件，发给所有server端
+		for _, addr = range G_ctnMgr.serverAddrs {
+			pSaTruck.DesAddr = addr
+			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+		}
 	}
 }
 
 //更新错误事件信息
-func handleErrorMessage(errMsg error)  {
+func handleErrorMessage(errMsg error) {
 	//向服务端发送错误事件信息
-	var(
+	var (
 		pSaTruck protocol.SA_TRUCK
-		addr string
+		addr     string
 	)
 	pool.AddIndex()
 	pSaTruck.Flag = ctn.FLAG_EVENT
 	pSaTruck.Index = pool.GetIndex()
 
-	pSaTruck.ErrMsg = make([]error,0,1)
+	pSaTruck.ErrMsg = make([]error, 0, 1)
 	pSaTruck.ErrMsg = append(pSaTruck.ErrMsg, errMsg)
 
-	for _, addr = range G_ctnMgr.serverAddrs{
-		pSaTruck.Addr = addr
+	//发给所有server端
+	for _, addr = range G_ctnMgr.serverAddrs {
+		pSaTruck.DesAddr = addr
 		G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 	}
 }
-
-
-
