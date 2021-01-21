@@ -66,15 +66,15 @@ func (pCtnS *CTNS) GetLog() (log string, err error) {
 	pSaTruck := &protocol.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
 	pSaTruck.Index = pool.GetIndex()
-	pSaTruck.Addr = pCtnS.AgentAddr
+	pSaTruck.DesAddr = pCtnS.AgentAddr
 	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
 	pSaTruck.Req_Ans[0].CtnOper = ctn.GETLOG
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
 
-	pool.RegPrivateChanInt(pSaTruck.Index,1)
+	pool.RegPrivateChanInt(pSaTruck.Index, 1)
 	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
 	GetSendChan() <- pSaTruck
-	ctx, cancel:=context.WithTimeout(context.Background(), time.Second * time.Duration(5))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(5))
 	select {
 	case <-ctx.Done():
 		pool.UnregPrivateChanInt(pSaTruck.Index)
@@ -102,7 +102,7 @@ func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
 	pSaTruck := &protocol.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
 	pSaTruck.Index = pool.GetIndex()
-	pSaTruck.Addr = pCtnS.AgentAddr
+	pSaTruck.DesAddr = pCtnS.AgentAddr
 	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
 	pSaTruck.Req_Ans[0].CtnOper = ctn.GETLOG
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
@@ -110,7 +110,7 @@ func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
 	pool.RegPrivateChanInt(pSaTruck.Index, 1)
 	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
 	GetSendChan() <- pSaTruck
-	ctx, cancel:=context.WithTimeout(context.Background(), time.Second * time.Duration(5))
+	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(5))
 	select {
 	case <-ctx.Done():
 		pool.UnregPrivateChanInt(pSaTruck.Index)
@@ -138,7 +138,7 @@ func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (errType string, e
 	pSaTruck := &protocol.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
 	pSaTruck.Index = pool.GetIndex()
-	pSaTruck.Addr = pCtnS.AgentAddr
+	pSaTruck.DesAddr = pCtnS.AgentAddr
 	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
 	pSaTruck.Req_Ans[0].CtnOper = operFlag
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
