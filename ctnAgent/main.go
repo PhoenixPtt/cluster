@@ -12,12 +12,13 @@ import (
 func main() {
 	var serverAddrs []string = []string{"192.168.1.155"} //agent可能为多台server服务
 	var agentAddr string = "192.168.1.155"
+	//初始化容器管理器
+	ctnA.InitCtnMgr(mySendCtn, agentAddr)
+
 	for _, serverAddr := range serverAddrs {
+		ctnA.AddServer(serverAddr)
 		tcpSocket.ConnectToHost(serverAddr, 10000, agentAddr, 0, myReceiveData, myStateChange)
 	}
-
-	//初始化容器管理器
-	ctnA.InitCtnMgr(mySendCtn, agentAddr, serverAddrs)
 
 	for {
 		time.Sleep(time.Second * time.Duration(1))

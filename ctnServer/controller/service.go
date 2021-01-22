@@ -53,7 +53,7 @@ func (service *SERVICE) SetNodeStatus(nodeName string, status bool) {
 func (service *SERVICE) WatchRpl() {
 	pool.RegPrivateChanStr(service.SvcName, CHAN_BUFFER)
 	var ctx context.Context
-	ctx,service.CancelWatchRpl=context.WithCancel(context.Background())
+	ctx, service.CancelWatchRpl = context.WithCancel(context.Background())
 	for {
 		select {
 		case <-ctx.Done():
@@ -93,7 +93,9 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 	rpl.AgentAddr = agentAddr
 	rpl.AgentStatus = true
 	rpl.RplTargetStat = RPL_TARGET_REMOVED
-	rpl.CreateTime = headers.ToString(time.Now(),headers.TIME_LAYOUT_NANO)//启动时间
+	rpl.CreateTime = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //启动时间
+	rpl.Timeout = pSvc.Timeout
+	rpl.AgentTryNum = pSvc.AgentTryNum
 
 	pSvc.Replicas = append(pSvc.Replicas, rpl)
 
@@ -120,7 +122,7 @@ func (pSvc *SERVICE) Create() (err error) {
 	} else {
 		Mylog.Info("-----------------------创建服务-----------------------")
 		pSvc.SvcStats = SVC_CREATED
-		pSvc.CreateTime = headers.ToString(time.Now(),headers.TIME_LAYOUT_NANO)//创建时间
+		pSvc.CreateTime = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //创建时间
 	}
 
 	switch info {
@@ -146,8 +148,8 @@ func (pSvc *SERVICE) Start() (err error) {
 	default:
 		Mylog.Info("-----------------------启动服务-----------------------")
 		pSvc.SvcStats = SVC_RUNNING
-		pSvc.updateRpl() //根据具体情况增删副本
-		pSvc.StartTime = headers.ToString(time.Now(),headers.TIME_LAYOUT_NANO)//启动时间
+		pSvc.updateRpl()                                                        //根据具体情况增删副本
+		pSvc.StartTime = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //启动时间
 	}
 
 	switch info {
@@ -220,7 +222,7 @@ func (pSvc *SERVICE) Stop() (err error) {
 
 //对应用户删除操作
 func (pSvc *SERVICE) Remove() (err error) {
-	var info string//判断是否满足执行动作的前提条件
+	var info string //判断是否满足执行动作的前提条件
 	Mylog.Info("-----------------------删除-----------------------")
 	pSvc.SvcStats = SVC_REMOVED
 	pSvc.updateRpl() //根据具体情况增删副本

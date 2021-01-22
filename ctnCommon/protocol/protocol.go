@@ -2,7 +2,6 @@ package protocol
 
 import (
 	"ctnCommon/ctn"
-	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 )
 
@@ -40,12 +39,14 @@ type SA_TRUCK struct {
 	//Agent响应
 	Req_Ans []REQ_ANS
 
-	//Agent主动发送
+	//Agent上传的容器状态信息
+	CtnInfo []ctn.CTN
 	EvtMsg  []events.Message
 	ErrMsg  []error
-	CtnList []types.Container
-	CtnStat []ctn.CTN_STATS
-	CtnMsg  []CTN_MSG
+
+	//CtnList []types.Container
+	//CtnStat []ctn.CTN_STATS
+	//CtnMsg  []CTN_MSG
 
 	//消息发送时间
 	MsgTimeStr string

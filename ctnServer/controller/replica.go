@@ -65,7 +65,7 @@ func (rpl *REPLICA) WatchCtn() {
 	statusMap = make(map[string]int)
 	pool.RegPrivateChanStr(rpl.CtnName, 1)
 	var ctx context.Context
-	ctx,rpl.CancelWatchCtn=context.WithCancel(context.Background())
+	ctx, rpl.CancelWatchCtn = context.WithCancel(context.Background())
 	for {
 		select {
 		case <-ctx.Done():
@@ -124,6 +124,7 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 	}
 
 	if rpl.CtnName == "" {
+		configMap[ctnS.AGENT_TRY_NUM] = fmt.Sprint(rpl.AgentTryNum)
 		pCtnS = ctnS.NewCtnS(rpl.RplImage, rpl.AgentAddr, configMap)
 		rpl.CtnName = pCtnS.CtnName
 		go rpl.WatchCtn()
@@ -137,7 +138,7 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 		goto Error
 	}
 
-	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(1))
+	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(rpl.Timeout))
 	defer cancel()
 	errType, err = pCtnS.Run(ctx)
 	if err != nil {
@@ -167,8 +168,8 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 		log       string
 		rplStatus map[string]int
 		pChan     chan interface{}
-		ctx		context.Context
-		cancel	context.CancelFunc
+		ctx       context.Context
+		cancel    context.CancelFunc
 	)
 	rplStatus = make(map[string]int)
 
@@ -189,7 +190,7 @@ func (rpl *REPLICA) Remove() (errType string, err error) {
 		goto Error
 	}
 
-	ctx,cancel=context.WithTimeout(context.TODO(), time.Second * time.Duration(5))
+	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
 	defer cancel()
 	errType, err = pCtnS.Remove(ctx)
 	if err != nil {

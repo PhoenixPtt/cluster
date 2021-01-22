@@ -23,12 +23,14 @@ type SERVICE struct {
 	SvcScale        int     `yaml: "svc_scale"` //服务的预期规模
 	SvcHealthDegree float64 //服务健康度
 
-	CreateTime   string // 服务创建时间
-	StartTime    string // 服务启动时间
-	NameSpace    string //服务的命名空间
+	CreateTime string // 服务创建时间
+	StartTime  string // 服务启动时间
+	NameSpace  string //服务的命名空间
 
-	Replicas         []*REPLICA      //服务的副本
-	NodeStatusMap    map[string]bool //节点状态映射表
+	Replicas       []*REPLICA      //服务的副本
+	Timeout        int             //超时时间
+	AgentTryNum    int             //agent执行容器操作失败后允许的最大尝试次数
+	NodeStatusMap  map[string]bool //节点状态映射表
 	CancelWatchRpl context.CancelFunc
 	//SchedulePOLICY				//服务的调度策略
 

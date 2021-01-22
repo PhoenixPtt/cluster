@@ -29,7 +29,7 @@ const (
 type CTN struct {
 	CtnName   string `json:"ctn_name"`
 	ImageName string `json:"image_name"`
-	CtnID string `json:"ctn_id"`
+	CtnID     string `json:"ctn_id"`
 	AgentAddr string `json:"agentaddr"`
 
 	//容器状态，容器创建事件，容器状态更新时间
@@ -50,10 +50,15 @@ type CTN struct {
 	//容器信息和时间
 	types.Container
 
+	//容器资源使用情况
+	CTN_STATS
+
 	//容器事件和时间
 	CtnAction        string `json:"ctn_action"`
 	CtnActionTime    string `json:"ctn_action_time"`
 	CtnActionTimeInt int64
+
+	AgentTryNum int //agent执行容器操作失败后允许的最大尝试次数
 }
 
 //容器操作接口声明

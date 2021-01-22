@@ -17,11 +17,11 @@ import (
 )
 
 //创建容器
-func Create(ctx context.Context, ctnName string, imgName string) (err error) {
+func Create(ctx context.Context, ctnName string, imgName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		resp container.ContainerCreateCreatedBody
-		pCtn *ctn.CTN
+		//pCtn *ctn.CTN
 	)
 
 	//判断容器名称是否存在
@@ -52,21 +52,12 @@ func Create(ctx context.Context, ctnName string, imgName string) (err error) {
 	if err != nil {
 		return
 	}
-
-	//新建容器对象
-	pCtn = &ctn.CTN{
-		CtnName:   ctnName,
-		ImageName: imgName,
-		CtnID:     resp.ID,
-	}
-
-	//将容器对象添加到容器池中
-	G_ctnMgr.ctnObjPool.AddObj(ctnName, pCtn)
+	response = resp.ID
 	return
 }
 
 //启动容器
-func Start(ctx context.Context, ctnName string) (err error) {
+func Start(ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -85,15 +76,13 @@ func Start(ctx context.Context, ctnName string) (err error) {
 	}
 
 	//启动容器
-	if err = cli.ContainerStart(ctx, pCtn.ID, types.ContainerStartOptions{}); err != nil {
-		return err
-	}
+	err = cli.ContainerStart(ctx, pCtn.CtnID, types.ContainerStartOptions{})
 
 	return
 }
 
 //运行容器
-func Run(ctx context.Context, ctnName string, imgName string) (err error) {
+func Run(ctx context.Context, ctnName string, imgName string) (response interface{}, err error) {
 	var (
 		obj interface{}
 	)
@@ -101,26 +90,17 @@ func Run(ctx context.Context, ctnName string, imgName string) (err error) {
 	//判断该容器是否存在
 	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
 		//容器不存在，则创建容器
-		if err = Create(ctx, ctnName, imgName); err != nil {
+		if response, err = Create(ctx, ctnName, imgName); err != nil {
 			return
 		}
 	}
 
 	//启动容器
-	if err = Start(ctx, ctnName); err != nil {
-		goto ERROR
-	}
-
-	return
-
-ERROR:
-	//运行失败，则将容器删除
-	err = Remove(ctx, ctnName)
-	return
+	return Start(ctx, ctnName)
 }
 
 //停止容器
-func Stop(ctx context.Context, ctnName string) (err error) {
+func Stop(ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -140,13 +120,13 @@ func Stop(ctx context.Context, ctnName string) (err error) {
 
 	//正常停止容器
 	var timeout *time.Duration
-	err = cli.ContainerStop(ctx, pCtn.ID, timeout)
+	err = cli.ContainerStop(ctx, pCtn.CtnID, timeout)
 
 	return
 }
 
 //强制停止容器
-func Kill(ctx context.Context, ctnName string) (err error) {
+func Kill(ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -165,13 +145,13 @@ func Kill(ctx context.Context, ctnName string) (err error) {
 	}
 
 	//正常停止容器
-	err = cli.ContainerKill(ctx, pCtn.ID, "")
+	err = cli.ContainerKill(ctx, pCtn.CtnID, "")
 
 	return
 }
 
 //删除容器
-func Remove(ctx context.Context, ctnName string) (err error) {
+func Remove(ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -186,22 +166,19 @@ func Remove(ctx context.Context, ctnName string) (err error) {
 
 	//判断容器当前运行状态,如果容器正在运行，则kill容器
 	if pCtn.State == "running" {
-		if err = Kill(ctx, ctnName); err != nil {
+		if _, err = Kill(ctx, ctnName); err != nil {
 			return
 		}
 	}
 
-	if err = cli.ContainerRemove(ctx, pCtn.ID, types.ContainerRemoveOptions{}); err == nil {
-		//容器删除成功，则删除容器池中对应的容器对象
-		G_ctnMgr.ctnObjPool.RemoveObj(ctnName)
-	}
+	err = cli.ContainerRemove(ctx, pCtn.CtnID, types.ContainerRemoveOptions{})
 
 	return
 }
 
 //获取容器日志
 //注意：容器停止运行后无法获取容器日志
-func GetLog(ctx context.Context, ctnName string) (logStr string, err error) {
+func GetLog(ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -217,24 +194,26 @@ func GetLog(ctx context.Context, ctnName string) (logStr string, err error) {
 
 	//判断容器当前运行状态,只有运行的容器才能获取到日志
 	if pCtn.State == "running" {
-		if logs, err = cli.ContainerLogs(ctx, pCtn.ID, types.ContainerLogsOptions{ShowStdout: true}); err != nil {
+		if logs, err = cli.ContainerLogs(ctx, pCtn.CtnID, types.ContainerLogsOptions{ShowStdout: true}); err != nil {
 			return
 		}
 		buf := new(bytes.Buffer)
 		buf.ReadFrom(logs)
-		logStr = buf.String()
+		//logStr = buf.String()
+		response = buf.String()
 	}
 
 	return
 }
 
 //查看容器详细信息
-func Inspect(ctx context.Context, ctnName string) (ctnInspect ctn.CTN_INSPECT, err error) {
+func Inspect(ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj           interface{}
 		pCtn          *ctn.CTN
 		ctnJson       types.ContainerJSON
 		inspectStream []byte
+		ctnInspect    ctn.CTN_INSPECT
 	)
 
 	//判断该容器是否存在
@@ -245,7 +224,7 @@ func Inspect(ctx context.Context, ctnName string) (ctnInspect ctn.CTN_INSPECT, e
 	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//获取容器详细信息
-	if ctnJson, err = cli.ContainerInspect(ctx, pCtn.ID); err != nil {
+	if ctnJson, err = cli.ContainerInspect(ctx, pCtn.CtnID); err != nil {
 		return
 	}
 
@@ -255,7 +234,9 @@ func Inspect(ctx context.Context, ctnName string) (ctnInspect ctn.CTN_INSPECT, e
 	}
 
 	//json反序列化
-	err = json.Unmarshal(inspectStream, &ctnInspect)
+	if err = json.Unmarshal(inspectStream, &ctnInspect); err == nil {
+		response = ctnInspect
+	}
 
 	return
 }

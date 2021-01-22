@@ -1,7 +1,7 @@
 package controller
 
 import (
-	"ctnServer/easylog"
+	"ctnCommon/easylog"
 )
 
 var (
