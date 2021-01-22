@@ -48,13 +48,11 @@ func myStateChange(id string, mystring uint8) {
 	fmt.Println(id, mystring)
 
 	//判断服务器ip是否在容器管理器列表中
-	if ctnA.G_ctnMgr.IsServerExisted(id) {
-		switch mystring {
-		case 1: //在线
-			ctnA.G_ctnMgr.UpdateServerOnlineStatus(id, true)
-		case 2: //离线
-			ctnA.G_ctnMgr.UpdateServerOnlineStatus(id, false)
-		}
+	switch mystring {
+	case 1: //在线
+		ctnA.G_ctnMgr.UpdateServerOnlineStatus(id, true)
+	case 2: //离线
+		ctnA.G_ctnMgr.UpdateServerOnlineStatus(id, false)
 	}
 }
 

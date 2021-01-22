@@ -8,6 +8,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/docker/docker/client"
 	"io"
 	"runtime"
 	"time"
@@ -17,7 +18,7 @@ import (
 )
 
 //创建容器
-func Create(ctx context.Context, ctnName string, imgName string) (response interface{}, err error) {
+func Create(cli *client.Client, ctx context.Context, ctnName string, imgName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		resp container.ContainerCreateCreatedBody
@@ -30,9 +31,9 @@ func Create(ctx context.Context, ctnName string, imgName string) (response inter
 	}
 
 	//判断镜像是否存在
-	if !IsImageExisted(ctx, imgName) {
+	if !IsImageExisted(cli, ctx, imgName) {
 		//如果镜像不存在，则从私有仓库中拉取
-		if err = ImagePull(ctx, imgName); err != nil {
+		if err = ImagePull(cli, ctx, imgName); err != nil {
 			//如果拉取失败，则返回
 			return
 		}
@@ -57,7 +58,7 @@ func Create(ctx context.Context, ctnName string, imgName string) (response inter
 }
 
 //启动容器
-func Start(ctx context.Context, ctnName string) (response interface{}, err error) {
+func Start(cli *client.Client, ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -82,7 +83,7 @@ func Start(ctx context.Context, ctnName string) (response interface{}, err error
 }
 
 //运行容器
-func Run(ctx context.Context, ctnName string, imgName string) (response interface{}, err error) {
+func Run(cli *client.Client, ctx context.Context, ctnName string, imgName string) (response interface{}, err error) {
 	var (
 		obj interface{}
 	)
@@ -90,17 +91,17 @@ func Run(ctx context.Context, ctnName string, imgName string) (response interfac
 	//判断该容器是否存在
 	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
 		//容器不存在，则创建容器
-		if response, err = Create(ctx, ctnName, imgName); err != nil {
+		if response, err = Create(cli, ctx, ctnName, imgName); err != nil {
 			return
 		}
 	}
 
 	//启动容器
-	return Start(ctx, ctnName)
+	return Start(cli, ctx, ctnName)
 }
 
 //停止容器
-func Stop(ctx context.Context, ctnName string) (response interface{}, err error) {
+func Stop(cli *client.Client, ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -126,7 +127,7 @@ func Stop(ctx context.Context, ctnName string) (response interface{}, err error)
 }
 
 //强制停止容器
-func Kill(ctx context.Context, ctnName string) (response interface{}, err error) {
+func Kill(cli *client.Client, ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -151,7 +152,7 @@ func Kill(ctx context.Context, ctnName string) (response interface{}, err error)
 }
 
 //删除容器
-func Remove(ctx context.Context, ctnName string) (response interface{}, err error) {
+func Remove(cli *client.Client, ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -166,7 +167,7 @@ func Remove(ctx context.Context, ctnName string) (response interface{}, err erro
 
 	//判断容器当前运行状态,如果容器正在运行，则kill容器
 	if pCtn.State == "running" {
-		if _, err = Kill(ctx, ctnName); err != nil {
+		if _, err = Kill(cli, ctx, ctnName); err != nil {
 			return
 		}
 	}
@@ -178,7 +179,7 @@ func Remove(ctx context.Context, ctnName string) (response interface{}, err erro
 
 //获取容器日志
 //注意：容器停止运行后无法获取容器日志
-func GetLog(ctx context.Context, ctnName string) (response interface{}, err error) {
+func GetLog(cli *client.Client, ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj  interface{}
 		pCtn *ctn.CTN
@@ -207,7 +208,7 @@ func GetLog(ctx context.Context, ctnName string) (response interface{}, err erro
 }
 
 //查看容器详细信息
-func Inspect(ctx context.Context, ctnName string) (response interface{}, err error) {
+func Inspect(cli *client.Client, ctx context.Context, ctnName string) (response interface{}, err error) {
 	var (
 		obj           interface{}
 		pCtn          *ctn.CTN
@@ -241,7 +242,7 @@ func Inspect(ctx context.Context, ctnName string) (response interface{}, err err
 	return
 }
 
-func CtnStats(ctx context.Context, ctnName string) {
+func CtnStats(cli *client.Client, ctx context.Context, ctnName string) {
 	var (
 		obj      interface{}
 		err      error
@@ -310,7 +311,7 @@ func CtnStats(ctx context.Context, ctnName string) {
 				ctnStats.Read = headers.ToLocalTime(ctnStats.Read)
 				ctnStats.Preread = headers.ToLocalTime(ctnStats.Preread)
 
-				ctnStatMap[ctnId] = ctnStats
+				G_ctnMgr.ctnStatMap[ctnId] = ctnStats
 
 				//直接发给server端
 				//fmt.Println(ctnStats.ID[:10], ctnStats.Read, ctnStats.Preread, ctnStats.CPUUsageCalc, ctnStats.PercpuUsageCalc)
