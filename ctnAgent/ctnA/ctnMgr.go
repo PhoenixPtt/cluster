@@ -160,7 +160,6 @@ func WatchCtns() {
 			}
 
 			reqAns := pSaTruck.Req_Ans[0]
-			reqAns.CtnErrType = make([]string, 1)
 
 			//获取对应的容器
 			if pObj = G_ctnMgr.ctnObjPool.GetObj(reqAns.CtnName); pObj == nil {
@@ -294,6 +293,8 @@ func WatchCtnOper() {
 		pSaTruck protocol.SA_TRUCK
 
 		response interface{}
+
+		index int = 0
 	)
 	ctx, G_ctnMgr.cancelWatchCtnOper = context.WithCancel(context.Background())
 	for {
@@ -303,6 +304,8 @@ func WatchCtnOper() {
 			return
 		case obj := <-pool.GetPrivateChanStr(OPERATE_WATCH):
 			pCtnA = obj.(*ctn.CTN)
+			index--
+			pSaTruck.Index = index
 			pSaTruck.DesAddr = G_ctnMgr.ctnClstMap[pCtnA.CtnID]
 			pSaTruck.SrcAddr = pCtnA.AgentAddr
 			reqAns := pSaTruck.Req_Ans[0]
@@ -387,8 +390,7 @@ func MonitorCtns(ctx context.Context, clstName string) {
 			pSaTruck.SrcAddr = G_ctnMgr.agentAddr
 			pSaTruck.DesAddr = clstName
 			//更新容器信息
-			var ctnInfo []ctn.CTN
-			ctnInfo = make([]ctn.CTN, 0, MAX_CTN_NUM)
+			pSaTruck.CtnInfo = make([]ctn.CTN, 0, MAX_CTN_NUM)
 			for _, ctnId := range ctnIds {
 				//获取容器结构体
 				ctnName, ok := G_ctnMgr.ctnIdMap[ctnId]
@@ -419,7 +421,7 @@ func MonitorCtns(ctx context.Context, clstName string) {
 					pCtn.CTN_STATS = ctnStat
 				}
 
-				ctnInfo = append(ctnInfo, *pCtn)
+				pSaTruck.CtnInfo = append(pSaTruck.CtnInfo, *pCtn)
 			}
 			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 			timer.Reset(interval)

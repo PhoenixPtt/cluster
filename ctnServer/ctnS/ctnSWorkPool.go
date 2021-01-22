@@ -41,49 +41,11 @@ func (workPool *CTNS_WORK_POOL) Recv() {
 			pSaTruck := obj.(*protocol.SA_TRUCK)
 			switch pSaTruck.Flag {
 			case ctn.FLAG_CTRL:
-				pool.AppendInt(pSaTruck.Index, pSaTruck)
-				//fmt.Println("KKKKKKKKKKKKKKKKKKKKK", pSaTruck)
-				//privateChan := pool.GetPrivateChanInt(pSaTruck.Index)
-				//if privateChan==nil{
-				//	continue
-				//}
-				//fmt.Println("GGGGGGGGGGGGGGGGGGGGGGG", privateChan)
-				////fmt.Println("1111111111111111111", pSaTruck)
-				////_,ok:=<-privateChan
-				////if !ok{
-				////	break
-				////}
-				////fmt.Println("22222222222222222222222222", pSaTruck)
-				//
-				//select {
-				//case privateChan <- pSaTruck:
-				//default:
-				//}
-				//fmt.Println("QQQQQQQQQQQQQQQQQQQQQQQQQQQQQQ", privateChan)
-			case ctn.FLAG_CTN: //更新容器信息
-				UpdateCtnInfo(pSaTruck.CtnList)
-			case ctn.FLAG_STATS: //更新资源使用情况
-			case ctn.FLAG_EVENT: //更新事件
-				//这些信息都要返回给上层
-				if len(pSaTruck.EvtMsg) > 0 {
-					eventMsg := pSaTruck.EvtMsg[0]
-					//fmt.Printf("%#v", eventMsg)
-					UpdateCtnEvent(eventMsg)
-				}
-
-				if len(pSaTruck.ErrMsg) > 0 {
-					//更新错误信息
+				if pSaTruck.Index > 0 {
+					pool.AppendInt(pSaTruck.Index, pSaTruck)
 				}
 			}
-
-			uploadChan := pool.GetPrivateChanStr(DAQ)
-			if uploadChan == nil {
-				continue
-			}
-			select {
-			case uploadChan <- pSaTruck:
-			default:
-			}
+			UpdateInfo(pSaTruck)
 		}
 	}
 }

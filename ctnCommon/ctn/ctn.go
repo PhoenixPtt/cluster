@@ -42,7 +42,10 @@ type CTN struct {
 
 	//操作类型和时间
 	OperType     string //记录最近一次的操作
-	OperStrategy bool   //是否启动
+	OperErr      string
+	CtnLog       string
+	CtnInspect   CTN_INSPECT
+	OperStrategy bool //是否启动
 	OperNum      int
 	OperTime     int64
 	OperTimeStr  string

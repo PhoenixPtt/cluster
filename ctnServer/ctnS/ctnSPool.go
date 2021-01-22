@@ -1,11 +1,11 @@
 package ctnS
 
 import (
+	"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"ctnCommon/pool"
-	"github.com/docker/docker/api/types"
+	"ctnCommon/protocol"
 	"github.com/docker/docker/api/types/events"
-	"time"
 )
 
 var (
@@ -15,7 +15,7 @@ var (
 
 func init() {
 	pCtnPool = pool.NewObjPool()
-	ctnIDMap = make(map[string]*CTNS,)
+	ctnIDMap = make(map[string]*CTNS)
 }
 
 //添加容器
@@ -25,9 +25,9 @@ func AddCtn(pCtnS *CTNS) {
 
 //删除容器
 func RemoveCtn(ctnName string) error {
-	pCtnS:=GetCtn(ctnName)
-	if pCtnS!=nil{
-		delete(ctnIDMap, pCtnS.ID)
+	pCtnS := GetCtn(ctnName)
+	if pCtnS != nil {
+		delete(ctnIDMap, pCtnS.CtnID)
 	}
 	return pCtnPool.RemoveObj(ctnName)
 }
@@ -66,49 +66,114 @@ func getRplStateFromCtnState(ctnState string) (rplState string) {
 	return
 }
 
-func UpdateCtnInfo(ctnList []types.Container) {
-	ctnLen := len(ctnList)
-	if ctnLen == 0 {
-		return
-	}
-	for _, container := range ctnList {
-		pCtnS := GetCtnFromID(container.ID)
-		if pCtnS != nil {
-			pCtnPool.Lock()
-			pCtnS.Container = container
-			oldRplState := getRplStateFromCtnState(pCtnS.State)
-			newRplState := getRplStateFromCtnState(container.State)
-
-			pCtnS.State = container.State
-
-			if oldRplState != newRplState {
-				pCtnS.Updated = time.Now().UnixNano()
-				pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
-				pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
-				pChan <- newRplState
+func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
+	switch pSaTruck.Flag {
+	case ctn.FLAG_CTRL:
+		{
+			len := len(pSaTruck.Req_Ans)
+			if len < 1 {
+				//不处理
 			}
-			pCtnPool.Unlock()
-		}
-	}
-	for _, pCtnS := range GetCtns() {
-		if pCtnS.ID != "" {
-			var bExisted bool = false
-			for _, container := range ctnList {
-				if pCtnS.ID == container.ID {
-					bExisted = true
-				}
-			}
-			if !bExisted {
-				pCtnPool.Lock()
-				defer pCtnPool.Unlock()
-				pCtnS.State = CTN_STATUS_NOTRUNNING
-				pCtnS.Updated = time.Now().UnixNano()
-				pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
-				pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
-				pChan <- pCtnS.State
+			reqAns := pSaTruck.Req_Ans[0]
+			pCtn := GetCtn(reqAns.CtnName)
+			switch reqAns.CtnOper {
+			case ctn.CREATE, ctn.RUN, ctn.START, ctn.STOP, ctn.KILL, ctn.REMOVE:
+				pCtn.OperType = reqAns.CtnOper
+				pCtn.OperErr = reqAns.CtnErr.Error()
+			case ctn.GETLOG:
+				pCtn.OperType = reqAns.CtnOper
+				pCtn.OperErr = reqAns.CtnErr.Error()
+				pCtn.CtnLog = reqAns.CtnLog[0]
+			case ctn.INSPECT:
+				pCtn.OperType = reqAns.CtnOper
+				pCtn.OperErr = reqAns.CtnErr.Error()
+				pCtn.CtnInspect = reqAns.CtnInspect[0]
 			}
 		}
+	case ctn.FLAG_CTN: //更新容器信息
+	case ctn.FLAG_EVENT: //更新事件
+		////这些信息都要返回给上层
+		//if len(pSaTruck.EvtMsg) > 0 {
+		//	eventMsg := pSaTruck.EvtMsg[0]
+		//	//fmt.Printf("%#v", eventMsg)
+		//	UpdateCtnEvent(eventMsg)
+		//}
+		//
+		//if len(pSaTruck.ErrMsg) > 0 {
+		//	//更新错误信息
+		//}
 	}
+
+	//for _, newCtn := range  ctnInfo{
+	//	pCtnS := GetCtn(newCtn.CtnName)
+
+	////判断类型
+	//switch pSaTruck.Flag {
+	//case ctn.CREATE, ctn.RUN, ctn.START, ctn.STOP, ctn.KILL, ctn.REMOVE:
+	//	pCtnS.OperType = newCtn.OperType
+	//	pCtnS.op
+	//	if err != nil { //执行N次仍然失败，则上报给server端
+	//		reqAns.CtnErr = err
+	//	}
+	//case ctn.GETLOG:
+	//	reqAns.CtnLog = make([]string, 1)
+	//	if err == nil {
+	//		reqAns.CtnLog[0] = response.(string)
+	//	}
+	//case ctn.INSPECT:
+	//	reqAns.CtnInspect = make([]ctn.CTN_INSPECT, 1)
+	//	if err == nil {
+	//		reqAns.CtnInspect[0] = response.(ctn.CTN_INSPECT)
+	//	}
+	//}
+	//}
+
+	//需要更新的状态
+
+	//根据原始数据计算出来的状态更新
+
+	//ctnLen := len(ctnList)
+	//if ctnLen == 0 {
+	//	return
+	//}
+	//for _, container := range ctnList {
+	//	pCtnS := GetCtnFromID(container.ID)
+	//	if pCtnS != nil {
+	//		pCtnPool.Lock()
+	//		pCtnS.Container = container
+	//		oldRplState := getRplStateFromCtnState(pCtnS.State)
+	//		newRplState := getRplStateFromCtnState(container.State)
+	//
+	//		pCtnS.State = container.State
+	//
+	//		if oldRplState != newRplState {
+	//			pCtnS.Updated = time.Now().UnixNano()
+	//			pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
+	//			pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
+	//			pChan <- newRplState
+	//		}
+	//		pCtnPool.Unlock()
+	//	}
+	//}
+	//for _, pCtnS := range GetCtns() {
+	//	if pCtnS.CtnID != "" {
+	//		var bExisted bool = false
+	//		for _, container := range ctnList {
+	//			if pCtnS.CtnID == container.ID {
+	//				bExisted = true
+	//			}
+	//		}
+	//		if !bExisted {
+	//			pCtnPool.Lock()
+	//			defer pCtnPool.Unlock()
+	//			pCtnS.State = CTN_STATUS_NOTRUNNING
+	//			pCtnS.Updated = time.Now().UnixNano()
+	//			pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
+	//			pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
+	//			pChan <- pCtnS.State
+	//		}
+	//	}
+	//}
 }
 
 func UpdateCtnEvent(events events.Message) {
@@ -146,17 +211,17 @@ func UpdateCtnEvent(events events.Message) {
 }
 
 func GetCtnFromID(ctnID string) *CTNS {
-	_,ok:=ctnIDMap[ctnID]
-	if ok{
+	_, ok := ctnIDMap[ctnID]
+	if ok {
 		return ctnIDMap[ctnID]
 	}
 	return nil
 }
 
-func UpdateCtnID(pCtnS *CTNS, ctnID string)  {
-	pCtnS.ID = ctnID
-	_,ok:=ctnIDMap[ctnID]
-	if !ok{
+func UpdateCtnID(pCtnS *CTNS, ctnID string) {
+	pCtnS.CtnID = ctnID
+	_, ok := ctnIDMap[ctnID]
+	if !ok {
 		ctnIDMap[ctnID] = pCtnS
 	}
 	return

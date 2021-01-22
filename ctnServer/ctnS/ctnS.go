@@ -6,7 +6,6 @@ import (
 	"ctnCommon/pool"
 	"ctnCommon/protocol"
 	"errors"
-	"time"
 )
 
 const (
@@ -24,116 +23,56 @@ type CTNS struct {
 }
 
 //创建容器
-func (pCtnS *CTNS) Create(ctx context.Context) (errType string, err error) {
-	errType, err = pCtnS.Oper(ctx, ctn.CREATE)
+func (pCtnS *CTNS) Create(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.CREATE)
 	return
 }
 
 //启动容器
-func (pCtnS *CTNS) Start(ctx context.Context) (errType string, err error) {
-	errType, err = pCtnS.Oper(ctx, ctn.START)
+func (pCtnS *CTNS) Start(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.START)
 	return
 }
 
 //运行容器
-func (pCtnS *CTNS) Run(ctx context.Context) (errType string, err error) {
-	errType, err = pCtnS.Oper(ctx, ctn.RUN)
+func (pCtnS *CTNS) Run(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.RUN)
 	return
 }
 
 //停止容器
-func (pCtnS *CTNS) Stop(ctx context.Context) (errType string, err error) {
-	errType, err = pCtnS.Oper(ctx, ctn.STOP)
+func (pCtnS *CTNS) Stop(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.STOP)
 	return
 }
 
 //强制停止容器
-func (pCtnS *CTNS) Kill(ctx context.Context) (errType string, err error) {
-	errType, err = pCtnS.Oper(ctx, ctn.KILL)
+func (pCtnS *CTNS) Kill(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.KILL)
 	return
 }
 
 //删除容器
-func (pCtnS *CTNS) Remove(ctx context.Context) (errType string, err error) {
-	errType, err = pCtnS.Oper(ctx, ctn.REMOVE)
+func (pCtnS *CTNS) Remove(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.REMOVE)
 	return
 }
 
 //获取容器日志
 //注意：容器被删除之后无法获取容器日志
-func (pCtnS *CTNS) GetLog() (log string, err error) {
-	pool.AddIndex()
-	pSaTruck := &protocol.SA_TRUCK{}
-	pSaTruck.Flag = ctn.FLAG_CTRL
-	pSaTruck.Index = pool.GetIndex()
-	pSaTruck.DesAddr = pCtnS.AgentAddr
-	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
-	pSaTruck.Req_Ans[0].CtnOper = ctn.GETLOG
-	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
-
-	pool.RegPrivateChanInt(pSaTruck.Index, 1)
-	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
-	GetSendChan() <- pSaTruck
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(5))
-	select {
-	case <-ctx.Done():
-		pool.UnregPrivateChanInt(pSaTruck.Index)
-		cancel()
-		return "", errors.New(ERR_CTN_TIMEOUT)
-	case obj := <-pPrivateChan:
-		pSaAnsTruck := obj.(*protocol.SA_TRUCK)
-		if len(pSaAnsTruck.Req_Ans) < 1 {
-			return ERR_CTN_NILANS, errors.New(ERR_CTN_NILANS)
-		}
-		reqAns := pSaAnsTruck.Req_Ans[0]
-		switch reqAns.CtnOper {
-		case ctn.GETLOG:
-			log, err = pCtnS.GetLog()
-			return
-		}
-	}
-
+func (pCtnS *CTNS) GetLog(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.GETLOG)
 	return
 }
 
 //查看容器详细信息
-func (pCtnS *CTNS) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
-	pool.AddIndex()
-	pSaTruck := &protocol.SA_TRUCK{}
-	pSaTruck.Flag = ctn.FLAG_CTRL
-	pSaTruck.Index = pool.GetIndex()
-	pSaTruck.DesAddr = pCtnS.AgentAddr
-	pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
-	pSaTruck.Req_Ans[0].CtnOper = ctn.GETLOG
-	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
-
-	pool.RegPrivateChanInt(pSaTruck.Index, 1)
-	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
-	GetSendChan() <- pSaTruck
-	ctx, cancel := context.WithTimeout(context.Background(), time.Second*time.Duration(5))
-	select {
-	case <-ctx.Done():
-		pool.UnregPrivateChanInt(pSaTruck.Index)
-		cancel()
-		return ctnInspect, errors.New(ERR_CTN_TIMEOUT)
-	case obj := <-pPrivateChan:
-		pSaAnsTruck := obj.(*protocol.SA_TRUCK)
-		if len(pSaAnsTruck.Req_Ans) < 1 {
-			return ctnInspect, errors.New(ERR_CTN_NILANS)
-		}
-		reqAns := pSaAnsTruck.Req_Ans[0]
-		switch reqAns.CtnOper {
-		case ctn.INSPECT:
-			ctnInspect, err = pCtnS.Inspect()
-		}
-		return
-	}
-
+func (pCtnS *CTNS) Inspect(ctx context.Context) (err error) {
+	err = pCtnS.Oper(ctx, ctn.INSPECT)
 	return
 }
 
 //容器操作回路
-func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (errType string, err error) {
+func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (err error) {
 	pool.AddIndex()
 	pSaTruck := &protocol.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
@@ -150,35 +89,18 @@ func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (errType string, e
 	select {
 	case <-ctx.Done():
 		pool.UnregPrivateChanInt(pSaTruck.Index)
-		return ERR_CTN_TIMEOUT, errors.New(ERR_CTN_TIMEOUT)
+		return errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
 		pSaAnsTruck := obj.(*protocol.SA_TRUCK)
 		if len(pSaAnsTruck.Req_Ans) < 1 {
-			return ERR_CTN_NILANS, errors.New(ERR_CTN_NILANS)
+			return errors.New(ERR_CTN_NILANS)
 		}
 		reqAns := pSaAnsTruck.Req_Ans[0]
 		switch reqAns.CtnOper {
 		case ctn.CREATE, ctn.RUN:
 			UpdateCtnID(pCtnS, reqAns.CtnID[0])
-			pCtnS.State = reqAns.CtnState
-			errType = reqAns.CtnErrType[0]
-			err = reqAns.CtnErr
-		default:
-			switch reqAns.CtnOper {
-			case ctn.START, ctn.STOP, ctn.KILL:
-				pCtnS.State = reqAns.CtnState
-				errType = reqAns.CtnErrType[0]
-				err = reqAns.CtnErr
-			case ctn.REMOVE:
-				pCtnS.State = reqAns.CtnState
-				errType = reqAns.CtnErrType[0]
-				err = reqAns.CtnErr
-
-				if err == nil {
-					RemoveCtn(pCtnS.CtnName)
-				}
-			}
 		}
+		err = reqAns.CtnErr
 		return
 	}
 
