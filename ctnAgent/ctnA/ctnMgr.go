@@ -390,7 +390,7 @@ func MonitorCtns(ctx context.Context, clstName string) {
 			pSaTruck.SrcAddr = G_ctnMgr.agentAddr
 			pSaTruck.DesAddr = clstName
 			//更新容器信息
-			pSaTruck.CtnInfo = make([]ctn.CTN, 0, MAX_CTN_NUM)
+			pSaTruck.CtnInfos = make([]ctn.CTN, 0, MAX_CTN_NUM)
 			for _, ctnId := range ctnIds {
 				//获取容器结构体
 				ctnName, ok := G_ctnMgr.ctnIdMap[ctnId]
@@ -421,7 +421,7 @@ func MonitorCtns(ctx context.Context, clstName string) {
 					pCtn.CTN_STATS = ctnStat
 				}
 
-				pSaTruck.CtnInfo = append(pSaTruck.CtnInfo, *pCtn)
+				pSaTruck.CtnInfos = append(pSaTruck.CtnInfos, *pCtn)
 			}
 			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 			timer.Reset(interval)
@@ -432,18 +432,8 @@ func MonitorCtns(ctx context.Context, clstName string) {
 //更新容器事件信息
 func handleEventMessage(evtMsg events.Message) {
 	var (
-		//ok      bool
-		//ctnName string
 		addr string
 	)
-	//if evtMsg.Type == "container" {
-	//	if ctnName, ok = ctnIdMap[evtMsg.ID]; !ok {
-	//		return
-	//	}
-	//	ctnEvtMsgMap[ctnName] = evtMsg
-	//
-	//	//更新容器对象池中的容器状态
-	//}
 
 	//向服务端发送容器事件信息
 	var pSaTruck protocol.SA_TRUCK

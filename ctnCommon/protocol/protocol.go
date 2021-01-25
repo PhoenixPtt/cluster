@@ -39,9 +39,9 @@ type SA_TRUCK struct {
 	Req_Ans []REQ_ANS
 
 	//Agent上传的容器状态信息
-	CtnInfo []ctn.CTN
-	EvtMsg  []events.Message
-	ErrMsg  []error
+	CtnInfos []ctn.CTN
+	EvtMsg   []events.Message
+	ErrMsg   []error
 
 	//CtnList []types.Container
 	//CtnStat []ctn.CTN_STATS

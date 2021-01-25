@@ -2,15 +2,16 @@ package ctnS
 
 import (
 	"ctnCommon/ctn"
-	"ctnCommon/headers"
 	"ctnCommon/pool"
 	"ctnCommon/protocol"
 	"github.com/docker/docker/api/types/events"
 )
 
 var (
-	pCtnPool *pool.OBJ_POOL
-	ctnIDMap map[string]*CTNS
+	pCtnPool  *pool.OBJ_POOL
+	ctnIDMap  map[string]*CTNS
+	eventMsgs []events.Message
+	errMsgs   []error
 )
 
 func init() {
@@ -91,124 +92,72 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 			}
 		}
 	case ctn.FLAG_CTN: //更新容器信息
-	case ctn.FLAG_EVENT: //更新事件
-		////这些信息都要返回给上层
-		//if len(pSaTruck.EvtMsg) > 0 {
-		//	eventMsg := pSaTruck.EvtMsg[0]
-		//	//fmt.Printf("%#v", eventMsg)
-		//	UpdateCtnEvent(eventMsg)
-		//}
-		//
-		//if len(pSaTruck.ErrMsg) > 0 {
-		//	//更新错误信息
-		//}
-	}
-
-	//for _, newCtn := range  ctnInfo{
-	//	pCtnS := GetCtn(newCtn.CtnName)
-
-	////判断类型
-	//switch pSaTruck.Flag {
-	//case ctn.CREATE, ctn.RUN, ctn.START, ctn.STOP, ctn.KILL, ctn.REMOVE:
-	//	pCtnS.OperType = newCtn.OperType
-	//	pCtnS.op
-	//	if err != nil { //执行N次仍然失败，则上报给server端
-	//		reqAns.CtnErr = err
-	//	}
-	//case ctn.GETLOG:
-	//	reqAns.CtnLog = make([]string, 1)
-	//	if err == nil {
-	//		reqAns.CtnLog[0] = response.(string)
-	//	}
-	//case ctn.INSPECT:
-	//	reqAns.CtnInspect = make([]ctn.CTN_INSPECT, 1)
-	//	if err == nil {
-	//		reqAns.CtnInspect[0] = response.(ctn.CTN_INSPECT)
-	//	}
-	//}
-	//}
-
-	//需要更新的状态
-
-	//根据原始数据计算出来的状态更新
-
-	//ctnLen := len(ctnList)
-	//if ctnLen == 0 {
-	//	return
-	//}
-	//for _, container := range ctnList {
-	//	pCtnS := GetCtnFromID(container.ID)
-	//	if pCtnS != nil {
-	//		pCtnPool.Lock()
-	//		pCtnS.Container = container
-	//		oldRplState := getRplStateFromCtnState(pCtnS.State)
-	//		newRplState := getRplStateFromCtnState(container.State)
-	//
-	//		pCtnS.State = container.State
-	//
-	//		if oldRplState != newRplState {
-	//			pCtnS.Updated = time.Now().UnixNano()
-	//			pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
-	//			pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
-	//			pChan <- newRplState
-	//		}
-	//		pCtnPool.Unlock()
-	//	}
-	//}
-	//for _, pCtnS := range GetCtns() {
-	//	if pCtnS.CtnID != "" {
-	//		var bExisted bool = false
-	//		for _, container := range ctnList {
-	//			if pCtnS.CtnID == container.ID {
-	//				bExisted = true
-	//			}
-	//		}
-	//		if !bExisted {
-	//			pCtnPool.Lock()
-	//			defer pCtnPool.Unlock()
-	//			pCtnS.State = CTN_STATUS_NOTRUNNING
-	//			pCtnS.Updated = time.Now().UnixNano()
-	//			pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
-	//			pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
-	//			pChan <- pCtnS.State
-	//		}
-	//	}
-	//}
-}
-
-func UpdateCtnEvent(events events.Message) {
-	if events.Type == "container" {
-		pCtnS := GetCtnFromID(events.ID)
-		if pCtnS != nil {
-			if pCtnS.CtnActionTimeInt < events.TimeNano { //比较时间，谁的时间更近，以谁为准
-				pCtnPool.Lock()
-				defer pCtnPool.Unlock()
-				pCtnS.CtnAction = events.Action
-				pCtnS.CtnActionTime = headers.ToStringInt(events.TimeNano, headers.TIME_LAYOUT_NANO)
-				pCtnS.CtnActionTimeInt = events.TimeNano
-
-				oldRplState := getRplStateFromCtnState(pCtnS.State)
-
-				var ctnStatus string
-				switch pCtnS.CtnAction {
-				case "start":
-					ctnStatus = CTN_STATUS_RUNNING
-				default:
-					ctnStatus = CTN_STATUS_NOTRUNNING
-				}
-				if oldRplState != ctnStatus {
-					if pCtnS.Updated < events.TimeNano {
-						pCtnS.State = ctnStatus
-						pCtnS.Updated = events.TimeNano
-						pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
-						pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
-						pChan <- pCtnS.State
-					}
+		{
+			for _, ctnInfo := range pSaTruck.CtnInfos {
+				pCtn := GetCtn(ctnInfo.CtnName)
+				//更新的容器信息
+				//1.容器信息是否过期
+				//2.容器信息
+				//3.容器资源状态信息
+				pCtn.Dirty = ctnInfo.Dirty
+				if !pCtn.Dirty { //容器未过期的情况下更新其它信息
+					pCtn.Container = ctnInfo.Container
+					pCtn.CTN_STATS = ctnInfo.CTN_STATS
 				}
 			}
 		}
+	case ctn.FLAG_EVENT: //更新事件
+		if len(pSaTruck.EvtMsg) > 0 {
+			//一般事件信息
+			eventMsg := pSaTruck.EvtMsg[0]
+			//?作为集群参数传给web前端
+			eventMsgs = append(eventMsgs, eventMsg)
+			//fmt.Printf("%#v", eventMsg)
+		}
+
+		if len(pSaTruck.ErrMsg) > 0 {
+			//错误事件信息
+			errMsg := pSaTruck.ErrMsg[0]
+			//?作为集群参数传给web前端
+			errMsgs = append(errMsgs, errMsg)
+		}
 	}
 }
+
+//
+//func UpdateCtnEvent(events events.Message) {
+//	if events.Type == "container" {
+//		pCtnS := GetCtnFromID(events.ID)
+//		if pCtnS != nil {
+//			if pCtnS.CtnActionTimeInt < events.TimeNano { //比较时间，谁的时间更近，以谁为准
+//				pCtnPool.Lock()
+//				defer pCtnPool.Unlock()
+//				pCtnS.CtnAction = events.Action
+//				pCtnS.CtnActionTime = headers.ToStringInt(events.TimeNano, headers.TIME_LAYOUT_NANO)
+//				pCtnS.CtnActionTimeInt = events.TimeNano
+//
+//				oldRplState := getRplStateFromCtnState(pCtnS.State)
+//
+//				var ctnStatus string
+//				switch pCtnS.CtnAction {
+//				case "start":
+//					ctnStatus = CTN_STATUS_RUNNING
+//				default:
+//					ctnStatus = CTN_STATUS_NOTRUNNING
+//				}
+//				if oldRplState != ctnStatus {
+//					if pCtnS.Updated < events.TimeNano {
+//						pCtnS.State = ctnStatus
+//						pCtnS.Updated = events.TimeNano
+//						pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
+//						pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
+//						pChan <- pCtnS.State
+//					}
+//				}
+//			}
+//		}
+//	}
+//}
 
 func GetCtnFromID(ctnID string) *CTNS {
 	_, ok := ctnIDMap[ctnID]
