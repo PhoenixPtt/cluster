@@ -118,21 +118,6 @@ func main() {
 									g_controller.StopSvc(service.SvcName)
 									g_controller.StartSvc(service.SvcName)
 								}
-								//g_cluster.cr
-								//if index==2||index==5||index==6{//启动或扩容缩容或重启
-								//	//如果是扩容缩容服务
-								//	fmt.Println("请输入副本规模：")
-								//	var sScale int
-								//	fmt.Scanln(&sScale)
-								//	service.SvcOperChan <- cluster.SVC_OPER{
-								//		SOperName: svcOpers[index],//将服务操作放入操作通道
-								//		Scale: sScale,
-								//	}
-								//}else{
-								//	service.SvcOperChan <- cluster.SVC_OPER{
-								//		SOperName: svcOpers[index],//将服务操作放入操作通道
-								//	}
-								//}
 							} else {
 								fmt.Println("服务%s不存在！", sNames[sIndex])
 							}
@@ -219,7 +204,7 @@ func main() {
 							}
 
 							pCtn = ctnS.GetCtn(ctnName)
-							pCtn.OperNum = 1
+							//pCtn.OperNum = 1
 							//fmt.Printf("%s：%s  %#v\n",flagMap[index],ctnName, pCtn)
 							var ctx context.Context
 							var cancel context.CancelFunc
@@ -282,7 +267,8 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 		fmt.Errorf(err.Error())
 		return
 	}
-	pSaTruck.SrcAddr = h
+	//controller.Mylog.Debug(fmt.Sprintf("agent端收到的数据%v",pSaTruck))
+	////pSaTruck.SrcAddr = h
 
 	ctnS.GetRecvChan() <- pSaTruck
 }

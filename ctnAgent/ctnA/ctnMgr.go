@@ -131,7 +131,7 @@ func AddServer(serverAddr string) {
 
 	//监听容器信息
 	server.ctx, G_ctnMgr.cancel_monitor = context.WithCancel(context.TODO())
-	MonitorCtns(server.ctx, serverAddr)
+	go MonitorCtns(server.ctx, serverAddr)
 }
 
 //接收server端的数据
@@ -407,10 +407,12 @@ func MonitorCtns(ctx context.Context, clstName string) {
 				if container, ok := G_ctnMgr.ctnInfoMap[ctnId]; ok {
 					//容器在docker中实际存在
 					pCtn.Dirty = false
+					pCtn.DirtyPosition = ""
 					pCtn.Container = container
 				} else {
 					//容器在docker中已不存在
 					pCtn.Dirty = true
+					pCtn.DirtyPosition = ctn.DIRTY_POSITION_DOCKER
 					pCtn.Container = types.Container{} //清空容器信息
 					pCtn.CTN_STATS = ctn.CTN_STATS{}   //清空资源状态信息
 				}

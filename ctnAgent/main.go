@@ -16,9 +16,13 @@ func main() {
 	ctnA.InitCtnMgr(mySendCtn, agentAddr)
 
 	for _, serverAddr := range serverAddrs {
+		ctnA.Mylog.Debug(agentAddr)
+		ctnA.Mylog.Debug(serverAddr)
 		ctnA.AddServer(serverAddr)
 		tcpSocket.ConnectToHost(serverAddr, 10000, agentAddr, 0, myReceiveData, myStateChange)
 	}
+
+	//tcpSocket.ConnectToHost("192.168.1.155", 10000, "192.168.1.155", 0, myReceiveData, myStateChange)
 
 	for {
 		time.Sleep(time.Second * time.Duration(1))
@@ -30,7 +34,8 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 }
 
 func ReceiveDataFromServer(h string, level uint8, pkgId uint16, i string, s []byte) {
-	fmt.Println("从客户端收取数据")
+	//fmt.Println("从客户端收取数据")
+	ctnA.Mylog.Debug(fmt.Sprintf("h=%s,i=%s", h, i))
 
 	pSaTruck := new(protocol.SA_TRUCK)
 	err := headers.Decode(s, pSaTruck)

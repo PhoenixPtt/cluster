@@ -22,6 +22,12 @@ const (
 	GETLOG  = "GETLOG"
 	INSPECT = "INSPECT"
 	//CTNEXIT = "EXIT"
+
+	DIRTY_POSITION_DOCKER  = "失效位置：docker服务器"
+	DIRTY_POSITION_AGENT   = "失效位置：agent端"
+	DIRTY_POSITION_REMOVED = "正常删除"
+	DIRTY_POSTION_IMAGE    = "失效位置：镜像"
+	DIRTY_POSTION_SERVER   = "失效位置：server端"
 )
 
 //容器结构体声明
@@ -32,8 +38,9 @@ type CTN struct {
 	AgentAddr string `json:"agentaddr"`
 
 	//容器状态
-	State string `json:"state"`
-	Dirty bool   `json:"dirty"`
+	State         string `json:"state"`
+	Dirty         bool   `json:"dirty"`
+	DirtyPosition string `json:"dirty_position"`
 
 	//操作
 	OperType     string //记录最近一次的操作
@@ -41,6 +48,7 @@ type CTN struct {
 	OperStrategy bool   //是否启动
 
 	//应答
+	OperErr         string
 	CtnLog          string
 	CtnInspect      CTN_INSPECT
 	types.Container //容器信息和时间
@@ -56,7 +64,6 @@ type CTN struct {
 	//CtnActionTime    string `json:"ctn_action_time"`
 	//CtnActionTimeInt int64
 	//OperNum      int
-	//OperErr      string//
 	//OperTime     int64
 	//OperTimeStr  string
 }

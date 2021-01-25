@@ -11,17 +11,17 @@ import (
 )
 
 const (
-	RPL_STATUS_GODIRTY = iota
-	RPL_STATUS_REMOVED
+	//RPL_STATUS_GODIRTY = iota
+	//RPL_STATUS_REMOVED
 
 	RPL_TARGET_RUNNING = "运行中"
 	RPL_TARGET_REMOVED = "已删除"
 	RPL_GETLOG         = "RPL_GETLOG"  //获取副本内容器日志
 	RPL_INSPECT        = "RPL_INSPECT" //获取副本详情
 
-	ERR_RPL_NOTEXIST    = "副本不存在"
-	ERR_RPL_CTNNOTEXIST = "副本的容器不存在"
-	ERR_RPL_COMMFAIL    = "副本的节点通信故障"
+	//ERR_RPL_NOTEXIST    = "副本不存在"
+	//ERR_RPL_CTNNOTEXIST = "副本的容器不存在"
+	ERR_RPL_COMMFAIL = "副本的节点通信故障"
 )
 
 func (rpl *REPLICA) SetTargetStat(targetStat string) {
@@ -42,30 +42,39 @@ func (rpl *REPLICA) SetNodeStatus(nodeName string, status bool) {
 			rpl.AgentStatus = status //更新节点状态
 			switch rpl.AgentStatus {
 			case true: //上线
-				if rpl.Dirty {
-					go rpl.Remove()
-				}
+				//if rpl.Dirty {
+				//	go rpl.Remove()
+				//}
 			case false: //下线
-				if !rpl.Dirty {
-					fmt.Println("")
+				//if !rpl.Dirty {
+				fmt.Println("")
+				pCtn := ctnS.GetCtn(rpl.CtnName)
+				if pCtn != nil {
+					pCtn.Dirty = true
+					pCtn.DirtyPosition = ctn.DIRTY_POSTION_SERVER
 					//rpl.Dirty = true
+					//rpl= ctn.DIRTY_POSTION_SERVER
 					pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-					var statusMap map[string]int
-					statusMap = make(map[string]int)
-					statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
+					var statusMap map[string]string
+					statusMap = make(map[string]string)
+					statusMap[rpl.RplName] = pCtn.DirtyPosition
 					pChan <- statusMap
 				}
+				//}
 			}
 		}
 	}
 }
 
 func (rpl *REPLICA) WatchCtn() {
-	var statusMap map[string]int
-	statusMap = make(map[string]int)
+	var statusMap map[string]string
+	statusMap = make(map[string]string)
+	//var statusMap map[string]int
+	//statusMap = make(map[string]int)
 	pool.RegPrivateChanStr(rpl.CtnName, 1)
 	var ctx context.Context
 	ctx, rpl.CancelWatchCtn = context.WithCancel(context.Background())
+	//增加一个超时机制
 	for {
 		select {
 		case <-ctx.Done():
@@ -73,52 +82,72 @@ func (rpl *REPLICA) WatchCtn() {
 			pool.UnregPrivateChanStr(rpl.CtnName)
 			return
 		case obj := <-pool.GetPrivateChanStr(rpl.CtnName):
-			ctnStatus := obj.(string)
-			switch ctnStatus {
-			case ctnS.CTN_STATUS_RUNNING:
-				switch rpl.RplTargetStat {
-				case RPL_TARGET_RUNNING: //副本状态与容器状态一致
-				case RPL_TARGET_REMOVED: //副本状态与容器状态不一致
-					if !rpl.Dirty {
-						fmt.Println("通知服务进行调度1", rpl.SvcName, rpl.RplName)
-						pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-						statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
-						pChan <- statusMap
-					}
+			//获取副本对应的容器对象
+			pCtn := ctnS.GetCtn(rpl.CtnName)
+			//判断容器对象信息是否过期
+			if !pCtn.Dirty { //未过期
+				ctnStatus := obj.(string) //获取容器状态
+				//容器实际运行状态与副本目标状态做比较。如果二者不一致，需要做处理
+				var ctnRunningStat bool
+				if ctnStatus == "running" {
+					ctnRunningStat = true
+				} else {
+					ctnRunningStat = false
 				}
-			case ctnS.CTN_STATUS_NOTRUNNING:
-				switch rpl.RplTargetStat {
-				case RPL_TARGET_RUNNING: //副本状态与容器状态不一致
-					if !rpl.Dirty {
-						if rpl.AgentStatus { //如果节点在线，则删除副本
-							go rpl.Remove()
-						}
-						fmt.Println("通知服务进行调度2", rpl.SvcName, rpl.RplName)
-						pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-						statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
-						pChan <- statusMap
-					}
-				case RPL_TARGET_REMOVED: //副本状态与容器状态一致
+
+				var rplTargetRunningStat bool
+				if rpl.RplTargetStat == RPL_TARGET_RUNNING {
+					rplTargetRunningStat = true
+				} else {
+					rplTargetRunningStat = false
 				}
+
+				if ctnRunningStat != rplTargetRunningStat { //容器实际运行状态与副本目标状态不一致
+					pCtn.Dirty = true                            //此时也认为容器已过期
+					pCtn.DirtyPosition = ctn.DIRTY_POSTION_IMAGE //初步认为该容器的镜像有问题
+					//容器过期，副本随之过期，将副本过期的消息传给其所属服务
+					pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
+					statusMap[rpl.RplName] = pCtn.DirtyPosition  //将容器信息过期的消息传给服务
+					pChan <- statusMap
+				}
+			} else { //已过期
+				//if rpl.AgentStatus { //如果节点在线，则删除副本
+				//	//go rpl.Remove()
+				//}
+				//容器过期，副本随之过期，将副本过期的消息传给其所属服务
+				pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
+				switch rpl.RplTargetStat {
+				case RPL_TARGET_REMOVED:
+					if pCtn.DirtyPosition == ctn.DIRTY_POSITION_AGENT { //执行删除操作，并在agent端成功删除了
+						pCtn.DirtyPosition = ctn.DIRTY_POSITION_REMOVED //正常删除
+						//从容器对象池中删除
+						pool.RemoveObj(pCtn.CtnName)
+					}
+				default:
+
+				}
+
+				statusMap[rpl.RplName] = pCtn.DirtyPosition //将容器信息过期的消息传给服务
+				pChan <- statusMap
 			}
 		}
 	}
 }
 
 //运行副本
-func (rpl *REPLICA) Run() (errType string, err error) {
+func (rpl *REPLICA) Run() (err error) {
 	var pCtnS *ctnS.CTNS
 	var configMap map[string]string
 	var log string
 	var ctx context.Context
 	var cancel context.CancelFunc
 
-	errType, err = check(rpl, RPL_TARGET_RUNNING)
+	err = check(rpl, RPL_TARGET_RUNNING)
 	if err != nil {
 		goto Error
 	}
 
-	errType, err = rpl.checkNodeStatus()
+	err = rpl.checkNodeStatus()
 	if err != nil {
 		goto Error
 	}
@@ -133,14 +162,14 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 
 	//获取副本对应的容器
 	pCtnS = ctnS.GetCtn(rpl.CtnName)
-	errType, err = checkCtn(pCtnS, RPL_TARGET_RUNNING)
+	err = checkCtn(pCtnS, RPL_TARGET_RUNNING)
 	if err != nil {
 		goto Error
 	}
 
 	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(rpl.Timeout))
 	defer cancel()
-	errType, err = pCtnS.Run(ctx)
+	err = pCtnS.Run(ctx)
 	if err != nil {
 		goto Error
 	}
@@ -150,85 +179,91 @@ func (rpl *REPLICA) Run() (errType string, err error) {
 	return
 
 Error:
-	if !rpl.Dirty {
-		pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-		statusMap := make(map[string]int)
-		statusMap[rpl.RplName] = RPL_STATUS_GODIRTY
-		pChan <- statusMap
-	}
-	log = fmt.Sprintf("%s执行Run操作执行失败。错误类型：%s；错误详情：%s\n", rpl.RplName, errType, errors.New(err.Error()))
+	pCtnS.Dirty = true
+	pCtnS.DirtyPosition = ctn.DIRTY_POSTION_SERVER
+	pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
+	statusMap := make(map[string]string)
+	statusMap[rpl.RplName] = pCtnS.DirtyPosition
+	pChan <- statusMap
+	log = fmt.Sprintf("%s执行Run操作执行失败。错误信息：%s\n", rpl.RplName, errors.New(err.Error()))
 	Mylog.Info(log)
 	return
 }
 
 //删除副本
-func (rpl *REPLICA) Remove() (errType string, err error) {
+func (rpl *REPLICA) Remove() (err error) {
 	var (
-		pCtnS     *ctnS.CTNS
-		log       string
-		rplStatus map[string]int
-		pChan     chan interface{}
-		ctx       context.Context
-		cancel    context.CancelFunc
+		pCtnS *ctnS.CTNS
+		log   string
+		//rplStatus map[string]int
+		pChan  chan interface{}
+		ctx    context.Context
+		cancel context.CancelFunc
 	)
-	rplStatus = make(map[string]int)
+	//rplStatus = make(map[string]int)
 
-	errType, err = check(rpl, RPL_TARGET_REMOVED)
+	err = check(rpl, RPL_TARGET_REMOVED)
 	if err != nil {
 		goto Error
 	}
 
-	errType, err = rpl.checkNodeStatus()
+	err = rpl.checkNodeStatus()
 	if err != nil {
 		goto Error
 	}
 
 	//获取副本对应的容器
 	pCtnS = ctnS.GetCtn(rpl.CtnName)
-	errType, err = checkCtn(pCtnS, RPL_TARGET_REMOVED)
+	err = checkCtn(pCtnS, RPL_TARGET_REMOVED)
 	if err != nil {
 		goto Error
 	}
 
-	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(5))
+	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(rpl.Timeout))
 	defer cancel()
-	errType, err = pCtnS.Remove(ctx)
+	err = pCtnS.Remove(ctx)
 	if err != nil {
 		goto Error
 	}
 
-	pChan = pool.GetPrivateChanStr(rpl.SvcName) //通知服务删除该副本
-	rplStatus[rpl.RplName] = RPL_STATUS_REMOVED
-	pChan <- rplStatus
 	log = fmt.Sprintf("%s执行Remove操作执行成功。\n", rpl.RplName)
 	Mylog.Info(log)
 	return
+
 Error:
-	if !rpl.Dirty {
-		pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
-		rplStatus[rpl.RplName] = RPL_STATUS_GODIRTY
-		pChan <- rplStatus
-	}
-	log = fmt.Sprintf("%s执行Remove操作执行失败。错误类型：%s；错误详情：%s\n", rpl.RplName, errType, errors.New(err.Error()))
+	pCtnS.Dirty = true
+	pCtnS.DirtyPosition = ctn.DIRTY_POSTION_SERVER
+	pChan = pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
+	statusMap := make(map[string]string)
+	statusMap[rpl.RplName] = pCtnS.DirtyPosition
+	pChan <- statusMap
+	log = fmt.Sprintf("%s执行Remove操作执行失败。错误详情：%s\n", rpl.RplName, errors.New(err.Error()))
 	Mylog.Info(log)
 	return
 }
 
 //获取副本对应容器日志
-func (rpl *REPLICA) GetLog() (log string, err error) {
-	_, err = check(rpl, RPL_GETLOG)
+func (rpl *REPLICA) GetLog() (err error) {
+	var (
+		ctx    context.Context
+		cancel context.CancelFunc
+	)
+
+	err = check(rpl, RPL_GETLOG)
 	if err != nil {
 		return
 	}
 
 	//获取副本对应的容器
 	pCtnS := ctnS.GetCtn(rpl.CtnName)
-	_, err = checkCtn(pCtnS, RPL_GETLOG)
+	err = checkCtn(pCtnS, RPL_GETLOG)
 	if err != nil {
 		return
 	}
 
-	log, err = pCtnS.GetLog()
+	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(rpl.Timeout))
+	defer cancel()
+	err = pCtnS.GetLog(ctx)
 	if err != nil {
 		return
 	}
@@ -236,30 +271,36 @@ func (rpl *REPLICA) GetLog() (log string, err error) {
 }
 
 //获取副本对应容器详细信息
-func (rpl *REPLICA) Inspect() (ctnInspect ctn.CTN_INSPECT, err error) {
-	_, err = check(rpl, RPL_INSPECT)
+func (rpl *REPLICA) Inspect() (err error) {
+	var (
+		ctx    context.Context
+		cancel context.CancelFunc
+	)
+
+	err = check(rpl, RPL_INSPECT)
 	if err != nil {
 		return
 	}
 
 	//获取副本对应的容器
 	pCtnS := ctnS.GetCtn(rpl.CtnName)
-	_, err = checkCtn(pCtnS, RPL_INSPECT)
+	err = checkCtn(pCtnS, RPL_INSPECT)
 	if err != nil {
 		return
 	}
 
-	ctnInspect, err = pCtnS.Inspect()
+	ctx, cancel = context.WithTimeout(context.TODO(), time.Second*time.Duration(rpl.Timeout))
+	defer cancel()
+	err = pCtnS.Inspect(ctx)
 	if err != nil {
 		return
 	}
 	return
 }
 
-func check(rpl *REPLICA, operType string) (errType string, err error) {
+func check(rpl *REPLICA, operType string) (err error) {
 	err = nil
 	if rpl == nil {
-		errType = ERR_RPL_NOTEXIST
 		var errStr string
 		switch operType {
 		case RPL_TARGET_RUNNING:
@@ -284,7 +325,6 @@ func check(rpl *REPLICA, operType string) (errType string, err error) {
 	}
 
 	if rpl.CtnName == "" {
-		errType = ERR_RPL_CTNNOTEXIST
 		var errStr string
 		switch operType {
 		case RPL_TARGET_RUNNING:
@@ -304,7 +344,7 @@ func check(rpl *REPLICA, operType string) (errType string, err error) {
 	return
 }
 
-func checkCtn(pCtn *ctnS.CTNS, operType string) (errType string, err error) {
+func checkCtn(pCtn *ctnS.CTNS, operType string) (err error) {
 	err = nil
 	if pCtn == nil {
 		var errStr string
@@ -324,10 +364,9 @@ func checkCtn(pCtn *ctnS.CTNS, operType string) (errType string, err error) {
 	return
 }
 
-func (rpl *REPLICA) checkNodeStatus() (errType string, err error) {
+func (rpl *REPLICA) checkNodeStatus() (err error) {
 	err = nil
 	if !rpl.AgentStatus { //通信故障
-		errType = ERR_RPL_COMMFAIL
 		err = errors.New(rpl.AgentAddr + ERR_RPL_COMMFAIL)
 		return
 	}

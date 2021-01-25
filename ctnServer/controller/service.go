@@ -2,6 +2,7 @@ package controller
 
 import (
 	"context"
+	"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"ctnCommon/pool"
 	"ctnServer/ctnS"
@@ -19,6 +20,7 @@ const (
 
 	SVC_STATUS_GODIRTY = iota
 	SVC_STATUS_REMOVED
+	SVC_STATUS_RUNNING
 )
 
 //服务接口
@@ -61,27 +63,47 @@ func (service *SERVICE) WatchRpl() {
 			pool.UnregPrivateChanStr(service.SvcName)
 			return
 		case obj := <-pool.GetPrivateChanStr(service.SvcName):
-			rplStatusMap := obj.(map[string]int)
+			//rplStatusMap := obj.(map[string]int)
+			rplStatusMap := obj.(map[string]string)
 			for rplName, status := range rplStatusMap {
+				rpl := service.GetRpl(rplName)
 				switch status {
-				case RPL_STATUS_GODIRTY: //副本变脏
-					fmt.Println("副本变脏，重新调度")
+				case ctn.DIRTY_POSITION_REMOVED: //被正常删除
+					service.DelRpl(rplName) //在副本层已经将容器对象从容器对象池中删除，服务层仅需删除副本
+				case ctn.DIRTY_POSITION_DOCKER: //单纯容器在docker服务端被非正常手段删除
+					//执行删除操作，注意在agent端不需要执行docker操作，直接删除agent端的容器对象即可
+					rpl.SetTargetStat(RPL_TARGET_REMOVED)
 					go service.schedule(rplName) //重新调度
-				case RPL_STATUS_REMOVED:
-					service.DelRpl(rplName)
-					fmt.Println("收到副本已被删除，嘻嘻", rplStatusMap, service.SvcName, service.SvcStats)
-					if service.SvcStats == SVC_REMOVED {
-						rplLen := len(service.Replicas)
-						if rplLen == 0 {
-							pChan := pool.GetPrivateChanStr(SERVICE_STATUS_WATCH)
-							svcStatusMap := make(map[string]int)
-							svcStatusMap[service.SvcName] = SVC_STATUS_REMOVED
-							pChan <- svcStatusMap
-						}
-					}
+				case ctn.DIRTY_POSITION_AGENT: //server端与agent端不同步导致的容器对象信息过期
+					//删除server端的信息：包括副本信息和容器对象池中的信息
+					//要不要删除由用户决定，进行调度
+					go service.schedule(rplName) //重新调度
+				case ctn.DIRTY_POSTION_IMAGE: //server端操作与操作结果不一致，在docker服务器中执行失败
+					//执行删除操作，在agent端需要执行docker操作
+					//由用户决定是否继续调度，进行调度
+					rpl.SetTargetStat(RPL_TARGET_REMOVED)
+					go service.schedule(rplName) //重新调度
+				case ctn.DIRTY_POSTION_SERVER: //server端操作执行超时导致的容器对象过期，网络不通或超时时间设置过短
+					//执行删除操作，仅需删除server端的容器对象，并进行调度
+					rpl.SetTargetStat(RPL_TARGET_REMOVED)
+					go service.schedule(rplName) //重新调度
 				}
 			}
 		}
+
+		//更新服务运行状态
+		pChan := pool.GetPrivateChanStr(SERVICE_STATUS_WATCH)
+		svcStatusMap := make(map[string]int)
+		rplLen := len(service.Replicas)
+		if rplLen == 0 {
+			//服务的健康度等
+			service.SvcStats = "停止"
+			svcStatusMap[service.SvcName] = SVC_STATUS_REMOVED
+		} else {
+			service.SvcStats = "运行"
+			svcStatusMap[service.SvcName] = SVC_STATUS_RUNNING
+		}
+		pChan <- svcStatusMap
 	}
 }
 
@@ -234,14 +256,6 @@ func (pSvc *SERVICE) Remove() (err error) {
 		err = errors.New(info)
 	}
 
-	rplLen := len(pSvc.Replicas)
-	if rplLen == 0 {
-		pChan := pool.GetPrivateChanStr(SERVICE_STATUS_WATCH)
-		svcStatusMap := make(map[string]int)
-		svcStatusMap[pSvc.SvcName] = SVC_STATUS_REMOVED
-		pChan <- svcStatusMap
-	}
-
 	Mylog.Info(info)
 	return
 }
@@ -297,11 +311,9 @@ func (service *SERVICE) updateHealthDegree() (healthDegree float64) {
 	var activeNum int = 0
 	replicas := service.getReplicas()
 	for _, replica := range replicas {
-		if !replica.Dirty { //不计算dirty的副本
-			pCtn := ctnS.GetCtn(replica.CtnName)
-			if pCtn.State == "running" {
-				activeNum++
-			}
+		pCtn := ctnS.GetCtn(replica.CtnName)
+		if !pCtn.Dirty && pCtn.State == "running" {
+			activeNum++
 		}
 	}
 	service.SvcHealthDegree = float64(activeNum) / float64(service.SvcScale)

@@ -11,9 +11,6 @@ import (
 const (
 	ERR_CTN_NILANS  = "通信：收到空的应答"
 	ERR_CTN_TIMEOUT = "通信：接收应答超时 "
-
-	CTN_STATUS_RUNNING    = "running"
-	CTN_STATUS_NOTRUNNING = "not running"
 )
 
 //Server端结构体声明

@@ -1,22 +1,28 @@
 package ctnS
 
 import (
+	"context"
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
 	"ctnCommon/protocol"
 	"github.com/docker/docker/api/types/events"
+	"time"
 )
 
 var (
-	pCtnPool  *pool.OBJ_POOL
-	ctnIDMap  map[string]*CTNS
-	eventMsgs []events.Message
-	errMsgs   []error
+	pCtnPool        *pool.OBJ_POOL
+	ctnIDMap        map[string]*CTNS
+	eventMsgs       []events.Message
+	errMsgs         []error
+	EVENT_MSG_WATCH = "EVENT_MSG_WATCH"
+	ERR_MSG_WATCH   = "ERR_MSG_WATCH"
 )
 
 func init() {
 	pCtnPool = pool.NewObjPool()
 	ctnIDMap = make(map[string]*CTNS)
+	pool.RegPrivateChanStr(EVENT_MSG_WATCH, 1)
+	pool.RegPrivateChanStr(ERR_MSG_WATCH, 1)
 }
 
 //添加容器
@@ -57,16 +63,6 @@ func GetCtnNames() []string {
 	return pCtnPool.GetObjNames()
 }
 
-func getRplStateFromCtnState(ctnState string) (rplState string) {
-	switch ctnState {
-	case CTN_STATUS_RUNNING:
-		rplState = CTN_STATUS_RUNNING
-	default:
-		rplState = CTN_STATUS_NOTRUNNING
-	}
-	return
-}
-
 func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 	switch pSaTruck.Flag {
 	case ctn.FLAG_CTRL:
@@ -93,16 +89,47 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 		}
 	case ctn.FLAG_CTN: //更新容器信息
 		{
+			var ctnMap map[string]bool
+			ctnMap = make(map[string]bool) //这个变量主要是帮助找到server端有但agent端没有的容器对象
 			for _, ctnInfo := range pSaTruck.CtnInfos {
 				pCtn := GetCtn(ctnInfo.CtnName)
-				//更新的容器信息
-				//1.容器信息是否过期
-				//2.容器信息
-				//3.容器资源状态信息
-				pCtn.Dirty = ctnInfo.Dirty
-				if !pCtn.Dirty { //容器未过期的情况下更新其它信息
-					pCtn.Container = ctnInfo.Container
-					pCtn.CTN_STATS = ctnInfo.CTN_STATS
+				if pCtn != nil {
+					//更新的容器信息
+					//1.容器信息是否过期
+					//2.容器信息
+					//3.容器资源状态信息
+					pCtn.Dirty = ctnInfo.Dirty
+					pCtn.DirtyPosition = ctnInfo.DirtyPosition
+					if !pCtn.Dirty { //容器未过期的情况下更新其它信息
+						pCtn.Container = ctnInfo.Container
+						pCtn.CTN_STATS = ctnInfo.CTN_STATS
+
+						//更新容器状态信息
+						pCtn.State = ctnInfo.State
+					}
+					pChan := pool.GetPrivateChanStr(pCtn.CtnName)
+					pChan <- pCtn.State
+
+					ctnMap[ctnInfo.CtnName] = true
+				} else {
+					//与agent端同步，删除agent端有但server端没有的容器
+					//这里只要把消息发出去就可以了，仅等待1m
+					ctx, cancel := context.WithTimeout(context.TODO(), time.Second*time.Duration(1))
+					defer cancel()
+					pCtn.Remove(ctx)
+				}
+			}
+
+			//server端有但是agent端没有的容器对象,这些容器对象在server端的容器信息已经过期
+			sCtnNames := GetCtnNames()
+			for _, ctnName := range sCtnNames {
+				pCtn := GetCtn(ctnName)
+
+				if _, ok := ctnMap[ctnName]; !ok {
+					pCtn.Dirty = true //设置容器信息过时
+					pCtn.DirtyPosition = ctn.DIRTY_POSITION_AGENT
+					pChan := pool.GetPrivateChanStr(pCtn.CtnName)
+					pChan <- pCtn.State
 				}
 			}
 		}
@@ -110,54 +137,18 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 		if len(pSaTruck.EvtMsg) > 0 {
 			//一般事件信息
 			eventMsg := pSaTruck.EvtMsg[0]
-			//?作为集群参数传给web前端
-			eventMsgs = append(eventMsgs, eventMsg)
-			//fmt.Printf("%#v", eventMsg)
+			pChan := pool.GetPrivateChanStr(EVENT_MSG_WATCH)
+			pChan <- eventMsg
 		}
 
 		if len(pSaTruck.ErrMsg) > 0 {
 			//错误事件信息
 			errMsg := pSaTruck.ErrMsg[0]
-			//?作为集群参数传给web前端
-			errMsgs = append(errMsgs, errMsg)
+			pChan := pool.GetPrivateChanStr(ERR_MSG_WATCH)
+			pChan <- errMsg
 		}
 	}
 }
-
-//
-//func UpdateCtnEvent(events events.Message) {
-//	if events.Type == "container" {
-//		pCtnS := GetCtnFromID(events.ID)
-//		if pCtnS != nil {
-//			if pCtnS.CtnActionTimeInt < events.TimeNano { //比较时间，谁的时间更近，以谁为准
-//				pCtnPool.Lock()
-//				defer pCtnPool.Unlock()
-//				pCtnS.CtnAction = events.Action
-//				pCtnS.CtnActionTime = headers.ToStringInt(events.TimeNano, headers.TIME_LAYOUT_NANO)
-//				pCtnS.CtnActionTimeInt = events.TimeNano
-//
-//				oldRplState := getRplStateFromCtnState(pCtnS.State)
-//
-//				var ctnStatus string
-//				switch pCtnS.CtnAction {
-//				case "start":
-//					ctnStatus = CTN_STATUS_RUNNING
-//				default:
-//					ctnStatus = CTN_STATUS_NOTRUNNING
-//				}
-//				if oldRplState != ctnStatus {
-//					if pCtnS.Updated < events.TimeNano {
-//						pCtnS.State = ctnStatus
-//						pCtnS.Updated = events.TimeNano
-//						pCtnS.UpdatedString = headers.ToStringInt(pCtnS.Updated, headers.TIME_LAYOUT_NANO)
-//						pChan := pool.GetPrivateChanStr(pCtnS.CtnName)
-//						pChan <- pCtnS.State
-//					}
-//				}
-//			}
-//		}
-//	}
-//}
 
 func GetCtnFromID(ctnID string) *CTNS {
 	_, ok := ctnIDMap[ctnID]
