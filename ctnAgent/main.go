@@ -35,7 +35,7 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 
 func ReceiveDataFromServer(h string, level uint8, pkgId uint16, i string, s []byte) {
 	//fmt.Println("从客户端收取数据")
-	ctnA.Mylog.Debug(fmt.Sprintf("h=%s,i=%s", h, i))
+	//ctnA.Mylog.Debug(fmt.Sprintf("h=%s,i=%s", h, i))
 
 	pSaTruck := new(protocol.SA_TRUCK)
 	err := headers.Decode(s, pSaTruck)

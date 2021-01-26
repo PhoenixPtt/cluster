@@ -2,21 +2,8 @@ package controller
 
 import (
 	header "clusterHeader"
-	"ctnCommon/pool"
-	"fmt"
 	//"github.com/docker/docker/api/types"
 )
-
-const UPLOAD = "UPLOAD"
-
-func WaitWebService() (pWebServices *header.SERVICE) {
-	select {
-	case obj := <-pool.GetPrivateChanStr(UPLOAD): //类型：header.SERVICE
-		pWebServices = obj.(*header.SERVICE)
-		fmt.Println("2222222222222222222222222222", pWebServices)
-	}
-	return
-}
 
 //数据格式适配器
 func Oper2ServiceOper(webSvcCfg *header.ServiceCfg) (svcCfg *SVC_CFG) {
@@ -40,10 +27,11 @@ func WebService2ServiceOperTruck(pWebSvc *header.SERVICE) (pSvcOperTruck *SERVIC
 	pSvcOperTruck = &SERVICE_OPER_TRUCK{}
 	pSvcCfg := Oper2ServiceOper(&pWebSvc.Service[0].Cfg)
 	pSvcOperTruck.OperType = pWebSvc.Type
-	switch pWebSvc.Par[0].Name {
-	case "规模":
-		//pSvcOperTruck.ScaleNum = pWebSvc.Par[0].Value
-	}
+	//switch pWebSvc.Par[0].Name {
+	//case "规模":
+	//	//pSvcOperTruck.ScaleNum = pWebSvc.Par[0].Value
+	//}
+	pSvcOperTruck.ScaleNum = int(pWebSvc.Service[0].Scale)
 	pSvcOperTruck.SvcName = pSvcCfg.Description.Name
 	pSvcOperTruck.SvcCfg = *pSvcCfg
 	return

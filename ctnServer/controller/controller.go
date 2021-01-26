@@ -1,13 +1,9 @@
 package controller
 
 import (
-	header "clusterHeader"
 	"context"
 	"ctnCommon/pool"
-	"ctnServer/ctnS"
 	"fmt"
-	"github.com/docker/docker/api/types/events"
-	"time"
 )
 
 //启动集群
@@ -54,8 +50,8 @@ func (pController *CONTROLLER) WatchService(svcWatch string) {
 			pClstOper := obj.(*SERVICE_OPER_TRUCK)
 			switch pClstOper.OperType {
 			case SCREATE:
-				//err = pController.CreateSvcFromFile(pClstOper.ConfigFileName, pClstOper.ConfigFileType)
-				err = pController.CreateSvc(&pClstOper.SvcCfg)
+				err = pController.CreateSvcFromFile(pClstOper.ConfigFileName, pClstOper.ConfigFileType)
+				//err = pController.CreateSvc(&pClstOper.SvcCfg)
 			case SSTART:
 				err = pController.StartSvc(pClstOper.SvcName)
 			case SSTOP:
@@ -94,86 +90,24 @@ func (pController *CONTROLLER) WatchServiceStatus() {
 	pool.RegPrivateChanStr(SERVICE_STATUS_WATCH, CHAN_BUFFER)
 	var ctx context.Context
 	ctx, pController.CancelWatchSvcStatus = context.WithCancel(context.Background())
-	var G_samplingRate int = 1
-	//定时器时间间隔
-	var interval time.Duration = time.Second * time.Duration(G_samplingRate)
 
-	timer := time.NewTimer(interval)
 	for {
-		pWebServices := &header.SERVICE{}
 		select {
 		case <-ctx.Done():
 			fmt.Println("\n取消监控服务状态\n")
 			pool.UnregPrivateChanStr(SERVICE_STATUS_WATCH)
 			return
-		case <-timer.C:
-			timer.Reset(interval)
 		case obj := <-pool.GetPrivateChanStr(SERVICE_STATUS_WATCH):
-			//svcStatusMap := obj.(map[string]int)
-			//for svcName, status := range rplStatusMap {
-			//	pSvc := pController.GetSvc(svcName)
-			//	pSvc
-			//}
-			//
-			//
-			var webSvcs header.Services
-			webSvcs.Service = make([]header.Service, 0, SVC_NUM)
 			rplStatusMap := obj.(map[string]int)
 			for svcName, status := range rplStatusMap {
-				pSvc := pController.GetSvc(svcName)
-				pWebSvc := &header.Service{}
 				switch status {
-				case SVC_STATUS_RUNNING: //服务在运行
-					//更新服务信息
-					//发送给web前段
-					//服务的基本信息
-					pWebSvc.Id = pSvc.SvcName // 服务Id
-					//服务状态
-					pWebSvc.Scale = uint32(pSvc.SvcScale)             // 设定的副本数量
-					pWebSvc.ReplicaCount = uint32(len(pSvc.Replicas)) // 应用服务的当前副本数量
-					pWebSvc.CreateTime = pSvc.CreateTime              // 服务创建时间
-					pWebSvc.StartTime = pSvc.StartTime                // 服务启动时间
-					pWebSvc.NameSpace = pSvc.NameSpace                //服务的命名空间
-					//服务配置信息,空缺
-
-					//服务的所有副本
-					for _, pRpl := range pSvc.Replicas {
-						pWebRpl := &header.Replica{}
-						pWebRpl.Id = pRpl.RplName
-						pWebRpl.CreateTime = pRpl.CreateTime
-						pCtn := ctnS.GetCtn(pRpl.CtnName)
-						if pCtn != nil {
-							pWebRpl.Ctn = pCtn.Container
-							pWebRpl.CtnStats = pCtn.CTN_STATS
-						}
-						pWebSvc.Replica = append(pWebSvc.Replica, *pWebRpl)
-					}
 				case SVC_STATUS_REMOVED:
 					pSvc := pController.GetSvc(svcName)
 					DelService(pSvc)
 					delete(pController.ServiceMap, svcName)
 					fmt.Println(svcName, "已被删除", "哈哈哈哈")
 				}
-				webSvcs.Service = append(webSvcs.Service, *pWebSvc)
 			}
-			webSvcs.Count = uint32(len(webSvcs.Service))
-			pWebServices.Services = webSvcs
-			timer.Reset(interval)
-		case obj := <-pool.GetPrivateChanStr(ctnS.EVENT_MSG_WATCH):
-			{
-				evtMsg := obj.(events.Message)
-				pWebServices.EventMsg = append(pWebServices.EventMsg, evtMsg)
-			}
-		case obj := <-pool.GetPrivateChanStr(ctnS.ERR_MSG_WATCH):
-			{
-				errMsg := obj.(error)
-				pWebServices.ErrMsg = append(pWebServices.ErrMsg, errMsg.Error())
-			}
-		}
-		select {
-		case pool.GetPrivateChanStr(UPLOAD) <- pWebServices:
-			//fmt.Println("111111111111111111111111111111111", pWebServices)
-		default:
 		}
 	}
 }

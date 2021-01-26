@@ -162,27 +162,25 @@ func WatchCtns() {
 			reqAns := pSaTruck.Req_Ans[0]
 
 			//获取对应的容器
-			if pObj = G_ctnMgr.ctnObjPool.GetObj(reqAns.CtnName); pObj == nil {
-				continue
-			}
-			pCtnA = pObj.(*ctn.CTN)
+			pObj = G_ctnMgr.ctnObjPool.GetObj(reqAns.CtnName)
 
 			//回复Server端,只有当容器id不存在的
-			if pCtnA == nil {
+			if pObj == nil {
 				switch reqAns.CtnOper {
 				case ctn.CREATE, ctn.RUN: //创建和运行操作，需在容器池中添加容器对象
 					pCtnA = &ctn.CTN{}
 					pCtnA.CtnName = reqAns.CtnName
-					pCtnA.Image = reqAns.CtnImage
+					pCtnA.ImageName = reqAns.CtnImage
 
-					G_ctnMgr.ctnObjPool.AddObj(pCtnA.CtnName, pCtnA)    //将容器加入容器池
-					G_ctnMgr.ctnIdMap[pCtnA.CtnID] = pCtnA.CtnName      //容器ID映射到容器名称
-					G_ctnMgr.ctnClstMap[pCtnA.CtnID] = pSaTruck.SrcAddr //记录该容器所属的集群
+					G_ctnMgr.ctnObjPool.AddObj(pCtnA.CtnName, pCtnA)      //将容器加入容器池
+					G_ctnMgr.ctnIdMap[pCtnA.CtnID] = pCtnA.CtnName        //容器ID映射到容器名称
+					G_ctnMgr.ctnClstMap[pCtnA.CtnName] = pSaTruck.SrcAddr //记录该容器所属的集群
 				default:
 					//对于非创建、运行操作，如果在容器池中找不到该容器则，返回错误。
 					reqAns.CtnErr = fmt.Errorf("容器%s不存在，无法执行%s操作。", reqAns.CtnName, reqAns.CtnOper)
 				}
 			} else {
+				pCtnA = pObj.(*ctn.CTN)
 				reqAns.CtnErr = nil
 			}
 			pSaTruck.Req_Ans[0] = reqAns
@@ -199,12 +197,15 @@ func WatchCtns() {
 func PutCtnOper(pCtn *ctn.CTN, oper string) {
 	pCtn.OperType = oper
 	switch pCtn.OperType {
-	case ctn.CREATE:
+	case ctn.CREATE, ctn.RUN:
 		pool.RegPrivateChanStr(OPERATE_WATCH, OPERATE_CHAN_BUFFER)
+		pChan := pool.GetPrivateChanStr(OPERATE_WATCH)
+		pChan <- pCtn
 		go WatchCtnOper()
+	default:
+		pChan := pool.GetPrivateChanStr(OPERATE_WATCH)
+		pChan <- pCtn
 	}
-	pChan := pool.GetPrivateChanStr(OPERATE_WATCH)
-	pChan <- pCtn
 }
 
 func handleCtnOperSuccess(ctnName string, operType string, response interface{}) {
@@ -305,12 +306,16 @@ func WatchCtnOper() {
 		case obj := <-pool.GetPrivateChanStr(OPERATE_WATCH):
 			pCtnA = obj.(*ctn.CTN)
 			index--
+			Mylog.Debug(fmt.Sprintf("%v", pSaTruck))
 			pSaTruck.Index = index
-			pSaTruck.DesAddr = G_ctnMgr.ctnClstMap[pCtnA.CtnID]
+			pSaTruck.DesAddr = G_ctnMgr.ctnClstMap[pCtnA.CtnName]
 			pSaTruck.SrcAddr = pCtnA.AgentAddr
+			pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 1)
 			reqAns := pSaTruck.Req_Ans[0]
 			reqAns.CtnOper = pCtnA.OperType
+			Mylog.Debug(fmt.Sprintf("%v", reqAns))
 			response, err = OperateN(context.TODO(), pCtnA, pCtnA.AgentTryNum) //默认重复执行3次
+			Mylog.Debug(fmt.Sprintf("%v", response))
 			switch pCtnA.OperType {
 			case ctn.CREATE, ctn.RUN, ctn.START, ctn.STOP, ctn.KILL, ctn.REMOVE:
 				if err != nil { //执行N次仍然失败，则上报给server端
@@ -348,10 +353,10 @@ func ResponseCtns() {
 }
 
 //获取指定集群的所有容器
-func getCtns(clstName string) (ctnIds []string) {
-	for ctnId, _ := range G_ctnMgr.ctnClstMap {
-		if G_ctnMgr.ctnClstMap[ctnId] == clstName {
-			ctnIds = append(ctnIds, ctnId)
+func getCtns(clstName string) (ctnNames []string) {
+	for ctnName, _ := range G_ctnMgr.ctnClstMap {
+		if G_ctnMgr.ctnClstMap[ctnName] == clstName {
+			ctnNames = append(ctnNames, ctnName)
 		}
 	}
 	return
@@ -448,7 +453,8 @@ func handleEventMessage(evtMsg events.Message) {
 
 	if evtMsg.Type == "container" {
 		//如果是容器相关事件，则只发给容器所属集群
-		if destAddr, ok := G_ctnMgr.ctnClstMap[evtMsg.ID]; ok {
+		ctnName := G_ctnMgr.ctnIdMap[evtMsg.ID]
+		if destAddr, ok := G_ctnMgr.ctnClstMap[ctnName]; ok {
 			pSaTruck.DesAddr = destAddr
 			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 		}

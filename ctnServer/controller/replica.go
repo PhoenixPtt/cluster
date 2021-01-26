@@ -153,6 +153,7 @@ func (rpl *REPLICA) Run() (err error) {
 	}
 
 	if rpl.CtnName == "" {
+		configMap = make(map[string]string)
 		configMap[ctnS.AGENT_TRY_NUM] = fmt.Sprint(rpl.AgentTryNum)
 		pCtnS = ctnS.NewCtnS(rpl.RplImage, rpl.AgentAddr, configMap)
 		rpl.CtnName = pCtnS.CtnName

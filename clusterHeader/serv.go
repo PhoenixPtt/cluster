@@ -73,6 +73,8 @@ type Replica struct {
 	State      uint32          // 副本的状态
 	Ctn        types.Container // 容器的副本信息
 	CtnStats   ctn.CTN_STATS   // 服务的CPU使用率、内存使用量和内存使用率
+	Log        string          //日志
+	CtnInspect ctn.CTN_INSPECT //副本详细信息
 }
 
 //// 服务静态配置结构体
