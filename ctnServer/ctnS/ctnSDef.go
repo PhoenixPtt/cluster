@@ -1,7 +1,6 @@
 package ctnS
 
 import (
-	"ctnCommon/easylog"
 	"ctnCommon/headers"
 	"fmt"
 	"strconv"
@@ -9,7 +8,6 @@ import (
 
 var (
 	AGENT_TRY_NUM = "失败尝试次数"
-	mylog         easylog.LOG_BEHAVIOR
 )
 
 //新建一个容器对象

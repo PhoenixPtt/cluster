@@ -1,4 +1,4 @@
-package controller
+package ctnS
 
 import (
 	"ctnCommon/easylog"

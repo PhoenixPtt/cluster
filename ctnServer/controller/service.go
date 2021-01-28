@@ -116,7 +116,6 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 	rpl.AgentTryNum = pSvc.AgentTryNum
 
 	pSvc.Replicas = append(pSvc.Replicas, rpl)
-
 	return
 }
 
@@ -138,7 +137,7 @@ func (pSvc *SERVICE) Create() (err error) {
 	if pSvc.SvcStats != SVC_DEFAULT { //服务只有处于初始（未创建）状态，才允许被创建
 		info = infoString(pSvc.SvcStats, "已创建，本次创建操作将被忽略。")
 	} else {
-		Mylog.Info("-----------------------创建服务-----------------------")
+		ctnS.Mylog.Info("-----------------------创建服务-----------------------")
 		pSvc.SvcStats = SVC_CREATED
 		pSvc.CreateTime = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //创建时间
 	}
@@ -150,7 +149,7 @@ func (pSvc *SERVICE) Create() (err error) {
 		err = errors.New(info)
 	}
 
-	Mylog.Info(info)
+	ctnS.Mylog.Info(info)
 	return
 }
 
@@ -164,7 +163,7 @@ func (pSvc *SERVICE) Start() (err error) {
 	case SVC_RUNNING:
 		info = infoString(pSvc.SvcName, "正在稳定运行中，本次启动操作将被忽略。")
 	default:
-		Mylog.Info("-----------------------启动服务-----------------------")
+		ctnS.Mylog.Info("-----------------------启动服务-----------------------")
 		pSvc.SvcStats = SVC_RUNNING
 		pSvc.updateRpl()                                                        //根据具体情况增删副本
 		pSvc.StartTime = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //启动时间
@@ -177,7 +176,7 @@ func (pSvc *SERVICE) Start() (err error) {
 		err = errors.New(info)
 	}
 
-	Mylog.Info(info)
+	ctnS.Mylog.Info(info)
 	return
 }
 
@@ -193,7 +192,7 @@ func (pSvc *SERVICE) Scale(scaleNum int) (err error) {
 	case SVC_STOPPED:
 		info = infoString(pSvc.SvcName, "已停止，无法执行调整规模操作。")
 	default:
-		Mylog.Info("-----------------------调整规模-----------------------")
+		ctnS.Mylog.Info("-----------------------调整规模-----------------------")
 		pSvc.SvcStats = SVC_RUNNING
 		pSvc.SvcScale = scaleNum
 		pSvc.updateRpl() //根据具体情况增删副本
@@ -206,7 +205,7 @@ func (pSvc *SERVICE) Scale(scaleNum int) (err error) {
 		err = errors.New(info)
 	}
 
-	Mylog.Info(info)
+	ctnS.Mylog.Info(info)
 	return
 }
 
@@ -222,7 +221,7 @@ func (pSvc *SERVICE) Stop() (err error) {
 	case SVC_STOPPED:
 		info = infoString(pSvc.SvcName, "已经停止，本次停止操作将被忽略。")
 	default:
-		Mylog.Info("-----------------------停止-----------------------")
+		ctnS.Mylog.Info("-----------------------停止-----------------------")
 		pSvc.SvcStats = SVC_STOPPED
 		pSvc.updateRpl() //根据具体情况增删副本
 	}
@@ -234,14 +233,14 @@ func (pSvc *SERVICE) Stop() (err error) {
 		err = errors.New(info)
 	}
 
-	Mylog.Info(info)
+	ctnS.Mylog.Info(info)
 	return
 }
 
 //对应用户删除操作
 func (pSvc *SERVICE) Remove() (err error) {
 	var info string //判断是否满足执行动作的前提条件
-	Mylog.Info("-----------------------删除-----------------------")
+	ctnS.Mylog.Info("-----------------------删除-----------------------")
 	pSvc.SvcStats = SVC_REMOVED
 	pSvc.updateRpl() //根据具体情况增删副本
 
@@ -252,7 +251,7 @@ func (pSvc *SERVICE) Remove() (err error) {
 		err = errors.New(info)
 	}
 
-	Mylog.Info(info)
+	ctnS.Mylog.Info(info)
 	return
 }
 

@@ -6,13 +6,14 @@ import (
 )
 
 type REQ_ANS struct {
-	CtnName  string //容器名称
-	CtnOper  string //容器操作
-	CtnImage string //容器镜像
+	CtnName     string //容器名称
+	CtnOper     string //容器操作
+	CtnImage    string //容器镜像
+	AgentTryNum int    //操作失败尝试次数
 
 	//执行结果
 	//错误的执行结果
-	CtnErr error
+	CtnErr string
 
 	//正确的执行结果
 	CtnID      []string

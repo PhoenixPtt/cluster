@@ -41,13 +41,31 @@ func (workPool *CTNS_WORK_POOL) Recv() {
 			pSaTruck := obj.(*protocol.SA_TRUCK)
 			switch pSaTruck.Flag {
 			case ctn.FLAG_CTRL:
-				if pSaTruck.Index > 0 {
-					pool.AppendInt(pSaTruck.Index, pSaTruck)
-				}
+				//Mylog.Debug(fmt.Sprintf("uuuuuuuuuuuuuuuuuuuuuuuuuuu%v",pSaTruck))
+				//if pSaTruck.Index > 0 {
+				//	pool.AppendInt(pSaTruck.Index, pSaTruck)
+				//	return
+				//}
 			}
 			UpdateInfo(pSaTruck)
 		}
 	}
+
+	//for {
+	//	obj, ok := <-workPool.GetRecvChan()
+	//	if ok{
+	//		pSaTruck := obj.(*protocol.SA_TRUCK)
+	//		switch pSaTruck.Flag {
+	//		case ctn.FLAG_CTRL:
+	//			//Mylog.Debug(fmt.Sprintf("uuuuuuuuuuuuuuuuuuuuuuuuuuu%v",pSaTruck))
+	//			if pSaTruck.Index > 0 {
+	//				pool.AppendInt(pSaTruck.Index, pSaTruck)
+	//				return
+	//			}
+	//		}
+	//		UpdateInfo(pSaTruck)
+	//	}
+	//}
 }
 
 var (

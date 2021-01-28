@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"ctnCommon/headers"
+	"ctnCommon/pool"
 	"ctnCommon/protocol"
 	"ctnServer/controller"
 	"ctnServer/ctnS"
@@ -257,20 +258,36 @@ func myReceiveData(h string, pkgId uint16, i string, s []byte) {
 }
 
 func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byte) {
-	if i == "CTRL" {
-		fmt.Println("\n从agent端收取数据", h, pkgId, i)
-	}
-
 	pSaTruck := &protocol.SA_TRUCK{}
 	err := headers.Decode(s, pSaTruck)
 	if err != nil {
 		fmt.Errorf(err.Error())
 		return
 	}
-	//controller.Mylog.Debug(fmt.Sprintf("agent端收到的数据%v",pSaTruck))
-	////pSaTruck.SrcAddr = h
+	if i == FLAG_CTRL {
+		ctnS.Mylog.Debug(fmt.Sprintf("agent端收到的数据%v", pSaTruck))
+		if pSaTruck.Index > 0 {
+			pool.AppendInt(pSaTruck.Index, pSaTruck)
+			return
+		}
+	}
+	//}else if i==FLAG_CTN{
+	//	if len(pSaTruck.Req_Ans)>0{
+	//		req_ans := pSaTruck.Req_Ans[0]
+	//		if len(req_ans.CtnID) > 0{
+	//			ctnS.Mylog.Debug(fmt.Sprintf("agent端收到的数据%v",pSaTruck))
+	//		}
+	//	}
+	//	//ctnS.GetRecvChan() <- pSaTruck
+	//}
+	//ctnS.Mylog.Debug(fmt.Sprintf("%v", pSaTruck))
+	select {
+	case ctnS.GetRecvChan() <- pSaTruck:
+		//ctnS.Mylog.Debug("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
+	default:
+		//ctnS.Mylog.Debug("sssssssssssssssssssssssssssssssss")
+	}
 
-	ctnS.GetRecvChan() <- pSaTruck
 }
 
 func myStateChange(id string, mystring uint8) {

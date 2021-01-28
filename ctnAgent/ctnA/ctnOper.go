@@ -25,9 +25,10 @@ func Create(cli *client.Client, ctx context.Context, ctnName string, imgName str
 		//pCtn *ctn.CTN
 	)
 
-	//判断容器名称是否存在
-	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj != nil {
-		//容器名称已存在，禁止重复创建
+	//判断该容器是否存在
+	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
+		return
 	}
 
 	//判断镜像是否存在
@@ -53,6 +54,7 @@ func Create(cli *client.Client, ctx context.Context, ctnName string, imgName str
 	if err != nil {
 		return
 	}
+
 	response = resp.ID
 	return
 }
@@ -78,7 +80,6 @@ func Start(cli *client.Client, ctx context.Context, ctnName string) (response in
 
 	//启动容器
 	err = cli.ContainerStart(ctx, pCtn.CtnID, types.ContainerStartOptions{})
-
 	return
 }
 
@@ -90,14 +91,18 @@ func Run(cli *client.Client, ctx context.Context, ctnName string, imgName string
 
 	//判断该容器是否存在
 	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
-		//容器不存在，则创建容器
-		if response, err = Create(cli, ctx, ctnName, imgName); err != nil {
-			return
-		}
+		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
+		return
 	}
 
-	//启动容器
-	return Start(cli, ctx, ctnName)
+	if response, err = Create(cli, ctx, ctnName, imgName); err != nil {
+		return
+	}
+
+	ctnId := response.(string)
+	err = cli.ContainerStart(ctx, ctnId, types.ContainerStartOptions{})
+
+	return
 }
 
 //停止容器

@@ -79,6 +79,7 @@ func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (err error) {
 	pSaTruck.Req_Ans[0].CtnOper = operFlag
 	pSaTruck.Req_Ans[0].CtnName = pCtnS.CtnName
 	pSaTruck.Req_Ans[0].CtnImage = pCtnS.Image
+	pSaTruck.Req_Ans[0].AgentTryNum = pCtnS.AgentTryNum
 
 	pool.RegPrivateChanInt(pSaTruck.Index, 1)
 	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
@@ -93,11 +94,11 @@ func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (err error) {
 			return errors.New(ERR_CTN_NILANS)
 		}
 		reqAns := pSaAnsTruck.Req_Ans[0]
-		switch reqAns.CtnOper {
-		case ctn.CREATE, ctn.RUN:
-			UpdateCtnID(pCtnS, reqAns.CtnID[0])
+		if reqAns.CtnErr == "nil" {
+			err = nil
+		} else {
+			err = errors.New(reqAns.CtnErr)
 		}
-		err = reqAns.CtnErr
 		return
 	}
 

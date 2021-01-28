@@ -70,20 +70,21 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 			len := len(pSaTruck.Req_Ans)
 			if len < 1 {
 				//不处理
+				return
 			}
 			reqAns := pSaTruck.Req_Ans[0]
 			pCtn := GetCtn(reqAns.CtnName)
 			switch reqAns.CtnOper {
 			case ctn.CREATE, ctn.RUN, ctn.START, ctn.STOP, ctn.KILL, ctn.REMOVE:
 				pCtn.OperType = reqAns.CtnOper
-				pCtn.OperErr = reqAns.CtnErr.Error()
+				pCtn.OperErr = reqAns.CtnErr
 			case ctn.GETLOG:
 				pCtn.OperType = reqAns.CtnOper
-				pCtn.OperErr = reqAns.CtnErr.Error()
+				pCtn.OperErr = reqAns.CtnErr
 				pCtn.CtnLog = reqAns.CtnLog[0]
 			case ctn.INSPECT:
 				pCtn.OperType = reqAns.CtnOper
-				pCtn.OperErr = reqAns.CtnErr.Error()
+				pCtn.OperErr = reqAns.CtnErr
 				pCtn.CtnInspect = reqAns.CtnInspect[0]
 			}
 		}

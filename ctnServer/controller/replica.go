@@ -11,16 +11,11 @@ import (
 )
 
 const (
-	//RPL_STATUS_GODIRTY = iota
-	//RPL_STATUS_REMOVED
-
 	RPL_TARGET_RUNNING = "运行中"
 	RPL_TARGET_REMOVED = "已删除"
 	RPL_GETLOG         = "RPL_GETLOG"  //获取副本内容器日志
 	RPL_INSPECT        = "RPL_INSPECT" //获取副本详情
 
-	//ERR_RPL_NOTEXIST    = "副本不存在"
-	//ERR_RPL_CTNNOTEXIST = "副本的容器不存在"
 	ERR_RPL_COMMFAIL = "副本的节点通信故障"
 )
 
@@ -69,8 +64,6 @@ func (rpl *REPLICA) SetNodeStatus(nodeName string, status bool) {
 func (rpl *REPLICA) WatchCtn() {
 	var statusMap map[string]string
 	statusMap = make(map[string]string)
-	//var statusMap map[string]int
-	//statusMap = make(map[string]int)
 	pool.RegPrivateChanStr(rpl.CtnName, 1)
 	var ctx context.Context
 	ctx, rpl.CancelWatchCtn = context.WithCancel(context.Background())
@@ -176,7 +169,7 @@ func (rpl *REPLICA) Run() (err error) {
 	}
 
 	log = fmt.Sprintf("%s执行Run操作执行成功。\n", rpl.RplName)
-	Mylog.Info(log)
+	ctnS.Mylog.Info(log)
 	return
 
 Error:
@@ -187,7 +180,7 @@ Error:
 	statusMap[rpl.RplName] = pCtnS.DirtyPosition
 	pChan <- statusMap
 	log = fmt.Sprintf("%s执行Run操作执行失败。错误信息：%s\n", rpl.RplName, errors.New(err.Error()))
-	Mylog.Info(log)
+	ctnS.Mylog.Info(log)
 	return
 }
 
@@ -228,7 +221,7 @@ func (rpl *REPLICA) Remove() (err error) {
 	}
 
 	log = fmt.Sprintf("%s执行Remove操作执行成功。\n", rpl.RplName)
-	Mylog.Info(log)
+	ctnS.Mylog.Info(log)
 	return
 
 Error:
@@ -239,7 +232,7 @@ Error:
 	statusMap[rpl.RplName] = pCtnS.DirtyPosition
 	pChan <- statusMap
 	log = fmt.Sprintf("%s执行Remove操作执行失败。错误详情：%s\n", rpl.RplName, errors.New(err.Error()))
-	Mylog.Info(log)
+	ctnS.Mylog.Info(log)
 	return
 }
 

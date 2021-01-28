@@ -46,6 +46,8 @@ func NewService(pSvcCfg *SVC_CFG) (pSvc *SERVICE) {
 	pSvc.Replicas = make([]*REPLICA, 0, CTN_SIZE)
 	pSvc.NodeStatusMap = make(map[string]bool, CTN_SIZE)
 	pSvc.SvcStats = SVC_DEFAULT
+	pSvc.AgentTryNum = pSvcCfg.Description.Deploy.AgentTryNum
+	pSvc.Timeout = pSvcCfg.Description.Deploy.Timeout
 	go pSvc.WatchRpl()
 	return
 }

@@ -21,7 +21,7 @@ func (pSvc *SERVICE) schedule(rplName string) (err error) {
 		info = infoString(pSvc.SvcName, "已停止，无法执行调度操作。")
 	default:
 		pSvc.mutex.Lock()
-		Mylog.Info("-----------------------调度-----------------------")
+		ctnS.Mylog.Info("-----------------------调度-----------------------")
 		pSvc.SvcStats = SVC_RUNNING
 		////原来副本置为脏
 		//pRpl:=pSvc.GetRpl(rplName)
@@ -49,7 +49,7 @@ func (pSvc *SERVICE) schedule(rplName string) (err error) {
 		err = errors.New(info)
 	}
 
-	Mylog.Info(info)
+	ctnS.Mylog.Info(info)
 	return
 }
 

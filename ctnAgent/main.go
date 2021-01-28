@@ -16,8 +16,6 @@ func main() {
 	ctnA.InitCtnMgr(mySendCtn, agentAddr)
 
 	for _, serverAddr := range serverAddrs {
-		ctnA.Mylog.Debug(agentAddr)
-		ctnA.Mylog.Debug(serverAddr)
 		ctnA.AddServer(serverAddr)
 		tcpSocket.ConnectToHost(serverAddr, 10000, agentAddr, 0, myReceiveData, myStateChange)
 	}
