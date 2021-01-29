@@ -165,13 +165,13 @@ func Remove(cli *client.Client, ctx context.Context, ctnName string) (response i
 
 	//判断该容器是否存在
 	if obj = G_ctnMgr.ctnObjPool.GetObj(ctnName); obj == nil {
-		err = errors.New(fmt.Sprintf("容器：%s不存在", ctnName))
+		err = nil
 		return
 	}
 	pCtn = obj.(*ctn.CTN) //接口强制类型转换为容器对象类型
 
 	//判断容器当前运行状态,如果容器正在运行，则kill容器
-	if pCtn.State == "running" {
+	if pCtn.Container.State == "running" {
 		if _, err = Kill(cli, ctx, ctnName); err != nil {
 			return
 		}
@@ -331,4 +331,30 @@ func CtnStats(cli *client.Client, ctx context.Context, ctnName string) {
 			}
 		}
 	}
+}
+
+func Flush(ctnId string) {
+	var (
+		err error
+		cli *client.Client
+		ctx context.Context
+	)
+
+	if cli, err = client.NewClientWithOpts(client.FromEnv, client.WithAPIVersionNegotiation()); err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if err = cli.ContainerKill(ctx, ctnId, ""); err != nil {
+		fmt.Println(err.Error())
+	}
+
+	if err = cli.ContainerRemove(ctx, ctnId, types.ContainerRemoveOptions{
+		true,
+		true,
+		true,
+	}); err != nil {
+		fmt.Println(err.Error())
+	}
+
+	return
 }

@@ -265,7 +265,7 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 		return
 	}
 	if i == FLAG_CTRL {
-		ctnS.Mylog.Debug(fmt.Sprintf("agent端收到的数据%v", pSaTruck))
+		ctnS.Mylog.Debug(fmt.Sprintf("agent端收到的数据\n%v", pSaTruck))
 		if pSaTruck.Index > 0 {
 			pool.AppendInt(pSaTruck.Index, pSaTruck)
 			return
@@ -282,8 +282,9 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 	//}
 	//ctnS.Mylog.Debug(fmt.Sprintf("%v", pSaTruck))
 	select {
-	case ctnS.GetRecvChan() <- pSaTruck:
-		//ctnS.Mylog.Debug("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
+	//case ctnS.GetRecvChan() <- pSaTruck:
+	case ctnS.GetPool().RecvTruck <- pSaTruck:
+		//ctnS.Mylog.Debug(fmt.Sprintf("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj", pSaTruck.Index))
 	default:
 		//ctnS.Mylog.Debug("sssssssssssssssssssssssssssssssss")
 	}

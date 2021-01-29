@@ -16,9 +16,11 @@ type REQ_ANS struct {
 	CtnErr string
 
 	//正确的执行结果
-	CtnID      []string
-	CtnLog     []string
-	CtnInspect []ctn.CTN_INSPECT
+	CtnID         []string
+	Created       int64
+	CreatedString string
+	CtnLog        []string
+	CtnInspect    []ctn.CTN_INSPECT
 }
 
 type CTN_MSG struct {
@@ -49,6 +51,6 @@ type SA_TRUCK struct {
 	//CtnMsg  []CTN_MSG
 
 	//消息发送时间
-	MsgTimeStr string
 	MsgTime    int64
+	MsgTimeStr string
 }

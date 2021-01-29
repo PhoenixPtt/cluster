@@ -95,6 +95,7 @@ func (rpl *REPLICA) WatchCtn() {
 					rplTargetRunningStat = false
 				}
 
+				ctnS.Mylog.Debug(fmt.Sprintf("%s, %v, %v", pCtn.CtnName, ctnRunningStat, rplTargetRunningStat))
 				if ctnRunningStat != rplTargetRunningStat { //容器实际运行状态与副本目标状态不一致
 					pCtn.Dirty = true                            //此时也认为容器已过期
 					pCtn.DirtyPosition = ctn.DIRTY_POSTION_IMAGE //初步认为该容器的镜像有问题
@@ -107,6 +108,7 @@ func (rpl *REPLICA) WatchCtn() {
 				//if rpl.AgentStatus { //如果节点在线，则删除副本
 				//	//go rpl.Remove()
 				//}
+				ctnS.Mylog.Debug("vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv")
 				//容器过期，副本随之过期，将副本过期的消息传给其所属服务
 				pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
 				switch rpl.RplTargetStat {
@@ -119,10 +121,13 @@ func (rpl *REPLICA) WatchCtn() {
 				default:
 
 				}
+				ctnS.Mylog.Debug("qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq")
 
 				statusMap[rpl.RplName] = pCtn.DirtyPosition //将容器信息过期的消息传给服务
 				pChan <- statusMap
+				ctnS.Mylog.Debug("ppppppppppppppppppppppppppppppppppppppppp")
 			}
+			ctnS.Mylog.Debug("ccccccccccccccccccccccccccccccccccccccccccc")
 		}
 	}
 }

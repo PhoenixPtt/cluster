@@ -28,6 +28,8 @@ const (
 	DIRTY_POSITION_REMOVED = "正常删除"
 	DIRTY_POSTION_IMAGE    = "失效位置：镜像"
 	DIRTY_POSTION_SERVER   = "失效位置：server端"
+
+	CTN_NOT_EXIST_ON_AGENT = "not exist on agent"
 )
 
 //容器结构体声明
@@ -38,12 +40,13 @@ type CTN struct {
 	AgentAddr string `json:"agentaddr"`
 
 	//容器状态
-	State         string `json:"state"`
+	//State         string `json:"state"`
 	Dirty         bool   `json:"dirty"`
 	DirtyPosition string `json:"dirty_position"`
 
 	//操作
 	OperType     string //记录最近一次的操作
+	OperIndex    int    //操作序号
 	AgentTryNum  int    //agent执行容器操作失败后允许的最大尝试次数
 	OperStrategy bool   //是否启动
 

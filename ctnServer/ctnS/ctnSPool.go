@@ -5,6 +5,7 @@ import (
 	"ctnCommon/ctn"
 	"ctnCommon/pool"
 	"ctnCommon/protocol"
+	"fmt"
 	"github.com/docker/docker/api/types/events"
 	"time"
 )
@@ -90,6 +91,7 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 		}
 	case ctn.FLAG_CTN: //更新容器信息
 		{
+			Mylog.Debug(fmt.Sprintf("消息时间：%s", pSaTruck.MsgTimeStr))
 			var ctnMap map[string]bool
 			ctnMap = make(map[string]bool) //这个变量主要是帮助找到server端有但agent端没有的容器对象
 			for _, ctnInfo := range pSaTruck.CtnInfos {
@@ -106,7 +108,7 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 						pCtn.CTN_STATS = ctnInfo.CTN_STATS
 
 						//更新容器状态信息
-						pCtn.State = ctnInfo.State
+						pCtn.State = ctnInfo.Container.State
 					}
 					pChan := pool.GetPrivateChanStr(pCtn.CtnName)
 					pChan <- pCtn.State
@@ -117,10 +119,15 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 					//这里只要把消息发出去就可以了，仅等待1m
 					ctx, cancel := context.WithTimeout(context.TODO(), time.Second*time.Duration(1))
 					defer cancel()
+					pCtn := &CTNS{}
+					pCtn.CTN = ctnInfo
+					Mylog.Debug("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj")
 					pCtn.Remove(ctx)
+					Mylog.Debug("kkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkkk")
 				}
 			}
 
+			Mylog.Debug("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")
 			//server端有但是agent端没有的容器对象,这些容器对象在server端的容器信息已经过期
 			sCtnNames := GetCtnNames()
 			for _, ctnName := range sCtnNames {
@@ -130,9 +137,11 @@ func UpdateInfo(pSaTruck *protocol.SA_TRUCK) {
 					pCtn.Dirty = true //设置容器信息过时
 					pCtn.DirtyPosition = ctn.DIRTY_POSITION_AGENT
 					pChan := pool.GetPrivateChanStr(pCtn.CtnName)
+					pCtn.State = ctn.CTN_NOT_EXIST_ON_AGENT
 					pChan <- pCtn.State
 				}
 			}
+			Mylog.Debug("wwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwwww")
 		}
 	case ctn.FLAG_EVENT: //更新事件
 		if len(pSaTruck.EvtMsg) > 0 {

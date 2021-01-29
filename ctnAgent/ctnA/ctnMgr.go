@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"github.com/docker/docker/client"
+	"sync"
 	"time"
 )
 
@@ -63,10 +64,11 @@ type CtnMgr struct {
 	cancelWatchCtnOper context.CancelFunc            //取消监控容器操作
 
 	//ctnEvtMsgMap map[string]events.Message  //与容器相关的事件集合
-	ctnIdMap   map[string]string          //从容器名称到容器Id的映射
-	ctnInfoMap map[string]types.Container //从容器ID到容器信息的映射
-	ctnStatMap map[string]ctn.CTN_STATS   //从容器ID到容器资源使用状态的映射
-	ctnClstMap map[string]string          //从容器ID到集群的映射
+	ctnIdMap     map[string]string          //从容器名称到容器Id的映射
+	ctnInfoMap   map[string]types.Container //从容器ID到容器信息的映射
+	ctnStatMap   map[string]ctn.CTN_STATS   //从容器ID到容器资源使用状态的映射
+	ctnClstMap   map[string]string          //从容器ID到集群的映射
+	clstMutexMap map[string]*sync.Mutex     //从集群名称到互斥量的映射
 }
 
 func (pCtnMgr *CtnMgr) UpdateServerOnlineStatus(serverAddr string, bOnline bool) {
@@ -92,14 +94,15 @@ var (
 func InitCtnMgr(sendObjFunc pool.SendObjFunc, agentAddr string) {
 	//初始化容器管理器
 	G_ctnMgr = &CtnMgr{
-		ctnWorkPool: pool.NewWorkPool(),
-		ctnObjPool:  pool.NewObjPool(),
-		agentAddr:   agentAddr,
-		serverMap:   make(map[string]*serverInfor, MAX_SERVER_NUM),
-		ctnIdMap:    make(map[string]string, MAX_CTN_NUM),          //从容器名称到容器Id的映射
-		ctnInfoMap:  make(map[string]types.Container, MAX_CTN_NUM), //从容器ID到容器信息的映射
-		ctnStatMap:  make(map[string]ctn.CTN_STATS, MAX_CTN_NUM),   //从容器ID到容器资源使用状态的映射
-		ctnClstMap:  make(map[string]string, MAX_CTN_NUM),          //从容器ID到集群的映射
+		ctnWorkPool:  pool.NewWorkPool(),
+		ctnObjPool:   pool.NewObjPool(),
+		agentAddr:    agentAddr,
+		serverMap:    make(map[string]*serverInfor, MAX_SERVER_NUM),
+		ctnIdMap:     make(map[string]string, MAX_CTN_NUM),          //从容器名称到容器Id的映射
+		ctnInfoMap:   make(map[string]types.Container, MAX_CTN_NUM), //从容器ID到容器信息的映射
+		ctnStatMap:   make(map[string]ctn.CTN_STATS, MAX_CTN_NUM),   //从容器ID到容器资源使用状态的映射
+		ctnClstMap:   make(map[string]string, MAX_CTN_NUM),          //从容器ID到集群的映射
+		clstMutexMap: make(map[string]*sync.Mutex, MAX_SERVER_NUM),
 	}
 
 	//初始化采样率
@@ -131,6 +134,8 @@ func AddServer(serverAddr string) {
 		fmt.Println(err.Error())
 	}
 	G_ctnMgr.serverMap[serverAddr] = &server
+	var pMutex *sync.Mutex = &sync.Mutex{}
+	G_ctnMgr.clstMutexMap[serverAddr] = pMutex
 
 	//监听容器信息
 	server.ctx, G_ctnMgr.cancel_monitor = context.WithCancel(context.TODO())
@@ -176,11 +181,15 @@ func WatchCtns() {
 					pCtnA.ImageName = reqAns.CtnImage
 					pCtnA.AgentTryNum = reqAns.AgentTryNum
 					pCtnA.OperType = reqAns.CtnOper
+					pCtnA.OperIndex = pSaTruck.Index
 					pCtnA.OperErr = "nil"
 
-					G_ctnMgr.ctnObjPool.AddObj(pCtnA.CtnName, pCtnA)      //将容器加入容器池
-					G_ctnMgr.ctnIdMap[pCtnA.CtnID] = pCtnA.CtnName        //容器ID映射到容器名称
-					G_ctnMgr.ctnClstMap[pCtnA.CtnName] = pSaTruck.SrcAddr //记录该容器所属的集群
+					clstName := pSaTruck.SrcAddr
+					G_ctnMgr.clstMutexMap[clstName].Lock()
+					G_ctnMgr.ctnObjPool.AddObj(pCtnA.CtnName, pCtnA) //将容器加入容器池
+					G_ctnMgr.ctnIdMap[pCtnA.CtnID] = pCtnA.CtnName   //容器ID映射到容器名称
+					G_ctnMgr.ctnClstMap[pCtnA.CtnName] = clstName    //记录该容器所属的集群
+					G_ctnMgr.clstMutexMap[clstName].Unlock()
 
 				default:
 					//对于非创建、运行操作，如果在容器池中找不到该容器则，返回错误。
@@ -189,6 +198,7 @@ func WatchCtns() {
 			} else {
 				pCtnA = pObj.(*ctn.CTN)
 				pCtnA.OperType = reqAns.CtnOper
+				pCtnA.OperIndex = pSaTruck.Index
 				pCtnA.OperErr = "nil"
 			}
 			if pCtnA != nil {
@@ -227,6 +237,8 @@ func handleCtnOperSuccess(ctnName string, operType string, response interface{},
 	switch operType {
 	case ctn.CREATE, ctn.RUN:
 		pCtn.CtnID = response.(string)
+		pCtn.Created = time.Now().UnixNano()
+		pCtn.CreatedString = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //创建时间
 	case ctn.START:
 		ctx, cancel = context.WithCancel(context.TODO())
 		serverAddr := G_ctnMgr.ctnClstMap[ctnName]
@@ -247,9 +259,19 @@ func handleCtnOperSuccess(ctnName string, operType string, response interface{},
 			delete(G_ctnMgr.cancel_stats_map, ctnId)
 		}
 
-		delete(G_ctnMgr.ctnIdMap, ctnId)
-		delete(G_ctnMgr.ctnClstMap, ctnId)
-		G_ctnMgr.ctnObjPool.RemoveObj(ctnName)
+		clstName := G_ctnMgr.ctnClstMap[pCtn.CtnName]
+		if clstName != "" {
+			Mylog.Debug(fmt.Sprintf("%s %s %s  %v", ctnName, ctnId, clstName, G_ctnMgr.clstMutexMap[clstName]))
+			G_ctnMgr.clstMutexMap[clstName].Lock()
+			if _, ok := G_ctnMgr.ctnIdMap[ctnId]; ok {
+				delete(G_ctnMgr.ctnIdMap, ctnId)
+			}
+			if _, ok := G_ctnMgr.ctnClstMap[pCtn.CtnName]; ok {
+				delete(G_ctnMgr.ctnClstMap, pCtn.CtnName)
+			}
+			G_ctnMgr.ctnObjPool.RemoveObj(ctnName)
+			G_ctnMgr.clstMutexMap[clstName].Unlock()
+		}
 	case ctn.GETLOG:
 		pCtn.CtnLog = response.(string)
 	case ctn.INSPECT:
@@ -289,11 +311,23 @@ func OperateN(ctx context.Context, pCtnA *ctn.CTN, num int) {
 		response interface{}
 		err      error
 	)
-	for i := 0; i < num; i++ {
+	for i := 1; i <= num; i++ {
 		response, err = Operate(context.TODO(), pCtnA)
-		handleCtnOperSuccess(pCtnA.CtnName, pCtnA.OperType, response, err)
 		if err == nil {
+			handleCtnOperSuccess(pCtnA.CtnName, pCtnA.OperType, response, err)
 			break
+		} else {
+			if i == num {
+				return
+			}
+
+			switch pCtnA.OperType {
+			case ctn.START:
+				if response != nil {
+					ctnId := response.(string)
+					Flush(ctnId)
+				}
+			}
 		}
 	}
 	return
@@ -305,7 +339,7 @@ func WatchCtnOper() {
 		pCtnA *ctn.CTN
 		err   error
 		ctx   context.Context
-		index int = 0
+		//index int = 0
 	)
 
 	ctx, G_ctnMgr.cancelWatchCtnOper = context.WithCancel(context.Background())
@@ -316,11 +350,12 @@ func WatchCtnOper() {
 			return
 		case obj := <-pool.GetPrivateChanStr(OPERATE_WATCH):
 			pCtnA = obj.(*ctn.CTN)
-			index--
+			//index--
 			OperateN(context.TODO(), pCtnA, pCtnA.AgentTryNum) //默认重复执行3次
 
 			var pSaTruck protocol.SA_TRUCK
-			pSaTruck.Index = index
+			//pSaTruck.Index = index
+			pSaTruck.Index = -pCtnA.OperIndex
 			pSaTruck.Flag = ctn.FLAG_CTRL
 			pSaTruck.DesAddr = G_ctnMgr.ctnClstMap[pCtnA.CtnName]
 			pSaTruck.SrcAddr = pCtnA.AgentAddr
@@ -332,6 +367,8 @@ func WatchCtnOper() {
 			case ctn.CREATE, ctn.RUN:
 				reqAns.CtnID = make([]string, 1)
 				reqAns.CtnID[0] = pCtnA.CtnID
+				reqAns.Created = pCtnA.Created
+				reqAns.CreatedString = pCtnA.CreatedString
 			case ctn.START, ctn.STOP, ctn.KILL, ctn.REMOVE:
 			case ctn.GETLOG:
 				reqAns.CtnLog = make([]string, 1)
@@ -346,6 +383,8 @@ func WatchCtnOper() {
 			}
 			pSaTruck.Req_Ans = make([]protocol.REQ_ANS, 0, 1)
 			pSaTruck.Req_Ans = append(pSaTruck.Req_Ans, reqAns)
+			pSaTruck.MsgTime = time.Now().UnixNano()
+			pSaTruck.MsgTimeStr = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO)
 			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 		}
 	}
@@ -362,7 +401,10 @@ func ResponseCtns() {
 			continue
 		}
 
-		Mylog.Debug(fmt.Sprintf("%s, %v", pSaTruck.DesAddr, pSaTruck))
+		//Mylog.Debug(fmt.Sprintf("%s, %v", pSaTruck.DesAddr, pSaTruck))
+		//for _, pCtn:=range pSaTruck.CtnInfos{
+		//	Mylog.Debug(fmt.Sprintf("%s, %s, %s",pCtn.CtnName, pCtn.CtnID, pCtn.Container.State))
+		//}
 		pool.CallbackSendCtn(pSaTruck.DesAddr, 1, 0, pSaTruck.Flag, byteStream, G_ctnMgr.ctnWorkPool.GetSendFunc()) //通知主线程发送数据
 	}
 }
@@ -400,6 +442,7 @@ func MonitorCtns(ctx context.Context, clstName string) {
 				G_ctnMgr.ctnInfoMap[container.ID] = container
 			}
 
+			G_ctnMgr.clstMutexMap[clstName].Lock()
 			//获取属于该集群的所有容器
 			ctnNames := getCtnNames(clstName)
 
@@ -414,10 +457,11 @@ func MonitorCtns(ctx context.Context, clstName string) {
 			for _, ctnName := range ctnNames {
 				//获取容器结构体
 				pObj := G_ctnMgr.ctnObjPool.GetObj(ctnName)
-				pCtn := pObj.(*ctn.CTN)
-				if pCtn == nil {
+				Mylog.Debug(fmt.Sprintf("%s,%s, %v", ctnName, clstName, pObj))
+				if pObj == nil {
 					continue
 				}
+				pCtn := pObj.(*ctn.CTN)
 
 				//更新容器信息
 				if container, ok := G_ctnMgr.ctnInfoMap[pCtn.CtnID]; ok {
@@ -432,6 +476,11 @@ func MonitorCtns(ctx context.Context, clstName string) {
 					pCtn.Container = types.Container{} //清空容器信息
 					pCtn.CTN_STATS = ctn.CTN_STATS{}   //清空资源状态信息
 				}
+
+				//信息更新时间
+				pCtn.Updated = time.Now().UnixNano()
+				pCtn.UpdatedString = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO)
+
 				//注：此处dirty参数表征了容器中的数据是有效的还是已经失效了。如果dirty=true，表明容器对象中的容器信息与资源使用状态已经失效了。
 
 				//更新资源使用状态信息
@@ -441,7 +490,12 @@ func MonitorCtns(ctx context.Context, clstName string) {
 
 				pSaTruck.CtnInfos = append(pSaTruck.CtnInfos, *pCtn)
 			}
-			//G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
+			pSaTruck.MsgTime = time.Now().UnixNano()
+			pSaTruck.MsgTimeStr = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO)
+
+			G_ctnMgr.clstMutexMap[clstName].Unlock()
+
+			G_ctnMgr.ctnWorkPool.GetSendChan() <- &pSaTruck
 			timer.Reset(interval)
 		}
 	}

@@ -66,7 +66,7 @@ func (service *SERVICE) WatchRpl() {
 			//rplStatusMap := obj.(map[string]int)
 			rplStatusMap := obj.(map[string]string)
 			for rplName, status := range rplStatusMap {
-				//rpl := service.GetRpl(rplName)
+				rpl := service.GetRpl(rplName)
 				switch status {
 				case ctn.DIRTY_POSITION_REMOVED: //被正常删除
 					service.DelRpl(rplName) //在副本层已经将容器对象从容器对象池中删除，服务层仅需删除副本
@@ -81,8 +81,8 @@ func (service *SERVICE) WatchRpl() {
 				case ctn.DIRTY_POSTION_IMAGE: //server端操作与操作结果不一致，在docker服务器中执行失败
 					//执行删除操作，在agent端需要执行docker操作
 					//由用户决定是否继续调度，进行调度
-					//rpl.SetTargetStat(RPL_TARGET_REMOVED)
-					//go service.schedule(rplName) //重新调度
+					rpl.SetTargetStat(RPL_TARGET_REMOVED)
+					go service.schedule(rplName) //重新调度
 				case ctn.DIRTY_POSTION_SERVER: //server端操作执行超时导致的容器对象过期，网络不通或超时时间设置过短
 					//执行删除操作，仅需删除server端的容器对象，并进行调度
 					//rpl.SetTargetStat(RPL_TARGET_REMOVED)

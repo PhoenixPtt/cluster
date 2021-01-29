@@ -23,9 +23,6 @@ func (pSvc *SERVICE) schedule(rplName string) (err error) {
 		pSvc.mutex.Lock()
 		ctnS.Mylog.Info("-----------------------调度-----------------------")
 		pSvc.SvcStats = SVC_RUNNING
-		////原来副本置为脏
-		//pRpl:=pSvc.GetRpl(rplName)
-		//pRpl.Dirty = true
 		//迁移到新的副本
 		var agentAddrNumMap map[string]int
 		agentAddrNumMap, err = pSvc.EScale(1)

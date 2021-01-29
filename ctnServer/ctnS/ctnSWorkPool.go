@@ -38,6 +38,8 @@ func (workPool *CTNS_WORK_POOL) Recv() {
 	for {
 		select {
 		case obj := <-workPool.GetRecvChan():
+			//case obj := <-workPool.RecvTruck:
+			//	Mylog.Debug(fmt.Sprintf("vvvvvvvvvvvvvvvvvvvvvvv%v",obj))
 			pSaTruck := obj.(*protocol.SA_TRUCK)
 			switch pSaTruck.Flag {
 			case ctn.FLAG_CTRL:
@@ -49,6 +51,7 @@ func (workPool *CTNS_WORK_POOL) Recv() {
 			}
 			UpdateInfo(pSaTruck)
 		}
+		Mylog.Debug("nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn")
 	}
 
 	//for {
@@ -96,4 +99,8 @@ func GetRecvChan() chan interface{} {
 //获取回调函数
 func GetSendFunc() (sendObjFunc pool.SendObjFunc) {
 	return pCtnsWorkPool.GetSendFunc()
+}
+
+func GetPool() *CTNS_WORK_POOL {
+	return pCtnsWorkPool
 }

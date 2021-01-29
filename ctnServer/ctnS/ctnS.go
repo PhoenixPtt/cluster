@@ -16,7 +16,6 @@ const (
 //Server端结构体声明
 type CTNS struct {
 	ctn.CTN
-	TimeOut int //超时时间
 }
 
 //创建容器
