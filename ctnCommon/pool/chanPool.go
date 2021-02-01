@@ -29,6 +29,7 @@ type CHAN_POOL struct {
 //注册以整型变量为关键字的私有通道
 func (pChanPool *CHAN_POOL) RegPrivateChanInt(keyInt int, bufferSize int) {
 	var mutex sync.Mutex
+	pChanPool.intMutex_map[keyInt] = &mutex
 	mutex.Lock()
 	defer mutex.Unlock()
 	_, ok := pChanPool.private_chan_int_map[keyInt]
@@ -36,8 +37,6 @@ func (pChanPool *CHAN_POOL) RegPrivateChanInt(keyInt int, bufferSize int) {
 		pChan := make(chan interface{}, bufferSize)
 		pChanPool.private_chan_int_map[keyInt] = pChan
 	}
-
-	pChanPool.intMutex_map[keyInt] = &mutex
 }
 
 func (pChanPool *CHAN_POOL) GetPrivateChanInt(keyInt int) (pChan chan interface{}) {

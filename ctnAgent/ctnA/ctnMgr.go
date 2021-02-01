@@ -261,13 +261,17 @@ func handleCtnOperSuccess(ctnName string, operType string, response interface{},
 
 		clstName := G_ctnMgr.ctnClstMap[pCtn.CtnName]
 		if clstName != "" {
-			Mylog.Debug(fmt.Sprintf("%s %s %s  %v", ctnName, ctnId, clstName, G_ctnMgr.clstMutexMap[clstName]))
+			//Mylog.Debug(fmt.Sprintf("%s %s %s  %v", ctnName, ctnId, clstName, G_ctnMgr.clstMutexMap[clstName]))
 			G_ctnMgr.clstMutexMap[clstName].Lock()
 			if _, ok := G_ctnMgr.ctnIdMap[ctnId]; ok {
 				delete(G_ctnMgr.ctnIdMap, ctnId)
 			}
 			if _, ok := G_ctnMgr.ctnClstMap[pCtn.CtnName]; ok {
 				delete(G_ctnMgr.ctnClstMap, pCtn.CtnName)
+			}
+			if _, ok = G_ctnMgr.cancel_stats_map[ctnId]; ok {
+				G_ctnMgr.cancel_stats_map[ctnId]()
+				delete(G_ctnMgr.cancel_stats_map, ctnId)
 			}
 			G_ctnMgr.ctnObjPool.RemoveObj(ctnName)
 			G_ctnMgr.clstMutexMap[clstName].Unlock()
@@ -339,7 +343,6 @@ func WatchCtnOper() {
 		pCtnA *ctn.CTN
 		err   error
 		ctx   context.Context
-		//index int = 0
 	)
 
 	ctx, G_ctnMgr.cancelWatchCtnOper = context.WithCancel(context.Background())
@@ -350,7 +353,41 @@ func WatchCtnOper() {
 			return
 		case obj := <-pool.GetPrivateChanStr(OPERATE_WATCH):
 			pCtnA = obj.(*ctn.CTN)
-			//index--
+			oper := pCtnA.OperType
+
+			//先查一查自己容器池中的容器对象是否过期
+			pObj_in_pool := pool.GetObj(pCtnA.CtnName)
+			if pObj_in_pool != nil {
+				ctnId := pCtnA.CtnID
+				ctnName := pCtnA.CtnName
+				Mylog.Debug(fmt.Sprintf("%s %s %s", oper, ctnId, ctnName))
+				pCtnA_in_pool := pObj_in_pool.(*ctn.CTN)
+				if pCtnA_in_pool.Dirty { //过期了
+					//过期的容器对象，只响应删除操作
+					Mylog.Debug(fmt.Sprintf(ctnId))
+					if oper == ctn.REMOVE {
+						//在容器池中删除容器对象
+						clstName := G_ctnMgr.ctnClstMap[ctnName]
+						if clstName != "" {
+							G_ctnMgr.clstMutexMap[clstName].Lock()
+							if _, ok := G_ctnMgr.ctnIdMap[ctnId]; ok {
+								delete(G_ctnMgr.ctnIdMap, ctnId)
+							}
+							if _, ok := G_ctnMgr.ctnClstMap[ctnName]; ok {
+								delete(G_ctnMgr.ctnClstMap, ctnName)
+							}
+							if _, ok := G_ctnMgr.cancel_stats_map[ctnId]; ok {
+								G_ctnMgr.cancel_stats_map[ctnId]()
+								delete(G_ctnMgr.cancel_stats_map, ctnId)
+							}
+							G_ctnMgr.ctnObjPool.RemoveObj(ctnName)
+							G_ctnMgr.clstMutexMap[clstName].Unlock()
+						}
+					}
+					continue
+				}
+			}
+
 			OperateN(context.TODO(), pCtnA, pCtnA.AgentTryNum) //默认重复执行3次
 
 			var pSaTruck protocol.SA_TRUCK
@@ -457,7 +494,7 @@ func MonitorCtns(ctx context.Context, clstName string) {
 			for _, ctnName := range ctnNames {
 				//获取容器结构体
 				pObj := G_ctnMgr.ctnObjPool.GetObj(ctnName)
-				Mylog.Debug(fmt.Sprintf("%s,%s, %v", ctnName, clstName, pObj))
+				//Mylog.Debug(fmt.Sprintf("%s,%s, %v", clstName, ctnName, pObj))
 				if pObj == nil {
 					continue
 				}
@@ -492,6 +529,7 @@ func MonitorCtns(ctx context.Context, clstName string) {
 			}
 			pSaTruck.MsgTime = time.Now().UnixNano()
 			pSaTruck.MsgTimeStr = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO)
+			Mylog.Debug(fmt.Sprintf("%s,%v, %v", pSaTruck.MsgTimeStr, len(pSaTruck.CtnInfos), pSaTruck.CtnInfos))
 
 			G_ctnMgr.clstMutexMap[clstName].Unlock()
 

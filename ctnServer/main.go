@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"ctnCommon/headers"
-	"ctnCommon/pool"
 	"ctnCommon/protocol"
 	"ctnServer/controller"
 	"ctnServer/ctnS"
@@ -264,13 +263,13 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 		fmt.Errorf(err.Error())
 		return
 	}
-	if i == FLAG_CTRL {
-		ctnS.Mylog.Debug(fmt.Sprintf("agent端收到的数据\n%v", pSaTruck))
-		if pSaTruck.Index > 0 {
-			pool.AppendInt(pSaTruck.Index, pSaTruck)
-			return
-		}
-	}
+	//if i == FLAG_CTRL {
+	//	ctnS.Mylog.Debug(fmt.Sprintf("agent端收到的数据\n%v", pSaTruck))
+	//	//if pSaTruck.Index > 0 {
+	//	//	pool.AppendInt(pSaTruck.Index, pSaTruck)
+	//	//	return
+	//	//}
+	//}
 	//}else if i==FLAG_CTN{
 	//	if len(pSaTruck.Req_Ans)>0{
 	//		req_ans := pSaTruck.Req_Ans[0]
@@ -282,11 +281,8 @@ func ReceiveDataFromAgent(h string, level uint8, pkgId uint16, i string, s []byt
 	//}
 	//ctnS.Mylog.Debug(fmt.Sprintf("%v", pSaTruck))
 	select {
-	//case ctnS.GetRecvChan() <- pSaTruck:
-	case ctnS.GetPool().RecvTruck <- pSaTruck:
-		//ctnS.Mylog.Debug(fmt.Sprintf("jjjjjjjjjjjjjjjjjjjjjjjjjjjjjj", pSaTruck.Index))
+	case ctnS.GetRecvChan() <- pSaTruck:
 	default:
-		//ctnS.Mylog.Debug("sssssssssssssssssssssssssssssssss")
 	}
 
 }

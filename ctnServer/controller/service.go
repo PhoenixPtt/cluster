@@ -63,30 +63,36 @@ func (service *SERVICE) WatchRpl() {
 			pool.UnregPrivateChanStr(service.SvcName)
 			return
 		case obj := <-pool.GetPrivateChanStr(service.SvcName):
-			//rplStatusMap := obj.(map[string]int)
 			rplStatusMap := obj.(map[string]string)
 			for rplName, status := range rplStatusMap {
 				rpl := service.GetRpl(rplName)
 				switch status {
-				case ctn.DIRTY_POSITION_REMOVED: //被正常删除
-					service.DelRpl(rplName) //在副本层已经将容器对象从容器对象池中删除，服务层仅需删除副本
+				case ctn.DIRTY_POSITION_ERR_BEFORE_RPL_OPER: //副本操作之前的合法性检查失败
+					service.DelRpl(rplName)      //删除副本
+					pool.RemoveObj(rpl.CtnName)  //在容器池中删除容器对象
+					go service.schedule(rplName) //重新调度
+				case ctn.DIRTY_POSITION_RPL_OPER_TIMEOUT: //副本操作超时
+					service.DelRpl(rplName)      //删除副本
+					pool.RemoveObj(rpl.CtnName)  //在容器池中删除容器对象
+					go service.schedule(rplName) //重新调度
 				case ctn.DIRTY_POSITION_DOCKER: //单纯容器在docker服务端被非正常手段删除
 					//执行删除操作，注意在agent端不需要执行docker操作，直接删除agent端的容器对象即可
-					//rpl.SetTargetStat(RPL_TARGET_REMOVED)
-					//go service.schedule(rplName) //重新调度
-				case ctn.DIRTY_POSITION_AGENT: //server端与agent端不同步导致的容器对象信息过期
-					//删除server端的信息：包括副本信息和容器对象池中的信息
-					//要不要删除由用户决定，进行调度
-					//go service.schedule(rplName) //重新调度
-				case ctn.DIRTY_POSTION_IMAGE: //server端操作与操作结果不一致，在docker服务器中执行失败
-					//执行删除操作，在agent端需要执行docker操作
-					//由用户决定是否继续调度，进行调度
 					rpl.SetTargetStat(RPL_TARGET_REMOVED)
 					go service.schedule(rplName) //重新调度
-				case ctn.DIRTY_POSTION_SERVER: //server端操作执行超时导致的容器对象过期，网络不通或超时时间设置过短
-					//执行删除操作，仅需删除server端的容器对象，并进行调度
-					//rpl.SetTargetStat(RPL_TARGET_REMOVED)
-					//go service.schedule(rplName) //重新调度
+				case ctn.DIRTY_POSITION_CTN_EXIST_IN_SERVER_BUT_NOT_IN_AGENT: //server端与agent端不同步导致的容器对象信息过期
+					service.DelRpl(rplName) //删除副本
+					pool.RemoveObj(rpl.CtnName)
+					switch rpl.RplTargetStat {
+					case RPL_TARGET_REMOVED:
+					default:
+						go service.schedule(rplName) //重新调度
+					}
+				case ctn.DIRTY_POSTION_IMAGE_RUN_ERR: //server端操作与操作结果不一致，在docker服务器中执行失败
+					//执行删除操作，在agent端需要执行docker操作
+					rpl.SetTargetStat(RPL_TARGET_REMOVED)
+					go service.schedule(rplName) //重新调度
+				case ctn.DIRTY_POSTION_SERVER_LOST_CONNICTION:
+					go service.schedule(rplName) //重新调度
 				}
 			}
 		}

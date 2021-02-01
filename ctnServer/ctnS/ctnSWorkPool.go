@@ -2,6 +2,7 @@ package ctnS
 
 import (
 	"ctnCommon/ctn"
+	//"ctnCommon/ctn"
 	"ctnCommon/headers"
 	"ctnCommon/protocol"
 	"unsafe"
@@ -38,37 +39,22 @@ func (workPool *CTNS_WORK_POOL) Recv() {
 	for {
 		select {
 		case obj := <-workPool.GetRecvChan():
-			//case obj := <-workPool.RecvTruck:
-			//	Mylog.Debug(fmt.Sprintf("vvvvvvvvvvvvvvvvvvvvvvv%v",obj))
 			pSaTruck := obj.(*protocol.SA_TRUCK)
 			switch pSaTruck.Flag {
 			case ctn.FLAG_CTRL:
-				//Mylog.Debug(fmt.Sprintf("uuuuuuuuuuuuuuuuuuuuuuuuuuu%v",pSaTruck))
-				//if pSaTruck.Index > 0 {
-				//	pool.AppendInt(pSaTruck.Index, pSaTruck)
-				//	return
-				//}
+				if pSaTruck.Index > 0 {
+					pool.AppendInt(pSaTruck.Index, pSaTruck)
+					continue
+				}
 			}
-			UpdateInfo(pSaTruck)
+			pChan := pool.GetPrivateChanStr(CTN_INFO_WATCH)
+			select {
+			case pChan <- pSaTruck:
+				//Mylog.Debug(fmt.Sprintf("%v",pSaTruck))
+			default:
+			}
 		}
-		Mylog.Debug("nnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnnn")
 	}
-
-	//for {
-	//	obj, ok := <-workPool.GetRecvChan()
-	//	if ok{
-	//		pSaTruck := obj.(*protocol.SA_TRUCK)
-	//		switch pSaTruck.Flag {
-	//		case ctn.FLAG_CTRL:
-	//			//Mylog.Debug(fmt.Sprintf("uuuuuuuuuuuuuuuuuuuuuuuuuuu%v",pSaTruck))
-	//			if pSaTruck.Index > 0 {
-	//				pool.AppendInt(pSaTruck.Index, pSaTruck)
-	//				return
-	//			}
-	//		}
-	//		UpdateInfo(pSaTruck)
-	//	}
-	//}
 }
 
 var (
