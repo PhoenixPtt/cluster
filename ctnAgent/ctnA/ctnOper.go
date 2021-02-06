@@ -45,9 +45,10 @@ func Create(cli *client.Client, ctx context.Context, ctnName string, imgName str
 		&container.Config{
 			Image: imgName,
 		},
-		&container.HostConfig{
-			NetworkMode: "host",
-		},
+		nil,
+		//&container.HostConfig{
+		//	NetworkMode: "host",
+		//},
 		nil,
 		nil,
 		"")

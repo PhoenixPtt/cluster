@@ -302,6 +302,6 @@ func myStateChange(id string, mystring uint8) {
 
 //向Agent端发送容器操作命令
 func mySendCtn(ip string, level uint8, pkgId uint16, flag string, data []byte) {
-	fmt.Println("\nmySendCtn:", ip)
+	ctnS.Mylog.Debug(fmt.Sprintf("!!!!!!向agent端发送数据agent端ip地址：%s\n", ip))
 	tcpSocket.WriteData(ip, level, pkgId, flag, data)
 }

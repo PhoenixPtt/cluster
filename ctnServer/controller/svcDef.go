@@ -48,6 +48,7 @@ func NewService(pSvcCfg *SVC_CFG) (pSvc *SERVICE) {
 	pSvc.SvcStats = SVC_DEFAULT
 	pSvc.AgentTryNum = pSvcCfg.Description.Deploy.AgentTryNum
 	pSvc.Timeout = pSvcCfg.Description.Deploy.Timeout
+	go pSvc.Daq()
 	go pSvc.WatchRpl()
 	return
 }

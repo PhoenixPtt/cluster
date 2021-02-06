@@ -6,6 +6,7 @@ import (
 	"ctnCommon/pool"
 	"ctnCommon/protocol"
 	"errors"
+	"sync"
 )
 
 const (
@@ -15,6 +16,8 @@ const (
 
 //Server端结构体声明
 type CTNS struct {
+	OperMap      map[int]string //记录操作及响应情况
+	OperMapMutex sync.Mutex
 	ctn.CTN
 }
 
@@ -70,6 +73,14 @@ func (pCtnS *CTNS) Inspect(ctx context.Context) (err error) {
 //容器操作回路
 func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (err error) {
 	pool.AddIndex()
+	pCtnS.OperType = operFlag
+	pCtnS.OperErr = ""
+	pCtnS.Dirty = false
+	pCtnS.DirtyPosition = ""
+	pCtnS.OperMapMutex.Lock()
+	pCtnS.OperMap[pool.GetIndex()] = pCtnS.OperType
+	pCtnS.OperMapMutex.Unlock()
+
 	pSaTruck := &protocol.SA_TRUCK{}
 	pSaTruck.Flag = ctn.FLAG_CTRL
 	pSaTruck.Index = pool.GetIndex()
@@ -82,10 +93,21 @@ func (pCtnS *CTNS) Oper(ctx context.Context, operFlag string) (err error) {
 
 	pool.RegPrivateChanInt(pSaTruck.Index, 1)
 	pPrivateChan := pool.GetPrivateChanInt(pSaTruck.Index)
-	GetSendChan() <- pSaTruck
+	select {
+	case GetSendChan() <- pSaTruck:
+	default:
+
+	}
+
 	select {
 	case <-ctx.Done():
 		pool.UnregPrivateChanInt(pSaTruck.Index)
+		pCtnS.OperMapMutex.Lock()
+		_, ok := pCtnS.OperMap[pSaTruck.Index]
+		if ok {
+			delete(pCtnS.OperMap, pSaTruck.Index)
+		}
+		pCtnS.OperMapMutex.Unlock()
 		return errors.New(ERR_CTN_TIMEOUT)
 	case obj := <-pPrivateChan:
 		pSaAnsTruck := obj.(*protocol.SA_TRUCK)

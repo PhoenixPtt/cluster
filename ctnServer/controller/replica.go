@@ -20,14 +20,23 @@ const (
 )
 
 func (rpl *REPLICA) SetTargetStat(targetStat string) {
-	if rpl.RplTargetStat != targetStat {
-		rpl.RplTargetStat = targetStat
-		switch rpl.RplTargetStat {
-		case RPL_TARGET_RUNNING:
-			go rpl.Run()
-		case RPL_TARGET_REMOVED:
-			go rpl.Remove()
-		}
+	//ctnS.Mylog.Debug(fmt.Sprintf("00000000000000000000000000 %s %s %s", rpl.RplName, rpl.RplTargetStat, targetStat))
+	//if rpl.RplTargetStat != targetStat {//
+	//	rpl.RplTargetStat = targetStat
+	//	switch rpl.RplTargetStat {
+	//	case RPL_TARGET_RUNNING:
+	//		go rpl.Run()
+	//	case RPL_TARGET_REMOVED:
+	//		go rpl.Remove()
+	//	}
+	//}
+
+	rpl.RplTargetStat = targetStat
+	switch rpl.RplTargetStat {
+	case RPL_TARGET_RUNNING:
+		go rpl.Run()
+	case RPL_TARGET_REMOVED:
+		go rpl.Remove()
 	}
 }
 
@@ -51,7 +60,12 @@ func (rpl *REPLICA) SetNodeStatus(nodeName string, status bool) {
 					var statusMap map[string]string
 					statusMap = make(map[string]string)
 					statusMap[rpl.RplName] = pCtn.DirtyPosition
-					pChan <- statusMap
+					select {
+					case pChan <- statusMap:
+					default:
+
+					}
+
 				}
 				//}
 			}
@@ -76,11 +90,22 @@ func (rpl *REPLICA) WatchCtn() {
 			//获取副本对应的容器对象
 			pCtn := ctnS.GetCtn(rpl.CtnName)
 			//判断容器对象信息是否过期
+			//ctnS.Mylog.Debug(fmt.Sprintf("\n副本收到容器数据： \n容器名称：%s\n", pCtn.CtnName))
 			if !pCtn.Dirty { //未过期
+				//首先判断是否处于执行操作的过程中
+				pCtn.OperMapMutex.Lock()
+				OperMapLen := len(pCtn.OperMap)
+				pCtn.OperMapMutex.Unlock()
+				if OperMapLen > 0 {
+					//不处理
+					continue
+				}
+
 				ctnStatus := obj.(string) //获取容器状态
 				//容器实际运行状态与副本目标状态做比较。如果二者不一致，需要做处理
+
 				var ctnRunningStat bool
-				if ctnStatus == "running" {
+				if ctnStatus == "running" || ctnStatus == "created" {
 					ctnRunningStat = true
 				} else {
 					ctnRunningStat = false
@@ -93,20 +118,30 @@ func (rpl *REPLICA) WatchCtn() {
 					rplTargetRunningStat = false
 				}
 
-				ctnS.Mylog.Debug(fmt.Sprintf("%s, %v, %v", pCtn.CtnName, ctnRunningStat, rplTargetRunningStat))
+				ctnS.Mylog.Debug(fmt.Sprintf("%s, %s, %s, %s, %s, %v, %v", rpl.RplName[:(len(rpl.SvcName))+11], pCtn.CtnName[:14], pCtn.CtnID[:10], ctnStatus, rpl.RplTargetStat, ctnRunningStat, rplTargetRunningStat))
 				if ctnRunningStat != rplTargetRunningStat { //容器实际运行状态与副本目标状态不一致
 					pCtn.Dirty = true                                    //此时也认为容器已过期
 					pCtn.DirtyPosition = ctn.DIRTY_POSTION_IMAGE_RUN_ERR //初步认为该容器的镜像有问题
 					//容器过期，副本随之过期，将副本过期的消息传给其所属服务
 					pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
 					statusMap[rpl.RplName] = pCtn.DirtyPosition  //将容器信息过期的消息传给服务
-					pChan <- statusMap
+					select {
+					case pChan <- statusMap:
+					default:
+
+					}
 				}
 			} else { //已过期
 				//将容器过期未知信息传给服务
+				//ctnS.Mylog.Debug(fmt.Sprintf("-------------------------------------------%s", rpl.SvcName))
 				pChan := pool.GetPrivateChanStr(rpl.SvcName) //通知服务进行调度
 				statusMap[rpl.RplName] = pCtn.DirtyPosition  //将容器信息过期的消息传给服务
-				pChan <- statusMap
+
+				select {
+				case pChan <- statusMap:
+				default:
+
+				}
 			}
 		}
 	}

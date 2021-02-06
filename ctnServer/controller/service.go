@@ -1,6 +1,7 @@
 package controller
 
 import (
+	header "clusterHeader"
 	"context"
 	"ctnCommon/ctn"
 	"ctnCommon/headers"
@@ -66,31 +67,47 @@ func (service *SERVICE) WatchRpl() {
 			rplStatusMap := obj.(map[string]string)
 			for rplName, status := range rplStatusMap {
 				rpl := service.GetRpl(rplName)
+				ctnS.Mylog.Debug(fmt.Sprintf("服务收到副本数据：	副本名称：%s|dirty状态：%s\n", rplName, status))
 				switch status {
+				case ctn.DIRTY_POSITION_REMOVED:
+					service.DelRpl(rplName)
+					ctnS.RemoveCtn(rpl.CtnName)
 				case ctn.DIRTY_POSITION_ERR_BEFORE_RPL_OPER: //副本操作之前的合法性检查失败
-					service.DelRpl(rplName)      //删除副本
-					pool.RemoveObj(rpl.CtnName)  //在容器池中删除容器对象
+					service.DelRpl(rplName) //删除副本
+					ctnS.RemoveCtn(rpl.CtnName)
 					go service.schedule(rplName) //重新调度
 				case ctn.DIRTY_POSITION_RPL_OPER_TIMEOUT: //副本操作超时
-					service.DelRpl(rplName)      //删除副本
-					pool.RemoveObj(rpl.CtnName)  //在容器池中删除容器对象
-					go service.schedule(rplName) //重新调度
-				case ctn.DIRTY_POSITION_DOCKER: //单纯容器在docker服务端被非正常手段删除
-					//执行删除操作，注意在agent端不需要执行docker操作，直接删除agent端的容器对象即可
-					rpl.SetTargetStat(RPL_TARGET_REMOVED)
-					go service.schedule(rplName) //重新调度
-				case ctn.DIRTY_POSITION_CTN_EXIST_IN_SERVER_BUT_NOT_IN_AGENT: //server端与agent端不同步导致的容器对象信息过期
 					service.DelRpl(rplName) //删除副本
-					pool.RemoveObj(rpl.CtnName)
-					switch rpl.RplTargetStat {
-					case RPL_TARGET_REMOVED:
-					default:
+					ctnS.RemoveCtn(rpl.CtnName)
+					go service.schedule(rplName) //重新调度
+				case ctn.DIRTY_POSITION_DOCKER, ctn.DIRTY_POSTION_IMAGE_RUN_ERR, ctn.DIRTY_POSITION_CTN_EXIST_IN_SERVER_BUT_NOT_IN_AGENT:
+					//单纯容器在docker服务端被非正常手段删除
+					//server端操作与操作结果不一致，在docker服务器中执行失败
+					pCtnS := ctnS.GetCtn(rpl.CtnName)
+					//ctnS.Mylog.Debug(fmt.Sprintf("rrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrrr333333333333333333333333333333333%v", pCtnS))
+					if pCtnS == nil {
+						continue
+					} else {
+						if pCtnS.CtnID == "" {
+							//表示此容器已经被删除了，处理下server端参与信息
+							service.DelRpl(rplName) //删除副本
+							ctnS.RemoveCtn(rpl.CtnName)
+							//ctnS.Mylog.Debug(fmt.Sprintf("oooooooooooooooooooooooooooooooooooooooooooooooooooooooo终于删掉了		%s, %s", rpl.CtnName, pCtnS.OperType))
+						} else {
+							rpl.SetTargetStat(RPL_TARGET_REMOVED) //执行删除操作
+						}
+					}
+
+					//执行调度操作
+					//ctnS.Mylog.Debug(fmt.Sprintf("%s %s %v %v", rplName, rpl.CtnName, rpl.IsSchedulering, pCtnS))
+					if !rpl.IsSchedulering {
 						go service.schedule(rplName) //重新调度
 					}
-				case ctn.DIRTY_POSTION_IMAGE_RUN_ERR: //server端操作与操作结果不一致，在docker服务器中执行失败
-					//执行删除操作，在agent端需要执行docker操作
-					rpl.SetTargetStat(RPL_TARGET_REMOVED)
-					go service.schedule(rplName) //重新调度
+
+					//ctnS.Mylog.Debug(fmt.Sprintf("%s %v", rpl.RplName, rpl.IsSchedulering))
+					if !rpl.IsSchedulering {
+						rpl.IsSchedulering = true
+					}
 				case ctn.DIRTY_POSTION_SERVER_LOST_CONNICTION:
 					go service.schedule(rplName) //重新调度
 				}
@@ -105,7 +122,13 @@ func (service *SERVICE) WatchRpl() {
 		if (rplLen == 0) && (service.SvcScale == 0) {
 			svcStatusMap[service.SvcName] = SVC_STATUS_REMOVED
 		}
-		pChan <- svcStatusMap
+
+		select {
+		case pChan <- svcStatusMap:
+		default:
+
+		}
+
 	}
 }
 
@@ -120,6 +143,7 @@ func (pSvc *SERVICE) NewRpl(name string, image string, agentAddr string) (rpl *R
 	rpl.CreateTime = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //启动时间
 	rpl.Timeout = pSvc.Timeout
 	rpl.AgentTryNum = pSvc.AgentTryNum
+	rpl.IsSchedulering = false
 
 	pSvc.Replicas = append(pSvc.Replicas, rpl)
 	return
@@ -169,7 +193,7 @@ func (pSvc *SERVICE) Start() (err error) {
 	case SVC_RUNNING:
 		info = infoString(pSvc.SvcName, "正在稳定运行中，本次启动操作将被忽略。")
 	default:
-		ctnS.Mylog.Info("-----------------------启动服务-----------------------")
+		ctnS.Mylog.Info("\n-----------------------启动服务-----------------------")
 		pSvc.SvcStats = SVC_RUNNING
 		pSvc.updateRpl()                                                        //根据具体情况增删副本
 		pSvc.StartTime = headers.ToString(time.Now(), headers.TIME_LAYOUT_NANO) //启动时间
@@ -356,4 +380,89 @@ func (service *SERVICE) GetRplIndex(rplName string) int {
 //获取所有副本
 func (service *SERVICE) getReplicas() []*REPLICA {
 	return service.Replicas
+}
+
+//处理网络消息
+func (service *SERVICE) Daq() {
+	pool.RegPrivateChanStr(UPLOAD, CHAN_BUFFER)
+
+	var ctx context.Context
+	ctx, cancelDaq = context.WithCancel(context.Background())
+
+	//定时器时间间隔
+	G_samplingRate = 10
+	var interval time.Duration = time.Second * time.Duration(G_samplingRate)
+	var timer *time.Timer = time.NewTimer(interval)
+	var pWebServices *header.SERVICE = &header.SERVICE{}
+	for {
+		select {
+		case <-ctx.Done():
+			fmt.Println("取消采集")
+			pool.UnregPrivateChanStr(ctnS.DAQ)
+			return
+		case <-timer.C:
+			pWebServices.Service = make([]header.Service, 0, SVC_NUM)
+			pWebServices.Count = 1
+			var webSvc header.Service
+			//ServiceInfo
+			webSvc.Id = service.SvcName
+			webSvc.State = service.SvcStats
+			webSvc.Scale = uint32(service.SvcScale)
+			webSvc.ReplicaCount = uint32(len(service.Replicas))
+			webSvc.CreateTime = service.CreateTime
+			webSvc.StartTime = service.StartTime
+			webSvc.NameSpace = service.NameSpace
+			//ServiceCfg 服务配置信息 暂时不填充
+			//副本信息
+			for _, replica := range service.Replicas {
+				var webReplica header.Replica
+				webReplica.Id = replica.RplName
+				webReplica.CreateTime = replica.CreateTime
+				webReplica.NodeId = replica.AgentAddr
+				webReplica.State = 0
+				pCtn := ctnS.GetCtn(replica.CtnName)
+				if pCtn != nil {
+					webReplica.Ctn = pCtn.Container
+					webReplica.CtnStats = pCtn.CTN_STATS
+					webReplica.Log = pCtn.CtnLog
+					webReplica.CtnInspect = pCtn.CtnInspect
+				}
+				webSvc.Replica = append(webSvc.Replica, webReplica)
+			}
+			pWebServices.Service = append(pWebServices.Service, webSvc)
+			pChan := pool.GetPrivateChanStr(UPLOAD)
+			select {
+			case pChan <- pWebServices:
+			default:
+			}
+			ctnS.Mylog.Debug(fmt.Sprintf("######向web前端发送数据		%v\n", pWebServices))
+
+			//var infoStr string
+			//var serviceNames []string
+			//for _,service:=range pWebServices.Service{
+			//	serviceNames = append(serviceNames, service.Id)
+			//
+			//	var serviceStr string
+			//	serviceStr = fmt.Sprintf("%s\n%s\n", serviceStr, service.Id)
+			//
+			//	var replicaNames []string
+			//
+			//	for _, replica:=range service.Replica{
+			//		replicaNames = append(replicaNames,replica.Id)
+			//	}
+			//
+			//	var replicaNameStr string
+			//	for _, replicaName:=range replicaNames{
+			//		replicaNameStr = fmt.Sprintf("%s\n%s\n",replicaNameStr,replicaName)
+			//	}
+			//
+			//	serviceStr = fmt.Sprintf("%s%s",serviceStr, replicaNameStr)
+			//
+			//	infoStr = fmt.Sprintf("%s%s",infoStr,serviceStr)
+			//}
+
+			//ctnS.Mylog.Debug(fmt.Sprintf("######向web前端发送数据		%s\n",infoStr))
+			timer.Reset(interval)
+		}
+	}
 }

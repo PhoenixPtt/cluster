@@ -16,6 +16,7 @@ func NewCtnS(image string, agentAddr string, configMap map[string]string) (pCtnS
 	pCtnS.CtnName = fmt.Sprintf("CTN_%s", headers.UniqueId())
 	pCtnS.AgentAddr = agentAddr
 	pCtnS.Image = image
+	pCtnS.OperMap = make(map[int]string)
 	if agentTryNumStr, ok := configMap[AGENT_TRY_NUM]; ok {
 		pCtnS.AgentTryNum, _ = strconv.Atoi(agentTryNumStr)
 	}

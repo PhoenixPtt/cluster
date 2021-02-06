@@ -27,7 +27,12 @@ func (pController *CONTROLLER) PutService(pSvcOperTruck *SERVICE_OPER_TRUCK) {
 		go pController.WatchService(svcWatch)
 	}
 	pChan := pool.GetPrivateChanStr(svcWatch)
-	pChan <- pSvcOperTruck
+	select {
+	case pChan <- pSvcOperTruck:
+	default:
+
+	}
+
 }
 
 //集群工作协程
@@ -116,7 +121,12 @@ func (pController *CONTROLLER) PutNode(nodeName string, status bool) {
 	nodeStatusMap := make(map[string]bool)
 	nodeStatusMap[nodeName] = status
 	pChan := pool.GetPrivateChanStr(NODE_WATCH)
-	pChan <- nodeStatusMap
+	select {
+	case pChan <- nodeStatusMap:
+	default:
+
+	}
+
 }
 
 func (pController *CONTROLLER) WatchNodes() {

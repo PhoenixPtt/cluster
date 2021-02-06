@@ -6,13 +6,15 @@ import (
 	"ctnCommon/pool"
 	"ctnCommon/protocol"
 	"fmt"
+	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/events"
 	"time"
 )
 
 var (
-	pCtnPool        *pool.OBJ_POOL
-	ctnIDMap        map[string]*CTNS
+	pCtnPool *pool.OBJ_POOL
+	ctnIDMap map[string]*CTNS
+
 	eventMsgs       []events.Message
 	errMsgs         []error
 	CTN_INFO_WATCH  = "CTN_INFO_WATCH"
@@ -84,24 +86,70 @@ func WatchCtnInfo() {
 						return
 					}
 					reqAns := pSaTruck.Req_Ans[0]
+
 					pCtn := GetCtn(reqAns.CtnName)
-					switch reqAns.CtnOper {
-					case ctn.CREATE, ctn.RUN, ctn.START, ctn.STOP, ctn.KILL, ctn.REMOVE:
-						pCtn.OperType = reqAns.CtnOper
-						pCtn.OperErr = reqAns.CtnErr
-					case ctn.GETLOG:
-						pCtn.OperType = reqAns.CtnOper
-						pCtn.OperErr = reqAns.CtnErr
-						pCtn.CtnLog = reqAns.CtnLog[0]
-					case ctn.INSPECT:
-						pCtn.OperType = reqAns.CtnOper
-						pCtn.OperErr = reqAns.CtnErr
-						pCtn.CtnInspect = reqAns.CtnInspect[0]
+					if pCtn != nil {
+						switch reqAns.CtnOper {
+						case ctn.CREATE, ctn.RUN, ctn.START:
+							pCtn.OperType = ""
+							pCtn.OperErr = ""
+							pCtn.CtnID = reqAns.CtnID[0]
+						case ctn.STOP, ctn.KILL:
+							pCtn.OperType = ""
+							pCtn.OperErr = ""
+							pCtn.CTN_STATS = ctn.CTN_STATS{} //有容器信息，但容器资源状态信息为空
+						case ctn.REMOVE:
+							pCtn.CtnID = "" //此时已经没有容器id了
+							pCtn.OperType = ""
+							pCtn.OperErr = ""
+							pCtn.Container = types.Container{} //容器设置为空
+							pCtn.CTN_STATS = ctn.CTN_STATS{}   //容器资源状态信息为空
+						case ctn.GETLOG:
+							pCtn.OperType = ""
+							pCtn.OperErr = ""
+							pCtn.CtnLog = reqAns.CtnLog[0]
+						case ctn.INSPECT:
+							pCtn.OperType = ""
+							pCtn.OperErr = ""
+							pCtn.CtnInspect = reqAns.CtnInspect[0]
+						}
+
+						operIndex := -pSaTruck.Index
+						pCtn.OperMapMutex.Lock()
+						_, ok := pCtn.OperMap[operIndex]
+						if ok {
+							Mylog.Debug(fmt.Sprintf("\n容器名称：%s\n容器操作：%s\n操作结果：%s\n", pCtn.CtnName, reqAns.CtnOper, reqAns.CtnErr))
+							delete(pCtn.OperMap, operIndex)
+						}
+						pCtn.OperMapMutex.Unlock()
 					}
 				}
 			case ctn.FLAG_CTN: //更新容器信息
 				{
-					Mylog.Debug(fmt.Sprintf("消息时间：%s", pSaTruck.MsgTimeStr))
+					var containerNames []string
+					var containerIds []string
+					containerNames = make([]string, 0, 1000)
+					containerIds = make([]string, 0, 1000)
+					for _, container := range pSaTruck.CtnInfos {
+						containerNames = append(containerNames, container.CtnName)
+						containerIds = append(containerIds, container.CtnID)
+					}
+					var containerStr string
+					if len(containerNames) > 0 {
+						for index, containerName := range containerNames {
+							ctnName := containerName
+							if len(ctnName) > 0 {
+								ctnName = containerName[:14]
+							}
+							ctnId := containerIds[index]
+							if len(ctnId) > 0 {
+								ctnId = containerIds[index][:10]
+							}
+
+							containerStr = fmt.Sprintf("%s\n容器名称：%s	|	容器id：%s", containerStr, ctnName, ctnId)
+						}
+						Mylog.Debug(fmt.Sprintf("\n******收到agent端容器信息******\n消息时间：%s\n%v\n", pSaTruck.MsgTimeStr, containerStr))
+					}
 					var ctnMap map[string]bool
 					ctnMap = make(map[string]bool) //这个变量主要是帮助找到server端有但agent端没有的容器对象
 					for _, ctnInfo := range pSaTruck.CtnInfos {
@@ -144,15 +192,21 @@ func WatchCtnInfo() {
 						pCtn := GetCtn(ctnName)
 
 						if _, ok := ctnMap[ctnName]; !ok {
-							pCtn.Dirty = true //设置容器信息过时
-							pCtn.DirtyPosition = ctn.DIRTY_POSITION_CTN_EXIST_IN_SERVER_BUT_NOT_IN_AGENT
-							pChan := pool.GetPrivateChanStr(pCtn.CtnName)
-							pCtn.State = ctn.CTN_NOT_EXIST_ON_AGENT
+							pCtn.OperMapMutex.Lock()
+							mapLen := len(pCtn.OperMap)
+							Mylog.Debug(fmt.Sprintf("\n\n！！！！！！！！！！！！！！！！注意： server端有但agent端没有\n容器名称：%s\n操作类型：%s\n错误信息：%s\n容器ID：%s\nmaplen的值：%d\n\n", pCtn.CtnName, pCtn.OperType, pCtn.OperErr, pCtn.CtnID, mapLen))
+							if mapLen == 0 {
+								pCtn.Dirty = true //设置容器信息过时
+								pCtn.DirtyPosition = ctn.DIRTY_POSITION_CTN_EXIST_IN_SERVER_BUT_NOT_IN_AGENT
+								pChan := pool.GetPrivateChanStr(pCtn.CtnName)
+								pCtn.State = ctn.CTN_NOT_EXIST_ON_AGENT
 
-							select {
-							case pChan <- pCtn.State:
-							default:
+								select {
+								case pChan <- pCtn.State:
+								default:
+								}
 							}
+							pCtn.OperMapMutex.Unlock()
 						}
 					}
 				}

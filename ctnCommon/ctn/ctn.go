@@ -23,14 +23,14 @@ const (
 	INSPECT = "INSPECT"
 	//CTNEXIT = "EXIT"
 
-	DIRTY_POSITION_DOCKER                               = "副本（容器）失效原因：docker服务器"
+	DIRTY_POSITION_DOCKER                               = "副本（容器）失效原因：agent端有容器，但docker中不存在"
 	DIRTY_POSITION_CTN_EXIST_IN_SERVER_BUT_NOT_IN_AGENT = "副本（容器）失效原因：server端与agent端连接正常但数据不一致，通常是server端有容器信息，而agent端没有改容器信息" //此类型还需要具体判断失效原因
-	DIRTY_POSITION_RPL_RUN_OR_REMOVE_ERR                = "副本（容器）失效原因：副本执行RUN操作或者REMOVE操作失败"
-	DIRTY_POSITION_ERR_BEFORE_RPL_OPER                  = "副本（容器）失效原因：副本操作在前合法性检测失败"
-	DIRTY_POSITION_RPL_OPER_TIMEOUT                     = "副本（容器）失效原因：server端副本操作超时"
-	DIRTY_POSITION_REMOVED                              = "正常删除"
-	DIRTY_POSTION_IMAGE_RUN_ERR                         = "副本（容器）失效原因：：镜像运行失败"
-	DIRTY_POSTION_SERVER_LOST_CONNICTION                = "副本（容器）失效原因：server端与agent端连接断开"
+	//DIRTY_POSITION_RPL_RUN_OR_REMOVE_ERR                = "副本（容器）失效原因：副本执行RUN操作或者REMOVE操作失败"
+	DIRTY_POSITION_ERR_BEFORE_RPL_OPER   = "副本（容器）失效原因：副本操作在前合法性检测失败"
+	DIRTY_POSITION_RPL_OPER_TIMEOUT      = "副本（容器）失效原因：server端副本操作超时"
+	DIRTY_POSITION_REMOVED               = "正常删除"
+	DIRTY_POSTION_IMAGE_RUN_ERR          = "副本（容器）失效原因：：镜像运行失败"
+	DIRTY_POSTION_SERVER_LOST_CONNICTION = "副本（容器）失效原因：server端与agent端连接断开"
 
 	CTN_NOT_EXIST_ON_AGENT = "not exist on agent"
 	CTN_UNKNOWN_CTN_STATUS = "容器状态未知"
